@@ -86,6 +86,7 @@ model Plan {
   status               PlanStatus   @default(active)
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
+  customers            Customer[]
 
   @@map("plans")
 }
@@ -101,6 +102,7 @@ model Server {
   status         ServerStatus @default(active)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  customers      Customer[]
 
   @@map("servers")
 }
@@ -125,6 +127,16 @@ model Customer {
   email     String?
   phone     String?
   status    String   @default("active")
+  
+  // New fields
+  planId    String?
+  plan      Plan?    @relation(fields: [planId], references: [id])
+  serverId  String?
+  server    Server?  @relation(fields: [serverId], references: [id])
+  connections Int    @default(1)
+  notes     String?
+  expiresAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

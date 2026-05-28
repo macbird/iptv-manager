@@ -47,8 +47,28 @@ export const CustomersPage: React.FC = () => {
             subtitle={customer.email}
             status={customer.status}
             footer={
-              <div className="text-xs text-slate-500 uppercase font-bold">
-                Tel: {customer.phone || 'N/A'}
+              <div className="space-y-2 mt-2 pt-2 border-t border-slate-100">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 font-bold uppercase">Plano:</span>
+                  <span className="text-slate-700 font-semibold">{customer.plan?.name || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 font-bold uppercase">Servidor:</span>
+                  <span className="text-slate-700 font-semibold">{customer.server?.name || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 font-bold uppercase">Conexões:</span>
+                  <span className="text-slate-700 font-semibold">{customer.connections}</span>
+                </div>
+                {customer.expiresAt && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400 font-bold uppercase">Vencimento:</span>
+                    <span className="text-slate-700 font-semibold">{new Date(customer.expiresAt).toLocaleDateString()}</span>
+                  </div>
+                )}
+                <div className="text-[10px] text-slate-400 font-medium">
+                  {customer.phone || 'Sem telefone'}
+                </div>
               </div>
             }
             onEdit={() => navigate(`/customers/${customer.id}/edit`)}
