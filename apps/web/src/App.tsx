@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './features/auth/pages/LoginPage';
-import { RegisterPage } from './features/auth/pages/RegisterPage';
+import { ChangePasswordPage } from './features/auth/pages/ChangePasswordPage';
 import { AppShell } from './app/layouts/AppShell';
 import { AdminShell } from './app/layouts/AdminShell';
 import { PlansPage } from './features/plans/pages/PlansPage';
@@ -47,7 +47,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route 
             path="/dashboard" 
             element={

@@ -6,8 +6,8 @@ export const authApi = {
     const response = await api.post('/auth/login', { email, password });
     return response.data;
   },
-  register: async (data: RegisterInput) => {
-    const response = await api.post('/auth/register', data);
+  changePassword: async (newPassword: string) => {
+    const response = await api.post('/auth/change-password', { newPassword });
     return response.data;
   },
   me: async () => {

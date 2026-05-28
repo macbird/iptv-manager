@@ -15,10 +15,16 @@ export const LoginPage: React.FC = () => {
     try {
       const response = await authApi.login(data.email, data.password);
       localStorage.setItem('token', response.token);
-      navigate('/dashboard');
+      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      if (response.user.passwordResetRequired) {
+        navigate('/change-password');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      alert(error.response?.data?.message || 'Invalid credentials');
+      alert(error.response?.data?.message || 'Credenciais inválidas');
     }
   };
 
@@ -63,12 +69,6 @@ export const LoginPage: React.FC = () => {
               </button>
             </div>
           </form>
-
-          <div className="mt-6 text-center">
-            <Link to="/register" className="text-sm text-indigo-600 hover:text-indigo-500">
-              Não tenho conta → Criar conta
-            </Link>
-          </div>
         </div>
       </div>
     </div>

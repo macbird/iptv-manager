@@ -23,21 +23,60 @@ export const CreateAccountPage: React.FC = () => {
   return (
     <FormLayout title="Nova Conta">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Nome</label>
-          <input
-            {...register('name')}
-            className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Nome da Empresa/Revenda</label>
+            <input
+              {...register('name', { required: true })}
+              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+              placeholder="Ex: IPTV Master"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Slug (URL)</label>
+            <input
+              {...register('slug')}
+              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+              placeholder="ex: iptv-master"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Slug</label>
-          <input
-            {...register('slug')}
-            className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-          />
+
+        <div className="border-t border-slate-200 pt-4 mt-6">
+          <h3 className="text-md font-semibold text-slate-800 mb-4">Dados do Proprietário</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Nome do Usuário</label>
+              <input
+                {...register('ownerName', { required: true })}
+                className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+                placeholder="Ex: João Silva"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700">E-mail de Acesso</label>
+              <input
+                type="email"
+                {...register('ownerEmail', { required: true })}
+                className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+                placeholder="joao@email.com"
+              />
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-slate-700">Senha Inicial (Opcional)</label>
+            <input
+              type="password"
+              {...register('initialPassword')}
+              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+              placeholder="Mudar123! (padrão se vazio)"
+            />
+            <p className="text-xs text-slate-500 mt-1">O usuário será obrigado a trocar esta senha no primeiro login.</p>
+          </div>
         </div>
-        <div className="flex justify-end space-x-3 mt-6">
+
+        <div className="flex justify-end space-x-3 mt-8">
           <button
             type="button"
             onClick={() => navigate('/admin/accounts')}
@@ -50,7 +89,7 @@ export const CreateAccountPage: React.FC = () => {
             disabled={isSubmitting}
             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
           >
-            {isSubmitting ? 'Salvando...' : 'Salvar'}
+            {isSubmitting ? 'Criando...' : 'Criar Conta'}
           </button>
         </div>
       </form>

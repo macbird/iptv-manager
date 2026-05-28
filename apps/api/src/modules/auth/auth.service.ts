@@ -4,52 +4,6 @@ import { RegisterInput } from '@iptv-manager/shared';
 import slugify from 'slugify';
 
 export class AuthService {
-  async register(input: RegisterInput) {
-    const existingUser = await prisma.accountUser.findUnique({
-      where: { email: input.email },
-    });
-
-    if (existingUser) {
-      throw new Error('Email already registered');
-    }
-
-    const passwordHash = await argon2.hash(input.password);
-    const slug = slugify(input.accountName, { lower: true });
-
-    // Handle slug collision (basic version)
-    let finalSlug = slug;
-    const existingAccount = await prisma.account.findUnique({
-      where: { slug },
-    });
-    
-    if (existingAccount) {
-      finalSlug = `${slug}-${Math.floor(Math.random() * 1000)}`;
-    }
-
-    return await prisma.$transaction(async (tx) => {
-      const account = await tx.account.create({
-        data: {
-          name: input.accountName,
-          slug: finalSlug,
-          phone: input.phone,
-          status: 'active',
-        },
-      });
-
-      const user = await tx.accountUser.create({
-        data: {
-          accountId: account.id,
-          email: input.email,
-          passwordHash,
-          name: input.userName,
-          role: 'tenant_owner',
-        },
-      });
-
-      return { account, user };
-    });
-  }
-
   async login(email: string, password: string) {
     const user = await prisma.accountUser.findUnique({
       where: { email },
@@ -57,26 +11,25 @@ export class AuthService {
     });
 
     if (!user) {
-      console.log('Login failed: User not found');
       throw new Error('Invalid credentials');
     }
 
-    console.log('Login attempt for user:', email);
-    console.log('Stored hash:', user.passwordHash);
-    
-    try {
-      const isValid = await argon2.verify(user.passwordHash, password);
-      console.log('Password verification result:', isValid);
-      
-      if (!isValid) {
-        console.log('Login failed: Password mismatch');
-        throw new Error('Invalid credentials');
-      }
-    } catch (err) {
-      console.error('Password verification error:', err);
+    const isValid = await argon2.verify(user.passwordHash, password);
+    if (!isValid) {
       throw new Error('Invalid credentials');
     }
 
     return user;
+  }
+
+  async changePassword(userId: string, newPassword: string) {
+    const passwordHash = await argon2.hash(newPassword);
+    return await prisma.accountUser.update({
+      where: { id: userId },
+      data: {
+        passwordHash,
+        passwordResetRequired: false,
+      },
+    });
   }
 }

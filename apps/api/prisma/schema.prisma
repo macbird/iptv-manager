@@ -65,6 +65,7 @@ model AccountUser {
   passwordHash String
   name         String
   role         UserRole  @default(tenant_owner)
+  passwordResetRequired Boolean @default(false)
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
