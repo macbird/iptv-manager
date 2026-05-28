@@ -1,9 +1,9 @@
 import { api } from '../../../shared/api/api.client';
-import { LoginInput, RegisterInput } from '@iptv-manager/shared';
+import type { LoginInput, RegisterInput } from '@iptv-manager/shared';
 
 export const authApi = {
-  login: async (data: LoginInput) => {
-    const response = await api.post('/auth/login', data);
+  login: async (email: string, password: string) => {
+    const response = await api.post('/auth/login', { email, password });
     return response.data;
   },
   register: async (data: RegisterInput) => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { planSchema, PlanInput } from '@iptv-manager/shared';
+import { planSchema, type PlanInput } from '@iptv-manager/shared';
 
 interface PlanFormProps {
   onSubmit: (data: PlanInput) => Promise<void>;
@@ -10,15 +10,20 @@ interface PlanFormProps {
 }
 
 export const PlanForm: React.FC<PlanFormProps> = ({ onSubmit, onCancel, initialData }) => {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<PlanInput>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<PlanInput>({
     resolver: zodResolver(planSchema),
     defaultValues: {
       billingCycle: 'monthly',
       maxConnections: 1,
       status: 'active',
-      ...initialData,
     },
   });
+
+  React.useEffect(() => {
+    if (initialData) {
+      reset(initialData);
+    }
+  }, [initialData, reset]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

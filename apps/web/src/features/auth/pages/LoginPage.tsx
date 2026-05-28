@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, LoginInput } from '@iptv-manager/shared';
+import { loginSchema, type LoginInput } from '@iptv-manager/shared';
 import { authApi } from '../api/auth.api';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -15,7 +15,7 @@ export const LoginPage: React.FC = () => {
     try {
       const response = await authApi.login(data.email, data.password);
       localStorage.setItem('token', response.token);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       alert(error.response?.data?.message || 'Invalid credentials');
@@ -38,7 +38,7 @@ export const LoginPage: React.FC = () => {
               <input
                 type="email"
                 {...register('email')}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-900"
               />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
@@ -48,7 +48,7 @@ export const LoginPage: React.FC = () => {
               <input
                 type="password"
                 {...register('password')}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-900"
               />
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>

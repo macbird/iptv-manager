@@ -8,6 +8,21 @@ O app do revendedor (`apps/web`) e o painel admin (`apps/admin`, Fase 2) devem s
 
 ---
 
+### Formulários e Ações (Obrigatório)
+
+**Proibido uso de modais (`dialog`) para formulários de criação/edição em dispositivos móveis.**
+
+Motivo: Modais em mobile frequentemente sofrem com problemas de rolagem, teclado ocupando espaço e layout quebrado.
+
+**Padrão obrigatório:**
+- Navegação via rotas (`react-router-dom`): use páginas dedicadas (ex: `/plans/new`, `/plans/:id/edit`).
+- Desktop: pode renderizar como modal (opcional), mas a rota deve ser acessível diretamente.
+- Mobile: obrigatoriamente renderiza como página cheia (full-screen).
+- O botão de ação na lista deve ser um `<Link to="...">` (não um `<button>` que abre um modal).
+- Botão "Salvar" deve ser de fácil acesso, preferencialmente posicionado ou em área fixa caso o formulário seja longo.
+
+---
+
 ## Stack frontend
 
 | Item | Escolha |

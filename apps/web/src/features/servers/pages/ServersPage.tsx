@@ -1,36 +1,27 @@
 import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { serversApi } from '../api/servers.api';
 import { CardList, EntityCard } from '../../../shared/ui/lists/EntityCard';
-import { Plus, ExternalLink } from 'lucide-react';
-import { Modal } from '../../../shared/ui/modals/Modal';
-import { ServerForm } from './ServerForm';
-import { ServerInput } from '@iptv-manager/shared';
+import { Plus, ExternalLink, Server } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { BottomSheet } from '../../../shared/ui/modals/BottomSheet';
+import { useCrud } from '../../../shared/hooks/useCrud';
 
 export const ServersPage: React.FC = () => {
-  const queryClient = useQueryClient();
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
   const { data: servers, isLoading } = useQuery({
     queryKey: ['servers'],
     queryFn: serversApi.list,
   });
 
-  const createMutation = useMutation({
-    mutationFn: serversApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['servers'] });
-      setIsModalOpen(false);
-    },
-    onError: (err: unknown) => {
-      const error = err as { response?: { data?: { message?: string } } };
-      alert(error.response?.data?.message || 'Erro ao criar servidor');
-    }
+  const { remove } = useCrud({
+    queryKey: ['servers'],
+    deleteFn: serversApi.delete,
+    listPath: '/servers',
+    entityName: 'Servidor',
   });
-
-  const onSubmit = async (data: ServerInput) => {
-    await createMutation.mutateAsync(data);
-  };
 
   if (isLoading) return <div>Carregando...</div>;
 
@@ -38,19 +29,20 @@ export const ServersPage: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Servidores</h1>
-        <button 
-          onClick={() => setIsModalOpen(true)}
+        <Link 
+          to="/servers/new"
           className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
         >
           <Plus className="mr-2 h-5 w-5" />
           Novo Servidor
-        </button>
+        </Link>
       </div>
 
       <CardList>
-        {servers?.map((server: { id: string; name: string; panelUrl: string; status: string }) => (
+        {servers?.map((server: any) => (
           <EntityCard
             key={server.id}
+            icon={<Server className="h-5 w-5" />}
             title={server.name}
             subtitle={server.panelUrl}
             status={server.status}
@@ -64,6 +56,8 @@ export const ServersPage: React.FC = () => {
                 Abrir Painel <ExternalLink className="ml-1 h-4 w-4" />
               </a>
             }
+            onEdit={() => navigate(`/servers/${server.id}/edit`)}
+            onDelete={() => setDeleteId(server.id)}
           />
         ))}
       </CardList>
@@ -74,16 +68,13 @@ export const ServersPage: React.FC = () => {
         </div>
       )}
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Novo Servidor"
-      >
-        <ServerForm 
-          onSubmit={onSubmit} 
-          onCancel={() => setIsModalOpen(false)} 
-        />
-      </Modal>
+      <BottomSheet 
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => deleteId && remove(deleteId)}
+        title="Excluir Servidor"
+        description="Tem certeza que deseja excluir este servidor? Esta ação não poderá ser desfeita."
+      />
     </div>
   );
 };

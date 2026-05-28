@@ -1,5 +1,5 @@
 import { api } from '../../../shared/api/api.client';
-import { ServerInput } from '@iptv-manager/shared';
+import type { ServerInput } from '@iptv-manager/shared';
 
 export const serversApi = {
   list: async () => {

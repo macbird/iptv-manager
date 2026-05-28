@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { serverSchema, ServerInput } from '@iptv-manager/shared';
+import { serverSchema, type ServerInput } from '@iptv-manager/shared';
 
 interface ServerFormProps {
   onSubmit: (data: ServerInput) => Promise<void>;
@@ -10,13 +10,18 @@ interface ServerFormProps {
 }
 
 export const ServerForm: React.FC<ServerFormProps> = ({ onSubmit, onCancel, initialData }) => {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ServerInput>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ServerInput>({
     resolver: zodResolver(serverSchema),
     defaultValues: {
       status: 'active',
-      ...initialData,
     },
   });
+
+  React.useEffect(() => {
+    if (initialData) {
+      reset(initialData);
+    }
+  }, [initialData, reset]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

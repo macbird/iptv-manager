@@ -57,12 +57,23 @@ export class AuthService {
     });
 
     if (!user) {
+      console.log('Login failed: User not found');
       throw new Error('Invalid credentials');
     }
 
-    const isValid = await argon2.verify(user.passwordHash, password);
-
-    if (!isValid) {
+    console.log('Login attempt for user:', email);
+    console.log('Stored hash:', user.passwordHash);
+    
+    try {
+      const isValid = await argon2.verify(user.passwordHash, password);
+      console.log('Password verification result:', isValid);
+      
+      if (!isValid) {
+        console.log('Login failed: Password mismatch');
+        throw new Error('Invalid credentials');
+      }
+    } catch (err) {
+      console.error('Password verification error:', err);
       throw new Error('Invalid credentials');
     }
 

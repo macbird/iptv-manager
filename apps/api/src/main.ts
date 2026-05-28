@@ -5,6 +5,7 @@ import { registerAuthModule } from './modules/auth';
 import { registerPlansModule } from './modules/plans';
 import { registerServersModule } from './modules/servers';
 import { registerTagsModule } from './modules/tags';
+import { registerCustomersModule } from './modules/customers';
 import { tenantContextMiddleware } from './core/middleware/tenant-context';
 
 const app = Fastify({
@@ -40,6 +41,7 @@ const start = async () => {
     await app.register(registerPlansModule, { prefix: '/api/plans' });
     await app.register(registerServersModule, { prefix: '/api/servers' });
     await app.register(registerTagsModule, { prefix: '/api/tags' });
+    await app.register(registerCustomersModule, { prefix: '/api/customers' });
 
     const port = Number(process.env.PORT) || 3001;
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registerSchema, RegisterInput } from '@iptv-manager/shared';
+import { registerSchema, type RegisterInput } from '@iptv-manager/shared';
 import { authApi } from '../api/auth.api';
 import { useNavigate, Link } from 'react-router-dom';
 

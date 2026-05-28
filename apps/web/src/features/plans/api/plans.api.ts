@@ -1,5 +1,5 @@
 import { api } from '../../../shared/api/api.client';
-import { PlanInput } from '@iptv-manager/shared';
+import type { PlanInput } from '@iptv-manager/shared';
 
 export const plansApi = {
   list: async () => {

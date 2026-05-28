@@ -88,12 +88,12 @@ Este projeto **não** é módulo `eva-*`. Desative regras do monorepo EVA ao abr
 
 ---
 
-## 7. Commits sugeridos
+## 8. Política Obrigatória de Testes
 
-Um commit por passo ou sub-passo:
+**Regra de Ouro:** Nenhuma fase ou nova funcionalidade será considerada concluída sem a devida validação via **Chrome DevTools**.
 
-```
-feat(api): add auth module with tenant register
-feat(web): customers list and detail pages
-feat(billing): asaas pix webhook and payment confirmation
-```
+- É obrigatório testar o fluxo completo (CRUD: Criar, Ler, Editar, Excluir) antes de avançar para a próxima fase do desenvolvimento.
+- O uso de modais para formulários é proibido em dispositivos móveis. Todo CRUD deve seguir o padrão de rotas dedicadas (`/entity/new`, `/entity/:id/edit`).
+- Apenas avançar para a próxima etapa (ex: Módulo de Clientes) após ter validado que o CRUD do módulo atual (ex: Planos, Servidores, Tags) está 100% funcional, com feedback visual (toasts) e navegação correta.
+- Em caso de erros, investigue a rede (Network Tab) e o console antes de prosseguir.
+

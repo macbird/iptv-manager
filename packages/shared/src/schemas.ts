@@ -49,3 +49,12 @@ export const tagSchema = z.object({
 });
 
 export type TagInput = z.infer<typeof tagSchema>;
+
+export const customerSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().min(10, "Telefone inválido"),
+  status: z.enum(['active', 'inactive']).default('active'),
+});
+
+export type CustomerInput = z.infer<typeof customerSchema>;

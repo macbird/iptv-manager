@@ -1,5 +1,5 @@
 import { api } from '../../../shared/api/api.client';
-import { TagInput } from '@iptv-manager/shared';
+import type { TagInput } from '@iptv-manager/shared';
 
 export const tagsApi = {
   list: async () => {

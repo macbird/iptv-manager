@@ -1,26 +1,26 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { plansApi } from '../api/plans.api';
+import { customersApi } from '../api/customers.api';
 import { CardList, EntityCard } from '../../../shared/ui/lists/EntityCard';
-import { Plus, CreditCard } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BottomSheet } from '../../../shared/ui/modals/BottomSheet';
 import { useCrud } from '../../../shared/hooks/useCrud';
 
-export const PlansPage: React.FC = () => {
+export const CustomersPage: React.FC = () => {
   const navigate = useNavigate();
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
-  const { data: plans, isLoading } = useQuery({
-    queryKey: ['plans'],
-    queryFn: plansApi.list,
+  const { data: customers, isLoading } = useQuery({
+    queryKey: ['customers'],
+    queryFn: customersApi.list,
   });
 
   const { remove } = useCrud({
-    queryKey: ['plans'],
-    deleteFn: plansApi.delete,
-    listPath: '/plans',
-    entityName: 'Plano',
+    queryKey: ['customers'],
+    deleteFn: customersApi.delete,
+    listPath: '/customers',
+    entityName: 'Cliente',
   });
 
   if (isLoading) return <div>Carregando...</div>;
@@ -28,38 +28,38 @@ export const PlansPage: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Planos</h1>
+        <h1 className="text-2xl font-bold">Clientes</h1>
         <Link 
-          to="/plans/new"
+          to="/customers/new"
           className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
         >
           <Plus className="mr-2 h-5 w-5" />
-          Novo Plano
+          Novo Cliente
         </Link>
       </div>
 
       <CardList>
-        {plans?.map((plan: any) => (
+        {customers?.map((customer: any) => (
           <EntityCard
-            key={plan.id}
-            icon={<CreditCard className="h-5 w-5" />}
-            title={plan.name}
-            subtitle={`${plan.maxConnections} conexões · R$ ${plan.price}`}
-            status={plan.status}
+            key={customer.id}
+            icon={<Users className="h-5 w-5" />}
+            title={customer.name}
+            subtitle={customer.email}
+            status={customer.status}
             footer={
               <div className="text-xs text-slate-500 uppercase font-bold">
-                Ciclo: {plan.billingCycle}
+                Tel: {customer.phone || 'N/A'}
               </div>
             }
-            onEdit={() => navigate(`/plans/${plan.id}/edit`)}
-            onDelete={() => setDeleteId(plan.id)}
+            onEdit={() => navigate(`/customers/${customer.id}/edit`)}
+            onDelete={() => setDeleteId(customer.id)}
           />
         ))}
       </CardList>
-      
-      {plans?.length === 0 && (
+
+      {customers?.length === 0 && (
         <div className="text-center py-12 bg-white rounded-lg shadow">
-          <p className="text-gray-500">Nenhum plano cadastrado.</p>
+          <p className="text-gray-500">Nenhum cliente cadastrado.</p>
         </div>
       )}
 
@@ -67,8 +67,8 @@ export const PlansPage: React.FC = () => {
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
         onConfirm={() => deleteId && remove(deleteId)}
-        title="Excluir Plano"
-        description="Tem certeza que deseja excluir este plano? Esta ação não poderá ser desfeita."
+        title="Excluir Cliente"
+        description="Tem certeza que deseja excluir este cliente? Esta ação não poderá ser desfeita."
       />
     </div>
   );
