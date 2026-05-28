@@ -19,4 +19,15 @@ export async function adminAuthRoutes(app: FastifyInstance) {
       return reply.status(401).send({ message: 'Invalid credentials' });
     }
   });
+
+  app.get('/me', { preHandler: [app.authenticateAdmin] }, async (request) => {
+    const adminId = (request.user as any).sub;
+    return await adminAuthService.getProfile(adminId);
+  });
+
+  app.patch('/me', { preHandler: [app.authenticateAdmin] }, async (request) => {
+    const adminId = (request.user as any).sub;
+    const data = request.body as { email?: string, password?: string };
+    return await adminAuthService.updateProfile(adminId, data);
+  });
 }

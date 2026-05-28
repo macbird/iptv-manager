@@ -5,6 +5,14 @@ export const adminAuthApi = {
     const response = await api.post('/admin/auth/login', credentials);
     return response.data;
   },
+  getProfile: async () => {
+    const response = await api.get('/admin/auth/me');
+    return response.data;
+  },
+  updateProfile: async (data: { email?: string, password?: string }) => {
+    const response = await api.patch('/admin/auth/me', data);
+    return response.data;
+  },
 };
 
 export const tenantsApi = {

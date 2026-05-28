@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, Server, Tag, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Server, Tag, LogOut, Menu, X, UserCog } from 'lucide-react';
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -17,6 +17,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     { name: 'Planos', icon: CreditCard, href: '/plans' },
     { name: 'Servidores', icon: Server, href: '/servers' },
     { name: 'Tags', icon: Tag, href: '/tags' },
+    { name: 'Perfil', icon: UserCog, href: '/profile' },
   ];
 
   const NavContent = () => (

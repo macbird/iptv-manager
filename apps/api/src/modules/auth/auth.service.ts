@@ -32,4 +32,42 @@ export class AuthService {
       },
     });
   }
+
+  async getProfile(userId: string) {
+    return await prisma.accountUser.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        account: {
+          select: {
+            name: true,
+            slug: true
+          }
+        }
+      }
+    });
+  }
+
+  async updateProfile(userId: string, data: { name?: string, email?: string, password?: string }) {
+    const updateData: any = {};
+    if (data.name) updateData.name = data.name;
+    if (data.email) updateData.email = data.email;
+    if (data.password) {
+      updateData.passwordHash = await argon2.hash(data.password);
+    }
+
+    return await prisma.accountUser.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true
+      }
+    });
+  }
 }

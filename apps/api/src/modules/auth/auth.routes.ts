@@ -48,7 +48,14 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.get('/me', { preHandler: [app.authenticate] }, async (request, reply) => {
-    return request.user;
+    const userId = (request.user as any).sub;
+    return await authService.getProfile(userId);
+  });
+
+  app.patch('/me', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const userId = (request.user as any).sub;
+    const data = request.body as { name?: string, email?: string, password?: string };
+    return await authService.updateProfile(userId, data);
   });
 }
 

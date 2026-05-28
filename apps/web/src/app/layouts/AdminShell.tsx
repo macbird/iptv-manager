@@ -14,6 +14,7 @@ export const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
     { name: 'Contas', icon: Users, href: '/admin/accounts' },
+    { name: 'Perfil', icon: UserCog, href: '/admin/profile' },
   ];
 
   const NavContent = () => (

@@ -20,6 +20,8 @@ import { AccountsPage } from './features/admin/pages/AccountsPage';
 import { CreateAccountPage } from './features/admin/pages/CreateAccountPage';
 import { EditAccountPage } from './features/admin/pages/EditAccountPage';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
+import { UserProfilePage } from './features/auth/pages/UserProfilePage';
+import { AdminProfilePage } from './features/admin/pages/AdminProfilePage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
@@ -179,6 +181,16 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <UserProfilePage />
+                </AppShell>
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route 
             path="/admin/dashboard" 
@@ -186,6 +198,16 @@ function App() {
               <AdminProtectedRoute>
                 <AdminShell>
                   <AdminDashboardPage />
+                </AdminShell>
+              </AdminProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/profile" 
+            element={
+              <AdminProtectedRoute>
+                <AdminShell>
+                  <AdminProfilePage />
                 </AdminShell>
               </AdminProtectedRoute>
             } 

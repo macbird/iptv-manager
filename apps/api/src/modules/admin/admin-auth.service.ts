@@ -11,4 +11,25 @@ export class AdminAuthService {
     }
     return admin;
   }
+
+  async getProfile(id: string) {
+    return await prisma.platformAdmin.findUnique({
+      where: { id },
+      select: { id: true, email: true }
+    });
+  }
+
+  async updateProfile(id: string, data: { email?: string, password?: string }) {
+    const updateData: any = {};
+    if (data.email) updateData.email = data.email;
+    if (data.password) {
+      updateData.password = await argon2.hash(data.password);
+    }
+
+    return await prisma.platformAdmin.update({
+      where: { id },
+      data: updateData,
+      select: { id: true, email: true }
+    });
+  }
 }
