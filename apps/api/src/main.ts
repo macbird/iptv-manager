@@ -26,9 +26,13 @@ const start = async () => {
     app.decorate("authenticate", async (request: any, reply: any) => {
       try {
         await request.jwtVerify();
+        const user = request.user as any;
+        if (user.type !== 'tenant_user') {
+          throw new Error('Unauthorized');
+        }
         await tenantContextMiddleware(request, reply);
       } catch (err) {
-        reply.send(err);
+        reply.status(401).send({ message: 'Unauthorized' });
       }
     });
 

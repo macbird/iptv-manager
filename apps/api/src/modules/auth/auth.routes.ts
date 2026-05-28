@@ -14,6 +14,7 @@ export async function authRoutes(app: FastifyInstance) {
         sub: user.id,
         tenantId: user.accountId,
         role: user.role,
+        type: 'tenant_user',
       });
 
       return {
