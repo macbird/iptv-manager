@@ -7,11 +7,13 @@ import { Users, Plus, Key } from 'lucide-react';
 import { BottomSheet } from '../../../shared/ui/modals/BottomSheet';
 import { useNavigate, Link } from 'react-router-dom';
 
+import { ResetPasswordModal } from './ResetPasswordModal';
+
 export const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
-  const [resetUserId, setResetUserId] = React.useState<string | null>(null);
+  const [resetUser, setResetUser] = React.useState<{ id: string, name: string } | null>(null);
 
   const { data: accounts, isLoading } = useQuery({
     queryKey: ['accounts'],
@@ -32,14 +34,6 @@ export const AccountsPage: React.FC = () => {
       setDeleteId(null);
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       showToast.success('Conta suspensa');
-    }
-  });
-
-  const resetMutation = useMutation({
-    mutationFn: (userId: string) => tenantsApi.resetPassword(userId),
-    onSuccess: () => {
-      setResetUserId(null);
-      showToast.success('Senha resetada com sucesso!');
     }
   });
 
@@ -76,7 +70,7 @@ export const AccountsPage: React.FC = () => {
                         <p className="text-xs text-slate-500 truncate">{user.email}</p>
                       </div>
                       <button 
-                        onClick={() => setResetUserId(user.id)}
+                        onClick={() => setResetUser({ id: user.id, name: user.name })}
                         className="ml-2 p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-all"
                         title="Resetar Senha"
                       >
@@ -101,6 +95,13 @@ export const AccountsPage: React.FC = () => {
         ))}
       </CardList>
 
+      <ResetPasswordModal 
+        userId={resetUser?.id || null}
+        userName={resetUser?.name || null}
+        onClose={() => setResetUser(null)}
+        onSuccess={() => {}}
+      />
+
       {accounts?.length === 0 && (
         <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-slate-200">
           <p className="text-slate-500">Nenhuma conta cadastrada.</p>
@@ -113,14 +114,6 @@ export const AccountsPage: React.FC = () => {
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
         title="Suspender Conta"
         description="Tem certeza que deseja suspender esta conta? O revendedor perderá o acesso imediatamente."
-      />
-
-      <BottomSheet 
-        isOpen={!!resetUserId}
-        onClose={() => setResetUserId(null)}
-        onConfirm={() => resetUserId && resetMutation.mutate(resetUserId)}
-        title="Resetar Senha"
-        description="A senha será resetada para o padrão 'Reset123!'. O usuário será obrigado a trocá-la no primeiro acesso. Confirmar?"
       />
     </div>
   );
