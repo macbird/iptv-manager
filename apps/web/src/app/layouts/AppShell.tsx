@@ -51,18 +51,18 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   );
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100">
+    <div className="h-screen flex bg-gray-100">
       {/* Desktop sidebar */}
-      <div className="hidden md:flex md:flex-shrink-0">
+      <aside className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <div className="flex flex-col h-0 flex-1 bg-gray-800">
+          <div className="flex flex-col h-full bg-gray-800">
             <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900 text-white font-bold text-xl">
               IPTV Manager
             </div>
             <NavContent />
           </div>
         </div>
-      </div>
+      </aside>
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
@@ -88,20 +88,18 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       )}
 
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        <div className="md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3">
+        <header className="md:hidden bg-white border-b h-16 flex items-center px-4">
           <button
-            className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none"
+            className="h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none"
             onClick={() => setIsMobileMenuOpen(true)}
           >
             <Menu className="h-6 w-6" />
           </button>
-        </div>
+          <div id="mobile-header-portal" className="flex-1 flex justify-between items-center ml-4" />
+        </header>
+
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              {children}
-            </div>
-          </div>
+            {children}
         </main>
       </div>
     </div>

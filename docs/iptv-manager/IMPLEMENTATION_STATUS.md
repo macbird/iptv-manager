@@ -13,6 +13,9 @@ Este documento registra o progresso real da implementação do projeto, correlac
 ## ✅ Fase 1 — Passo 3: Clientes finais e conexões
 **Status:** Concluído
 
+## ✅ Ajustes de UX/UI
+**Status:** Concluído (Paginação unificada, correções de layout em formulários e rodapés)
+
 ---
 
 ## ✅ Fase 2 — Painel admin (plataforma)

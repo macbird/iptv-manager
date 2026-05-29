@@ -1,95 +1,135 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi } from '../api/customers.api';
-import { CardList, EntityCard } from '../../../shared/ui/lists/EntityCard';
-import { Plus, Users } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { BottomSheet } from '../../../shared/ui/modals/BottomSheet';
-import { useCrud } from '../../../shared/hooks/useCrud';
+import { Plus, ChevronLeft, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Modal } from '../../../shared/ui/modals/Modal';
+import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
+import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 
 export const CustomersPage: React.FC = () => {
   const navigate = useNavigate();
-  const [deleteId, setDeleteId] = React.useState<string | null>(null);
-
-  const { data: customers, isLoading } = useQuery({
-    queryKey: ['customers'],
-    queryFn: customersApi.list,
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState('');
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const pageSize = 10;
+  
+  const { data, isLoading } = useQuery({
+    queryKey: ['customers', page, filter],
+    queryFn: () => customersApi.list({ page, pageSize, filter }),
   });
 
-  const { remove } = useCrud({
-    queryKey: ['customers'],
-    deleteFn: customersApi.delete,
-    listPath: '/customers',
-    entityName: 'Cliente',
+  const deleteMutation = useMutation({
+    mutationFn: customersApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      setDeleteId(null);
+    },
   });
 
-  if (isLoading) return <div>Carregando...</div>;
+  const totalPages = data ? Math.ceil(data.total / pageSize) : 0;
+
+  const columns = [
+    { header: 'Nome', accessor: (c: any) => c.name },
+    { header: 'Plano', accessor: (c: any) => c.plan?.name || '-' },
+    { header: 'Conexões', accessor: (c: any) => c.connections?.length || 0 },
+    { header: 'Telefone', accessor: (c: any) => c.phone || '-' },
+    { header: 'Vencimento', accessor: (c: any) => c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-' },
+    { 
+      header: 'Ações', 
+      accessor: (c: any) => (
+        <div className="flex justify-end">
+          <button onClick={() => navigate(`/customers/${c.id}/edit`)} className="text-slate-500 hover:text-indigo-600 p-2"><Edit2 className="w-4 h-4" /></button>
+          <button onClick={() => setDeleteId(c.id)} className="text-slate-500 hover:text-red-600 p-2"><Trash2 className="w-4 h-4" /></button>
+        </div>
+      )
+    },
+  ];
+
+  const renderMobileCard = (c: any) => (
+    <>
+      <div className="flex justify-between items-center mb-2">
+        <div className="font-bold text-slate-900 uppercase truncate pr-2">{c.name}</div>
+        <div className="flex shrink-0">
+          <button onClick={() => navigate(`/customers/${c.id}/edit`)} className="text-slate-500 hover:text-indigo-600 p-1"><Edit2 className="w-4 h-4" /></button>
+          <button onClick={() => setDeleteId(c.id)} className="text-slate-500 hover:text-red-600 p-1"><Trash2 className="w-4 h-4" /></button>
+        </div>
+      </div>
+      <div className="text-xs text-slate-600 grid grid-cols-2 gap-y-1 border-t pt-2">
+        <div className="truncate"><span className="font-semibold text-slate-500">Plano:</span> {c.plan?.name || '-'}</div>
+        <div className="truncate"><span className="font-semibold text-slate-500">Conexões:</span> {c.connections?.length || 0}</div>
+        <div className="truncate"><span className="font-semibold text-slate-500">Tel:</span> {c.phone || '-'}</div>
+        <div className="truncate"><span className="font-semibold text-slate-500">Venc:</span> {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-'}</div>
+      </div>
+    </>
+  );
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Clientes</h1>
-        <Link 
-          to="/customers/new"
-          className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          Novo Cliente
-        </Link>
-      </div>
-
-      <CardList>
-        {customers?.map((customer: any) => (
-          <EntityCard
-            key={customer.id}
-            icon={<Users className="h-5 w-5" />}
-            title={customer.name}
-            subtitle={customer.email}
-            status={customer.status}
-            footer={
-              <div className="space-y-2 mt-2 pt-2 border-t border-slate-100">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400 font-bold uppercase">Plano:</span>
-                  <span className="text-slate-700 font-semibold">{customer.plan?.name || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400 font-bold uppercase">Servidor:</span>
-                  <span className="text-slate-700 font-semibold">{customer.server?.name || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400 font-bold uppercase">Conexões:</span>
-                  <span className="text-slate-700 font-semibold">{customer.connections}</span>
-                </div>
-                {customer.expiresAt && (
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 font-bold uppercase">Vencimento:</span>
-                    <span className="text-slate-700 font-semibold">{new Date(customer.expiresAt).toLocaleDateString()}</span>
-                  </div>
-                )}
-                <div className="text-[10px] text-slate-400 font-medium">
-                  {customer.phone || 'Sem telefone'}
-                </div>
-              </div>
-            }
-            onEdit={() => navigate(`/customers/${customer.id}/edit`)}
-            onDelete={() => setDeleteId(customer.id)}
-          />
-        ))}
-      </CardList>
-
-      {customers?.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
-          <p className="text-gray-500">Nenhum cliente cadastrado.</p>
+    <PageLayout
+      title="Clientes"
+      actions={
+        <button onClick={() => navigate('/customers/new')} className="bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 flex items-center text-sm">
+          <Plus className="w-4 h-4 mr-1" /> Novo
+        </button>
+      }
+      footer={
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-slate-600">Página {page} de {totalPages || 1}</span>
+          <div className="flex space-x-2">
+            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 border rounded hover:bg-slate-50 disabled:opacity-50"><ChevronLeft className="w-4 h-4" /></button>
+            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-2 border rounded hover:bg-slate-50 disabled:opacity-50"><ChevronRight className="w-4 h-4" /></button>
+          </div>
         </div>
-      )}
+      }
+    >
+      <FilterInput onFilterChange={(value) => { setFilter(value); setPage(1); }} currentFilter={filter} />
+      
+      <ResponsiveDataGrid 
+        data={data?.data || []} 
+        columns={columns} 
+        renderMobileCard={renderMobileCard} 
+        isLoading={isLoading}
+      />
 
-      <BottomSheet 
+      <Modal
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && remove(deleteId)}
+        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
         title="Excluir Cliente"
         description="Tem certeza que deseja excluir este cliente? Esta ação não poderá ser desfeita."
       />
-    </div>
+    </PageLayout>
   );
 };
+
+const FilterInput = React.memo(({ onFilterChange, currentFilter }: { onFilterChange: (v: string) => void, currentFilter: string }) => {
+  const [term, setTerm] = useState(currentFilter);
+
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+        onFilterChange(term);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [term, onFilterChange]);
+
+  return (
+    <div className="relative mb-4">
+      <input
+        type="text"
+        placeholder="Filtrar por nome..."
+        value={term}
+        onChange={(e) => setTerm(e.target.value)}
+        className="w-full border border-slate-300 rounded-md p-2 pr-10"
+      />
+      {term && (
+        <button 
+          onClick={() => { setTerm(''); onFilterChange(''); }}
+          className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  );
+});

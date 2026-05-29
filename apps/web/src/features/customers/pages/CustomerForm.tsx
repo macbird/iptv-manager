@@ -1,11 +1,12 @@
 import React from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { customerSchema, type CustomerInput } from '@iptv-manager/shared';
 import { PatternFormat } from 'react-number-format';
 import { useQuery } from '@tanstack/react-query';
 import { plansApi } from '../../plans/api/plans.api';
 import { serversApi } from '../../servers/api/servers.api';
+import { Trash2, Plus } from 'lucide-react';
 
 interface CustomerFormProps {
   onSubmit: (data: any) => Promise<void>;
@@ -13,14 +14,24 @@ interface CustomerFormProps {
   initialData?: Partial<any>;
 }
 
-export const CustomerForm: React.FC<CustomerFormProps> = ({ onSubmit, onCancel, initialData }) => {
-  const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } = useForm<any>({
-    // Temporarily disable strict resolver to allow new fields not yet in shared schema
+export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>(({ onSubmit, onCancel, initialData }, ref) => {
+  const { register, handleSubmit, reset, control, getValues, formState: { errors, isSubmitting } } = useForm<CustomerInput>({
     // resolver: zodResolver(customerSchema),
     defaultValues: {
       status: 'active',
-      connections: 1,
+      connections: [],
+      name: '',
+      email: '',
+      phone: '',
+      planId: '',
+      notes: '',
+      expiresAt: undefined,
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'connections',
   });
 
   const { data: plans } = useQuery({
@@ -39,8 +50,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ onSubmit, onCancel, 
     }
   }, [initialData, reset]);
 
+  const onSubmitHandler = handleSubmit(async () => {
+    const fullData = getValues();
+    console.log('DEBUG: Submitting fullData from getValues():', JSON.stringify(fullData, null, 2));
+    await onSubmit(fullData);
+  });
+
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form ref={ref} onSubmit={onSubmitHandler} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700">Nome</label>
@@ -48,7 +66,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ onSubmit, onCancel, 
             {...register('name', { required: true })}
             className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
           />
-          {errors.name && <p className="text-red-500 text-xs mt-1">Nome é obrigatório</p>}
         </div>
 
         <div>
@@ -79,40 +96,71 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ onSubmit, onCancel, 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Conexões</label>
-          <input
-            type="number"
-            {...register('connections', { valueAsNumber: true, min: 1 })}
-            className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
           <label className="block text-sm font-medium text-slate-700">Plano</label>
           <select
             {...register('planId')}
             className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
           >
             <option value="">Selecione um plano</option>
-            {plans?.map((plan: any) => (
+            {plans?.data?.map((plan: any) => (
               <option key={plan.id} value={plan.id}>{plan.name}</option>
             ))}
           </select>
         </div>
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Servidor</label>
-          <select
-            {...register('serverId')}
-            className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+      <div className="border-t border-slate-200 pt-4">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-sm font-medium text-slate-900">Conexões</h3>
+          <button
+            type="button"
+            onClick={() => append({ serverId: '', macAddress: '', applicationName: '' })}
+            className="flex items-center text-sm text-indigo-600 hover:text-indigo-800"
           >
-            <option value="">Selecione um servidor</option>
-            {servers?.map((server: any) => (
-              <option key={server.id} value={server.id}>{server.name}</option>
-            ))}
-          </select>
+            <Plus className="w-4 h-4 mr-1" /> Adicionar
+          </button>
+        </div>
+        <div className="space-y-3">
+          {fields.map((field, index) => (
+            <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center bg-slate-50 p-2 rounded">
+              <select
+                {...register(`connections.${index}.serverId`, { required: 'Servidor obrigatório' })}
+                className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm"
+              >
+                <option value="">Servidor</option>
+                {servers?.data?.map((server: any) => (
+                  <option key={server.id} value={server.id}>{server.name}</option>
+                ))}
+              </select>
+              <input
+                {...register(`connections.${index}.label`)}
+                placeholder="Rótulo (ex: Backup)"
+                className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm"
+              />
+              <input
+                {...register(`connections.${index}.macAddress`, { required: 'MAC obrigatório' })}
+                placeholder="MAC (00:00:00:00:00:00)"
+                className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm"
+              />
+              <div className="w-full">
+                <input
+                    {...register(`connections.${index}.applicationName`, { required: 'App obrigatório' })}
+                    placeholder="Aplicativo"
+                    className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm"
+                />
+                {errors.connections?.[index]?.applicationName && (
+                    <span className="text-red-500 text-[10px]">App obrigatório</span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="text-red-500 hover:text-red-700 p-2"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -120,7 +168,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ onSubmit, onCancel, 
         <label className="block text-sm font-medium text-slate-700">Data de Vencimento</label>
         <input
           type="date"
-          {...register('expiresAt')}
+          {...register('expiresAt', { setValueAs: (v) => (v ? new Date(v) : undefined) })}
           className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
         />
       </div>
@@ -133,42 +181,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ onSubmit, onCancel, 
           className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
         />
       </div>
-
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
-        <div className="flex gap-4">
-          {(['active', 'inactive'] as const).map((status) => (
-            <label key={status} className="flex items-center cursor-pointer">
-              <input
-                type="radio"
-                {...register('status')}
-                value={status}
-                className="sr-only peer"
-              />
-              <div className="px-4 py-2 rounded-full border text-sm font-medium transition-colors bg-slate-100 text-slate-600 border-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white">
-                {status === 'active' ? 'Ativo' : 'Inativo'}
-              </div>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex justify-end space-x-3 mt-6">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:bg-indigo-400"
-        >
-          {isSubmitting ? 'Salvando...' : 'Salvar'}
-        </button>
-      </div>
     </form>
   );
-};
+});
