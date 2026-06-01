@@ -1,8 +1,8 @@
 # Fase 1 — App do revendedor (tenant)
 
-Referência funcional: `IPTV-MANAGER-SPEC-TEMP.md` (§6, §12–§15).
+Referência funcional: `CLIENTE-MANAGER-SPEC-TEMP.md` (§6, §12–§15).
 
-**Objetivo:** produto completo para o revendedor operar clientes IPTV, cobrança automática, PIX, WhatsApp, dashboard, logs e fila de renovação no servidor.
+**Objetivo:** produto completo para o revendedor operar clientes, cobrança automática, PIX, WhatsApp, dashboard, logs e fila de renovação no servidor.
 
 **Não inclui:** painel `super_admin` (Fase 2).
 
@@ -14,11 +14,11 @@ Referência funcional: `IPTV-MANAGER-SPEC-TEMP.md` (§6, §12–§15).
 
 ### Cursor: prompt sugerido
 
-> Crie monorepo pnpm com apps/api (Fastify+TS+Prisma) e apps/web (Vite+React+TS+PWA), packages/shared com Zod. Docker compose postgres+redis. Módulo core com tenant middleware. Siga docs/iptv-manager/06-pwa-responsive.md.
+> Crie monorepo pnpm com apps/api (Fastify+TS+Prisma) e apps/web (Vite+React+TS+PWA), packages/shared com Zod. Docker compose postgres+redis. Módulo core com tenant middleware. Siga docs/client-manager/06-pwa-responsive.md.
 
 ### Checklist
 
-- [ ] Monorepo `iptv-manager` com workspaces
+- [ ] Monorepo `client-manager` com workspaces
 - [ ] `docker-compose.yml`: PostgreSQL 16, Redis 7
 - [ ] Prisma schema inicial: `account`, `account_user`
 - [ ] Módulo `auth`: register, login, refresh, JWT com `tenantId` + `role`
@@ -83,7 +83,7 @@ API e telas de plano/servidor/tag isoladas por `tenant_id`.
 
 ### Critério de pronto
 
-CRUD completo de cliente IPTV com N conexões.
+CRUD completo de cliente com N conexões.
 
 ---
 

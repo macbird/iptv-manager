@@ -98,7 +98,7 @@ phone: z.string().min(10).transform(normalizeBrazilPhoneE164)
 
 ```bash
 # exemplo cron 3h da manhã
-0 3 * * * /opt/iptv-manager/scripts/backup-db.sh
+0 3 * * * /opt/client-manager/scripts/backup-db.sh
 ```
 
 ---
@@ -222,8 +222,8 @@ phone: z.string().min(10).transform(normalizeBrazilPhoneE164)
 
 ## Prompt Cursor (lote P0)
 
-> Implemente melhorias P0 de docs/iptv-manager/09-improvements-p0-p1.md no escopo atual: health check, seed, idempotência webhook, audit log, telefone E.164, copiar PIX e wa.me nos cards. Modular, sem monolito.
+> Implemente melhorias P0 de docs/client-manager/09-improvements-p0-p1.md no escopo atual: health check, seed, idempotência webhook, audit log, telefone E.164, copiar PIX e wa.me nos cards. Modular, sem monolito.
 
 ## Prompt Cursor (lote P1)
 
-> Implemente melhorias P1 de docs/iptv-manager/09-improvements-p0-p1.md: manifest shortcuts, pull-to-refresh no CardList, busca q em customers, KPI renovações no dashboard, notas no card, aba pagamentos no detalhe do cliente.
+> Implemente melhorias P1 de docs/client-manager/09-improvements-p0-p1.md: manifest shortcuts, pull-to-refresh no CardList, busca q em customers, KPI renovações no dashboard, notas no card, aba pagamentos no detalhe do cliente.

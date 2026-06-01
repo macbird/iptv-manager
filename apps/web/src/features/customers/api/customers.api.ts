@@ -1,9 +1,13 @@
 import { api } from '../../../shared/api/api.client';
-import type { CustomerInput } from '@iptv-manager/shared';
+import type { CustomerInput } from '@client-manager/shared';
 
 export const customersApi = {
-  list: async () => {
-    const response = await api.get('/customers');
+  list: async (params: { page: number, pageSize: number, filter: string }) => {
+    const response = await api.get('/customers', { params });
+    return response.data;
+  },
+  getById: async (id: string) => {
+    const response = await api.get(`/customers/${id}`);
     return response.data;
   },
   create: async (data: CustomerInput) => {

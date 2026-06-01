@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi } from '../api/customers.api';
-import { Plus, ChevronLeft, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit2, Trash2, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../../shared/ui/modals/Modal';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
+import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 
 export const CustomersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,14 +31,26 @@ export const CustomersPage: React.FC = () => {
 
   const totalPages = data ? Math.ceil(data.total / pageSize) : 0;
 
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case 'active': return { label: 'Ativo', classes: 'bg-green-100 text-green-700' };
+      case 'overdue': return { label: 'Vencido', classes: 'bg-red-100 text-red-700' };
+      case 'trial': return { label: 'Teste', classes: 'bg-amber-100 text-amber-700' };
+      case 'blocked': return { label: 'Bloqueado', classes: 'bg-slate-100 text-slate-700' };
+      default: return { label: status, classes: 'bg-slate-100 text-slate-700' };
+    }
+  };
+
   const columns = [
-    { header: 'Nome', accessor: (c: any) => c.name },
-    { header: 'Plano', accessor: (c: any) => c.plan?.name || '-' },
-    { header: 'Conexões', accessor: (c: any) => c.connections?.length || 0 },
-    { header: 'Telefone', accessor: (c: any) => c.phone || '-' },
-    { header: 'Vencimento', accessor: (c: any) => c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-' },
+    { header: 'Nome', accessor: (c: any) => c.name, width: '22%' },
+    { header: 'Plano', accessor: (c: any) => c.plan?.name || '-', width: '16%' },
+    { header: 'Conexões', accessor: (c: any) => c.connections?.length || 0, width: '10%', align: 'center' as const },
+    { header: 'Telefone', accessor: (c: any) => c.phone || '-', width: '16%' },
+    { header: 'Vencimento', accessor: (c: any) => c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-', width: '14%' },
     { 
-      header: 'Ações', 
+      header: 'Ações',
+      width: '120px',
+      align: 'right' as const,
       accessor: (c: any) => (
         <div className="flex justify-end">
           <button onClick={() => navigate(`/customers/${c.id}/edit`)} className="text-slate-500 hover:text-indigo-600 p-2"><Edit2 className="w-4 h-4" /></button>
@@ -47,31 +60,62 @@ export const CustomersPage: React.FC = () => {
     },
   ];
 
-  const renderMobileCard = (c: any) => (
-    <>
-      <div className="flex justify-between items-center mb-2">
-        <div className="font-bold text-slate-900 uppercase truncate pr-2">{c.name}</div>
-        <div className="flex shrink-0">
-          <button onClick={() => navigate(`/customers/${c.id}/edit`)} className="text-slate-500 hover:text-indigo-600 p-1"><Edit2 className="w-4 h-4" /></button>
-          <button onClick={() => setDeleteId(c.id)} className="text-slate-500 hover:text-red-600 p-1"><Trash2 className="w-4 h-4" /></button>
+  const renderMobileCard = (c: any) => {
+    const statusInfo = getStatusInfo(c.status);
+    const initials = c.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
+
+    return (
+      <div className="flex items-center justify-between group py-1">
+        <div className="flex items-center space-x-3 overflow-hidden flex-1">
+          <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
+            <span className="text-[11px] font-bold text-slate-500">{initials}</span>
+          </div>
+          <div className="overflow-hidden">
+            <div className="text-sm font-bold text-slate-900 truncate leading-tight mb-0.5">{c.name}</div>
+            <div className="flex flex-col">
+              <div className="text-[10px] text-slate-400 truncate leading-none mb-1">{c.phone || 'Sem telefone'}</div>
+              <div className="text-[9px] font-medium text-indigo-500/70 uppercase tracking-tighter leading-none">
+                {c.connections?.length || 0} conexões
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center shrink-0 gap-2 w-[55%]">
+          <div className="flex-1 text-center min-w-0 overflow-hidden">
+            <div className="text-[11px] font-semibold text-slate-700 truncate">{c.plan?.name || '-'}</div>
+          </div>
+
+          <div className="flex-1 text-center min-w-0">
+            <div className={`text-[11px] font-bold truncate ${c.status === 'overdue' ? 'text-red-500' : 'text-slate-900'}`}>
+              {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '-'}
+            </div>
+          </div>
+          
+          <div className="w-10 shrink-0 flex justify-end">
+            <div className="flex">
+              <button onClick={() => navigate(`/customers/${c.id}/edit`)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"><Edit2 className="w-4 h-4" /></button>
+              <button onClick={() => setDeleteId(c.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="text-xs text-slate-600 grid grid-cols-2 gap-y-1 border-t pt-2">
-        <div className="truncate"><span className="font-semibold text-slate-500">Plano:</span> {c.plan?.name || '-'}</div>
-        <div className="truncate"><span className="font-semibold text-slate-500">Conexões:</span> {c.connections?.length || 0}</div>
-        <div className="truncate"><span className="font-semibold text-slate-500">Tel:</span> {c.phone || '-'}</div>
-        <div className="truncate"><span className="font-semibold text-slate-500">Venc:</span> {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-'}</div>
-      </div>
-    </>
-  );
+    );
+  };
 
   return (
     <PageLayout
       title="Clientes"
+      noPadding={true}
       actions={
-        <button onClick={() => navigate('/customers/new')} className="bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 flex items-center text-sm">
-          <Plus className="w-4 h-4 mr-1" /> Novo
-        </button>
+        <PageHeaderActions 
+          onSearch={setFilter}
+          currentFilter={filter}
+          primaryAction={{
+            label: 'Novo',
+            onClick: () => navigate('/customers/new')
+          }}
+        />
       }
       footer={
         <div className="flex items-center justify-between">
@@ -83,12 +127,11 @@ export const CustomersPage: React.FC = () => {
         </div>
       }
     >
-      <FilterInput onFilterChange={(value) => { setFilter(value); setPage(1); }} currentFilter={filter} />
-      
       <ResponsiveDataGrid 
         data={data?.data || []} 
         columns={columns} 
-        renderMobileCard={renderMobileCard} 
+        renderMobileCard={renderMobileCard}
+        mobileHeaderTitles={['Nome', 'Plano', 'Venc']}
         isLoading={isLoading}
       />
 
@@ -102,34 +145,3 @@ export const CustomersPage: React.FC = () => {
     </PageLayout>
   );
 };
-
-const FilterInput = React.memo(({ onFilterChange, currentFilter }: { onFilterChange: (v: string) => void, currentFilter: string }) => {
-  const [term, setTerm] = useState(currentFilter);
-
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-        onFilterChange(term);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [term, onFilterChange]);
-
-  return (
-    <div className="relative mb-4">
-      <input
-        type="text"
-        placeholder="Filtrar por nome..."
-        value={term}
-        onChange={(e) => setTerm(e.target.value)}
-        className="w-full border border-slate-300 rounded-md p-2 pr-10"
-      />
-      {term && (
-        <button 
-          onClick={() => { setTerm(''); onFilterChange(''); }}
-          className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
-        >
-          ✕
-        </button>
-      )}
-    </div>
-  );
-});

@@ -28,8 +28,8 @@ export const tenantsApi = {
     const response = await api.patch(`/admin/tenants/${id}/status`, { status });
     return response.data;
   },
-  resetPassword: async (userId: string, newPassword?: string) => {
-    const response = await api.post(`/admin/tenants/users/${userId}/reset-password`, { newPassword });
+  resetPassword: async (email: string, newPassword?: string) => {
+    const response = await api.post(`/admin/tenants/reset-password`, { email, newPassword });
     return response.data;
   },
 };

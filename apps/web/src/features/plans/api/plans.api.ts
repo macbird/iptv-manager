@@ -1,9 +1,13 @@
 import { api } from '../../../shared/api/api.client';
-import type { PlanInput } from '@iptv-manager/shared';
+import type { PlanInput } from '@client-manager/shared';
 
 export const plansApi = {
-  list: async () => {
-    const response = await api.get('/plans');
+  list: async (params: { page: number, pageSize: number, filter: string }) => {
+    const response = await api.get('/plans', { params });
+    return response.data;
+  },
+  getById: async (id: string) => {
+    const response = await api.get(`/plans/${id}`);
     return response.data;
   },
   create: async (data: PlanInput) => {

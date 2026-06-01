@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminDashboardApi } from '../api/admin.api';
 import { Users, Building2, UserCheck, ShieldAlert } from 'lucide-react';
+import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 
 export const AdminDashboardPage: React.FC = () => {
   const { data: stats, isLoading } = useQuery({
@@ -9,7 +10,7 @@ export const AdminDashboardPage: React.FC = () => {
     queryFn: adminDashboardApi.getStats,
   });
 
-  if (isLoading) return <div>Carregando métricas...</div>;
+  if (isLoading) return <div className="relative h-64"><LoadingSpinner /></div>;
 
   const cards = [
     {
@@ -65,7 +66,7 @@ export const AdminDashboardPage: React.FC = () => {
       <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border border-slate-200">
         <h2 className="text-lg font-semibold text-slate-900 mb-4">Visão Geral da Plataforma</h2>
         <p className="text-slate-600">
-          Este painel permite gerenciar todos os tenants da plataforma IPTV Manager. 
+          Este painel permite gerenciar todos os tenants da plataforma Cliente Manager. 
           Você pode criar novas contas, suspender acessos e monitorar o crescimento global.
         </p>
       </div>

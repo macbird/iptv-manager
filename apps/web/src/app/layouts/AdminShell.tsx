@@ -48,7 +48,7 @@ export const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }
   );
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100">
+    <div className="h-screen flex overflow-hidden bg-white">
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">

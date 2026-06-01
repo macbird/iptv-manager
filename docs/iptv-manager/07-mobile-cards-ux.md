@@ -150,4 +150,4 @@ type CardListProps<T> = {
 
 ## Prompt Cursor (copiar)
 
-> Todas as listagens mobile-first com CardList e EntityCard em shared/ui/lists. Proibido table como lista principal. Clientes, invoices, renewals, payments, logs seguem anatomia em docs/iptv-manager/07-mobile-cards-ux.md. FAB para criar, FilterSheet para filtros, infinite scroll com TanStack Query.
+> Todas as listagens mobile-first com CardList e EntityCard em shared/ui/lists. Proibido table como lista principal. Clientes, invoices, renewals, payments, logs seguem anatomia em docs/client-manager/07-mobile-cards-ux.md. FAB para criar, FilterSheet para filtros, infinite scroll com TanStack Query.

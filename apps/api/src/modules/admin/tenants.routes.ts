@@ -15,10 +15,9 @@ export async function tenantsRoutes(app: FastifyInstance) {
     return await tenantsService.create(data);
   });
 
-  app.post('/users/:userId/reset-password', async (request) => {
-    const { userId } = request.params as { userId: string };
-    const { newPassword } = request.body as { newPassword?: string };
-    return await tenantsService.resetPassword(userId, newPassword);
+  app.post('/reset-password', async (request) => {
+    const { email, newPassword } = request.body as { email: string, newPassword?: string };
+    return await tenantsService.resetPassword(email, newPassword);
   });
 
   app.patch('/:id/status', async (request) => {

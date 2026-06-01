@@ -1,6 +1,6 @@
 import { prisma } from '../../core/database';
 import argon2 from 'argon2';
-import { RegisterInput } from '@iptv-manager/shared';
+import { RegisterInput } from '@client-manager/shared';
 import slugify from 'slugify';
 
 export class AuthService {
@@ -23,7 +23,18 @@ export class AuthService {
   }
 
   async changePassword(userId: string, newPassword: string) {
+    console.log('DEBUG: Attempting to change password for user ID:', userId);
     const passwordHash = await argon2.hash(newPassword);
+
+    const user = await prisma.accountUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      console.error('DEBUG: User NOT found in DB for ID:', userId);
+      throw new Error('User not found');
+    }
+
     return await prisma.accountUser.update({
       where: { id: userId },
       data: {

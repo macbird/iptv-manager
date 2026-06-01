@@ -3,12 +3,12 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: iptv-manager-db
+    container_name: client-manager-db
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: iptv_manager
+      POSTGRES_DB: client_manager
     ports:
       - "5433:5432"
     volumes:
@@ -16,7 +16,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: iptv-manager-redis
+    container_name: client-manager-redis
     restart: always
     ports:
       - "6380:6379"

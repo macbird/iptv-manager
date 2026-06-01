@@ -3,7 +3,7 @@
 ## Monorepo
 
 ```
-iptv-manager/
+client-manager/
 ├── apps/
 │   ├── api/                    # Backend Node
 │   ├── web/                    # Frontend revendedor (PWA)
@@ -11,7 +11,7 @@ iptv-manager/
 ├── packages/
 │   ├── shared/                 # Zod schemas, enums, tipos API
 │   └── eslint-config/          # opcional
-├── docs/iptv-manager/          # Este guia
+├── docs/client-manager/          # Este guia
 ├── docker-compose.yml
 ├── docker-compose.prod.yml
 └── package.json                # workspaces (pnpm ou npm)

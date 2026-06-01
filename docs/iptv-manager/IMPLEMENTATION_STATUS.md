@@ -1,4 +1,4 @@
-# Status da Implementação — IPTV Manager
+# Status da Implementação — Cliente Manager
 
 Este documento registra o progresso real da implementação do projeto, correlacionando com as fases definidas no roadmap.
 

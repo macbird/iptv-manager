@@ -2,7 +2,7 @@ import { prisma } from '../core/database';
 import argon2 from 'argon2';
 
 async function seedAdmin() {
-  const email = 'admin@iptvmanager.com';
+  const email = 'admin@clientemanager.com';
   const password = 'AdminPassword123!';
   const hashedPassword = await argon2.hash(password);
 

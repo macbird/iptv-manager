@@ -29,7 +29,7 @@ export const CreateAccountPage: React.FC = () => {
             <input
               {...register('name', { required: true })}
               className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-              placeholder="Ex: IPTV Master"
+              placeholder="Ex: Revenda Master"
             />
           </div>
           <div>
@@ -37,7 +37,7 @@ export const CreateAccountPage: React.FC = () => {
             <input
               {...register('slug')}
               className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-              placeholder="ex: iptv-master"
+              placeholder="ex: revenda-master"
             />
           </div>
         </div>

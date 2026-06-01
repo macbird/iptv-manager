@@ -16,7 +16,6 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     { name: 'Clientes', icon: Users, href: '/customers' },
     { name: 'Planos', icon: CreditCard, href: '/plans' },
     { name: 'Servidores', icon: Server, href: '/servers' },
-    { name: 'Tags', icon: Tag, href: '/tags' },
     { name: 'Perfil', icon: UserCog, href: '/profile' },
   ];
 
@@ -51,13 +50,13 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   );
 
   return (
-    <div className="h-screen flex bg-gray-100">
+    <div className="h-screen flex bg-white">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
           <div className="flex flex-col h-full bg-gray-800">
             <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900 text-white font-bold text-xl">
-              IPTV Manager
+              Cliente Manager
             </div>
             <NavContent />
           </div>
@@ -79,7 +78,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             </div>
             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
               <div className="flex-shrink-0 flex items-center px-4 text-white font-bold text-xl">
-                IPTV Manager
+                Cliente Manager
               </div>
               <NavContent />
             </div>
@@ -88,14 +87,14 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       )}
 
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        <header className="md:hidden bg-white border-b h-16 flex items-center px-4">
+        <header className="md:hidden bg-white h-16 flex items-center px-4 shrink-0">
           <button
-            className="h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none"
+            className="h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-400 hover:text-gray-900 focus:outline-none"
             onClick={() => setIsMobileMenuOpen(true)}
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div id="mobile-header-portal" className="flex-1 flex justify-between items-center ml-4" />
+          <div id="mobile-header-portal" className="flex-1 flex justify-between items-center ml-2" />
         </header>
 
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none">

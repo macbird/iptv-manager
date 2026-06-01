@@ -1,9 +1,13 @@
 import { api } from '../../../shared/api/api.client';
-import type { ServerInput } from '@iptv-manager/shared';
+import type { ServerInput } from '@client-manager/shared';
 
 export const serversApi = {
-  list: async () => {
-    const response = await api.get('/servers');
+  list: async (params: { page: number, pageSize: number, filter: string }) => {
+    const response = await api.get('/servers', { params });
+    return response.data;
+  },
+  getById: async (id: string) => {
+    const response = await api.get(`/servers/${id}`);
     return response.data;
   },
   create: async (data: ServerInput) => {

@@ -4,8 +4,9 @@ import jwt from '@fastify/jwt';
 import { registerAuthModule } from './modules/auth';
 import { registerPlansModule } from './modules/plans';
 import { registerServersModule } from './modules/servers';
-import { registerTagsModule } from './modules/tags';
 import { registerCustomersModule } from './modules/customers';
+import { registerTagsModule } from './modules/tags';
+import { registerDashboardModule } from './modules/dashboard';
 import { registerAdminModule } from './modules/admin';
 import { tenantContextMiddleware } from './core/middleware/tenant-context';
 
@@ -27,10 +28,12 @@ const start = async () => {
       try {
         await request.jwtVerify();
         const user = request.user as any;
-        if (user.type !== 'tenant_user') {
+        if (user.type !== 'tenant_user' && user.type !== 'platform_admin') {
           throw new Error('Unauthorized');
         }
-        await tenantContextMiddleware(request, reply);
+        if (user.type === 'tenant_user') {
+          await tenantContextMiddleware(request, reply);
+        }
       } catch (err) {
         reply.status(401).send({ message: 'Unauthorized' });
       }
@@ -57,13 +60,15 @@ const start = async () => {
     await app.register(registerAuthModule, { prefix: '/api/auth' });
     await app.register(registerPlansModule, { prefix: '/api/plans' });
     await app.register(registerServersModule, { prefix: '/api/servers' });
-    await app.register(registerTagsModule, { prefix: '/api/tags' });
     await app.register(registerCustomersModule, { prefix: '/api/customers' });
+    await app.register(registerTagsModule, { prefix: '/api/tags' });
+    await app.register(registerDashboardModule, { prefix: '/api/dashboard' });
     await app.register(registerAdminModule, { prefix: '/api/admin' });
 
     const port = Number(process.env.PORT) || 3001;
 
     await app.listen({ port, host: '0.0.0.0' });
+    console.log('Registered routes:', app.printRoutes());
     console.log(`Server listening on port ${port}`);
   } catch (err) {
     app.log.error(err);

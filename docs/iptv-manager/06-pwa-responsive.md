@@ -74,9 +74,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
-        name: 'IPTV Manager',
-        short_name: 'IPTV Manager',
-        description: 'Gestão de clientes e cobrança IPTV',
+        name: 'Cliente Manager',
+        short_name: 'Cliente Manager',
+        description: 'Gestão de clientes e cobrança de assinaturas',
         theme_color: '#0f172a',
         background_color: '#ffffff',
         display: 'standalone',
@@ -208,7 +208,7 @@ Implementar em `apps/web/src/shared/ui/lists/` — especificação completa em [
 
 Mesmas regras em `apps/admin`:
 
-- Manifest: `name: 'IPTV Manager Admin'`, `start_url: '/admin'`  
+- Manifest: `name: 'Cliente Manager Admin'`, `start_url: '/admin'`  
 - Pode ser instalado separadamente do app revendedor  
 
 ---

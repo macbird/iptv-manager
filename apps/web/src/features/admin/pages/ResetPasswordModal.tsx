@@ -24,10 +24,10 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ userId, 
   });
 
   const onSubmit = async (data: any) => {
-    if (!userId) return;
+    if (!userEmail) return;
 
     try {
-      await tenantsApi.resetPassword(userId, data.password);
+      await tenantsApi.resetPassword(userEmail, data.password);
       setSavedPassword(data.password);
       setStep('success');
       onSuccess();
@@ -37,7 +37,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ userId, 
   };
 
   const handleCopy = () => {
-    const text = `Olá ${userName}, sua senha no IPTV Manager foi resetada.\n\nAcesso: http://localhost:5173/login\nE-mail: ${userEmail}\nSenha Provisória: ${savedPassword}\n\n(Você deverá alterar esta senha no primeiro acesso).`;
+    const text = `Olá ${userName}, sua senha no Cliente Manager foi resetada.\n\nAcesso: http://localhost:5173/login\nE-mail: ${userEmail}\nSenha Provisória: ${savedPassword}\n\n(Você deverá alterar esta senha no primeiro acesso).`;
     navigator.clipboard.writeText(text);
     showToast.success('Instruções copiadas!');
   };
@@ -96,7 +96,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ userId, 
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
             <h3 className="text-lg font-bold text-slate-900">Sucesso!</h3>
-            <p className="text-sm text-slate-600 mt-1">A senha de <strong>{userName}</strong> foi alterada.</p>
+            <p className="text-sm text-slate-600 mt-1">A senha de <strong>{userName}</strong> ({userEmail}) foi alterada.</p>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">

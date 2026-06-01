@@ -102,7 +102,8 @@ model Server {
   status         ServerStatus @default(active)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  customers      Customer[]
+  connections    Connection[]
+  tags           Tag[]
 
   @@map("servers")
 }
@@ -115,6 +116,8 @@ model Tag {
   color     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  customers Customer[]
+  servers   Server[]
 
   @@map("tags")
 }
@@ -128,19 +131,33 @@ model Customer {
   phone     String?
   status    String   @default("active")
   
-  // New fields
   planId    String?
   plan      Plan?    @relation(fields: [planId], references: [id])
-  serverId  String?
-  server    Server?  @relation(fields: [serverId], references: [id])
-  connections Int    @default(1)
   notes     String?
   expiresAt DateTime?
+
+  connections Connection[]
+  tags        Tag[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("customers")
+}
+
+model Connection {
+  id              String   @id @default(uuid())
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+  serverId        String
+  server          Server   @relation(fields: [serverId], references: [id])
+  macAddress      String
+  applicationName String
+  label           String?  // Novo campo para o apelido/referência
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("connections")
 }
 
 model PlatformAdmin {

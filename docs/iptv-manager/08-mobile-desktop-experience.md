@@ -35,7 +35,7 @@ Relacionado: [06-pwa-responsive.md](./06-pwa-responsive.md), [07-mobile-cards-ux
 
 ### 2. Gestos e toque
 
-| Técnica | Uso no IPTV Manager |
+| Técnica | Uso no Cliente Manager |
 |---------|---------------------|
 | **Pull-to-refresh** | Listas clientes, renovações, faturas |
 | **Tap target ≥ 44px** | Botões, cards, chips |
@@ -217,4 +217,4 @@ Usar para: mostrar sidebar vs bottom nav — **não** para esconder funcionalida
 
 ## Prompt Cursor (copiar)
 
-> Melhore UX mobile+desktop: mobile-first cards; lg sidebar + grid de cards; bottom nav com safe-area no mobile; sonner toasts; clipboard PIX; wa.me links; input font-size 16px; pull-to-refresh nas listas principais; React.lazy por rota. Paridade total de features mobile/desktop. Ver docs/iptv-manager/08-mobile-desktop-experience.md.
+> Melhore UX mobile+desktop: mobile-first cards; lg sidebar + grid de cards; bottom nav com safe-area no mobile; sonner toasts; clipboard PIX; wa.me links; input font-size 16px; pull-to-refresh nas listas principais; React.lazy por rota. Paridade total de features mobile/desktop. Ver docs/client-manager/08-mobile-desktop-experience.md.

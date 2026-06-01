@@ -61,12 +61,20 @@ export class TenantsService {
     });
   }
 
-  async resetPassword(userId: string, newPassword?: string) {
+  async resetPassword(email: string, newPassword?: string) {
     const password = newPassword || 'Reset123!';
     const passwordHash = await argon2.hash(password);
 
+    const user = await prisma.accountUser.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
     return await prisma.accountUser.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: {
         passwordHash,
         passwordResetRequired: true,

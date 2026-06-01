@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tenantsApi } from '../api/admin.api';
-import { CardList, EntityCard } from '../../../shared/ui/lists/EntityCard';
-import { showToast } from '../../../shared/utils/toast';
-import { Users, Plus, Key } from 'lucide-react';
-import { BottomSheet } from '../../../shared/ui/modals/BottomSheet';
-import { useNavigate, Link } from 'react-router-dom';
-
+import { Users, Plus, Key, Edit2, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { PageLayout } from '../../../shared/ui/layout/PageLayout';
+import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
+import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { ResetPasswordModal } from './ResetPasswordModal';
+import { showToast } from '../../../shared/utils/toast';
 
 export const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,72 +28,93 @@ export const AccountsPage: React.FC = () => {
     }
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => tenantsApi.toggleStatus(id, 'suspended'),
-    onSuccess: () => {
-      setDeleteId(null);
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      showToast.success('Conta suspensa');
-    }
-  });
+  const columns = [
+    { header: 'Nome', accessor: (a: any) => a.name, width: '35%' },
+    { header: 'Status', width: '20%', align: 'center' as const, accessor: (a: any) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {a.status}
+        </span>
+    )},
+    { 
+      header: 'Ações',
+      width: '200px',
+      align: 'right' as const,
+      accessor: (a: any) => (
+        <div className="flex justify-end space-x-2">
+           <button 
+            onClick={() => toggleMutation.mutate({ id: a.id, status: a.status === 'active' ? 'suspended' : 'active' })}
+            className="text-xs font-semibold text-slate-600 hover:text-indigo-600"
+          >
+            {a.status === 'active' ? 'Suspender' : 'Reativar'}
+          </button>
+          <button 
+            onClick={() => {
+              console.log('DEBUG: Reset button clicked. Account data:', JSON.stringify(a, null, 2));
+              setResetUser({ id: a.users[0]?.id, name: a.users[0]?.name, email: a.users[0]?.email });
+            }} 
+            className="text-slate-500 hover:text-indigo-600 p-2"
+          >
+            <Key className="w-4 h-4" />
+          </button>
+          <button onClick={() => navigate(`/admin/accounts/${a.id}/edit`)} className="text-slate-500 hover:text-indigo-600 p-2"><Edit2 className="w-4 h-4" /></button>
+        </div>
+      )
+    },
+  ];
 
-  if (isLoading) return <div>Carregando...</div>;
+  const renderMobileCard = (a: any) => (
+    <div className="flex items-center justify-between group h-14">
+      <div className="flex items-center space-x-3 overflow-hidden flex-1">
+        <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
+          <Users className="w-5 h-5 text-slate-400" />
+        </div>
+        <div className="overflow-hidden">
+          <div className="text-sm font-bold text-slate-900 truncate leading-tight">{a.name}</div>
+          <div className="text-[10px] text-slate-400 truncate leading-tight">{a.users?.length || 0} usuários</div>
+        </div>
+      </div>
+
+      <div className="flex items-center shrink-0 gap-2 w-[55%]">
+        <div className="flex-1 text-center min-w-0">
+             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} border border-current opacity-80`}>
+                {a.status}
+            </span>
+        </div>
+        
+        <div className="w-10 shrink-0 flex justify-end items-center">
+            <button 
+              onClick={() => setResetUser({ id: a.users[0]?.id, name: a.users[0]?.name, email: a.users[0]?.email })} 
+              className="p-2 text-slate-400 hover:text-indigo-600"
+            >
+              <Key className="w-4 h-4" />
+            </button>
+            <button onClick={() => navigate(`/admin/accounts/${a.id}/edit`)} className="p-2 text-slate-400 hover:text-indigo-600"><Edit2 className="w-4 h-4" /></button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Gerenciar Contas</h1>
-        <Link 
-          to="/admin/accounts/new"
-          className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+    <PageLayout
+      title="Contas"
+      noPadding={true}
+      actions={
+        <button 
+          onClick={() => navigate('/admin/accounts/new')}
+          className="flex items-center bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 text-sm"
         >
-          <Plus className="mr-2 h-5 w-5" />
-          Nova Conta
-        </Link>
-      </div>
-      
-      <CardList>
-        {accounts?.map((account: any) => (
-          <EntityCard
-            key={account.id}
-            icon={<Users className="h-5 w-5" />}
-            title={account.name}
-            status={account.status}
-            footer={
-              <div className="w-full space-y-4">
-                <div className="border-t border-slate-100 pt-3">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Usuários do Tenant</p>
-                  {account.users?.map((user: any) => (
-                    <div key={user.id} className="flex justify-between items-center text-sm mb-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                      <div className="overflow-hidden">
-                        <p className="font-semibold text-slate-700 truncate">{user.name}</p>
-                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                      </div>
-                      <button 
-                        onClick={() => setResetUser({ id: user.id, name: user.name, email: user.email })}
-                        className="ml-2 p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-all"
-                        title="Resetar Senha"
-                      >
-                        <Key className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-between items-center pt-2">
-                  <button 
-                    onClick={() => toggleMutation.mutate({ id: account.id, status: account.status === 'active' ? 'suspended' : 'active' })}
-                    className={`text-sm font-semibold transition-colors ${account.status === 'active' ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}`}
-                  >
-                    {account.status === 'active' ? 'Suspender Conta' : 'Reativar Conta'}
-                  </button>
-                </div>
-              </div>
-            }
-            onEdit={() => navigate(`/admin/accounts/${account.id}/edit`)}
-            onDelete={() => setDeleteId(account.id)}
-          />
-        ))}
-      </CardList>
+          <Plus className="mr-1 h-4 w-4" />
+          Nova
+        </button>
+      }
+    >
+      <ResponsiveDataGrid 
+        data={accounts || []} 
+        columns={columns} 
+        renderMobileCard={renderMobileCard} 
+        mobileHeaderTitles={['Nome', 'Status']}
+        isLoading={isLoading}
+      />
 
       <ResetPasswordModal 
         userId={resetUser?.id || null}
@@ -102,20 +123,6 @@ export const AccountsPage: React.FC = () => {
         onClose={() => setResetUser(null)}
         onSuccess={() => {}}
       />
-
-      {accounts?.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-slate-200">
-          <p className="text-slate-500">Nenhuma conta cadastrada.</p>
-        </div>
-      )}
-
-      <BottomSheet 
-        isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        title="Suspender Conta"
-        description="Tem certeza que deseja suspender esta conta? O revendedor perderá o acesso imediatamente."
-      />
-    </div>
+    </PageLayout>
   );
 };

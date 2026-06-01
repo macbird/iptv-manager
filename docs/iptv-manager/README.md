@@ -1,4 +1,4 @@
-# IPTV Manager — Guia de desenvolvimento (Cursor)
+# Cliente Manager — Guia de desenvolvimento (Cursor)
 
 Documentação para implementar o sistema com **Cursor**, em **fases**, com **front e back modulares** (sem monolitos).
 
@@ -15,7 +15,7 @@ Documentação para implementar o sistema com **Cursor**, em **fases**, com **fr
 | [07-mobile-cards-ux.md](./07-mobile-cards-ux.md) | **Listas em cards (não tabelas)** |
 | [08-mobile-desktop-experience.md](./08-mobile-desktop-experience.md) | **UX celular + navegador desktop** |
 | [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) | **Progresso real da implementação** |
-| [../IPTV-MANAGER-SPEC-TEMP.md](../../IPTV-MANAGER-SPEC-TEMP.md) | Especificação funcional completa |
+| [../CLIENTE-MANAGER-SPEC-TEMP.md](../../CLIENTE-MANAGER-SPEC-TEMP.md) | Especificação funcional completa |
 
 ---
 
@@ -58,14 +58,14 @@ O que é “seu”: **regras, fluxos, filas, templates** — não a infraestrutu
 2. `00-architecture-modular.md`  
 3. `01-phase-1-tenant-app.md` — implementar **na ordem** dos passos  
 4. `09-improvements-p0-p1.md` — melhorias P0/P1 nos passos correspondentes  
-5. Spec: `IPTV-MANAGER-SPEC-TEMP.md` quando precisar de regra de negócio  
+5. Spec: `CLIENTE-MANAGER-SPEC-TEMP.md` quando precisar de regra de negócio  
 
-Ao abrir o Cursor no repositório `iptv-manager`, copie esta pasta `docs/iptv-manager` e o arquivo `.cursor/rules/iptv-manager.mdc` (ver [05-cursor-workflow.md](./05-cursor-workflow.md)).
+Ao abrir o Cursor no repositório `client-manager`, copie esta pasta `docs/client-manager` e o arquivo `.cursor/rules/client-manager.mdc` (ver [05-cursor-workflow.md](./05-cursor-workflow.md)).
 
 ---
 
 ## Onde criar o repositório
 
-Recomendado: pasta nova fora do EVA, ex. `C:\Users\jpaulosi\projetos\iptv-manager\`.
+Recomendado: pasta nova fora do EVA, ex. `C:\Users\jpaulosi\projetos\client-manager\`.
 
 Não misturar com `eva-adapter-security-checker` em produção — este workspace só hospeda a documentação até você criar o repo.

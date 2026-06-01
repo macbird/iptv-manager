@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../../shared/ui/modals/Modal';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
+import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 
 export const PlansPage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,11 +32,13 @@ export const PlansPage: React.FC = () => {
   const totalPages = data ? Math.ceil(data.total / pageSize) : 0;
 
   const columns = [
-    { header: 'Nome', accessor: (p: any) => p.name },
-    { header: 'Conexões', accessor: (p: any) => p.maxConnections },
-    { header: 'Preço', accessor: (p: any) => `R$ ${p.price}` },
+    { header: 'Nome', accessor: (p: any) => p.name, width: '40%' },
+    { header: 'Conexões', accessor: (p: any) => p.maxConnections, width: '15%', align: 'center' as const },
+    { header: 'Preço', accessor: (p: any) => `R$ ${p.price}`, width: '20%' },
     { 
-      header: 'Ações', 
+      header: 'Ações',
+      width: '120px',
+      align: 'right' as const,
       accessor: (p: any) => (
         <div className="flex justify-end">
           <button onClick={() => navigate(`/plans/${p.id}/edit`)} className="text-slate-500 hover:text-indigo-600 p-2"><Edit2 className="w-4 h-4" /></button>
@@ -46,30 +49,43 @@ export const PlansPage: React.FC = () => {
   ];
 
   const renderMobileCard = (p: any) => (
-    <>
-      <div className="flex justify-between items-center mb-2">
-        <div className="font-bold text-slate-900 uppercase truncate pr-2 flex items-center">
-          <CreditCard className="w-4 h-4 mr-2 text-slate-400" /> {p.name}
+    <div className="flex items-center justify-between group h-12">
+      <div className="flex items-center space-x-3 overflow-hidden flex-1">
+        <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
+          <CreditCard className="w-5 h-5 text-slate-400" />
         </div>
-        <div className="flex shrink-0">
-          <button onClick={() => navigate(`/plans/${p.id}/edit`)} className="text-slate-500 hover:text-indigo-600 p-1"><Edit2 className="w-4 h-4" /></button>
-          <button onClick={() => setDeleteId(p.id)} className="text-slate-500 hover:text-red-600 p-1"><Trash2 className="w-4 h-4" /></button>
+        <div className="overflow-hidden">
+          <div className="text-sm font-bold text-slate-900 truncate leading-tight">{p.name}</div>
+          <div className="text-[10px] text-slate-400 truncate leading-tight">{p.maxConnections} conexões</div>
         </div>
       </div>
-      <div className="text-xs text-slate-600 grid grid-cols-2 gap-y-1 border-t pt-2">
-        <div className="truncate"><span className="font-semibold text-slate-500">Conexões:</span> {p.maxConnections}</div>
-        <div className="truncate"><span className="font-semibold text-slate-500">Preço:</span> R$ {p.price}</div>
+
+      <div className="flex items-center shrink-0 gap-2 w-[55%]">
+        <div className="flex-1 text-center">
+          <div className="text-sm font-medium text-slate-900">R$ {p.price}</div>
+        </div>
+        
+        <div className="w-10 shrink-0 flex items-center justify-end">
+          <button onClick={() => navigate(`/plans/${p.id}/edit`)} className="p-2 text-slate-400 hover:text-indigo-600"><Edit2 className="w-4 h-4" /></button>
+          <button onClick={() => setDeleteId(p.id)} className="p-2 text-slate-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+        </div>
       </div>
-    </>
+    </div>
   );
 
   return (
     <PageLayout
       title="Planos"
+      noPadding={true}
       actions={
-        <button onClick={() => navigate('/plans/new')} className="bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 flex items-center text-sm">
-          <Plus className="w-4 h-4 mr-1" /> Novo
-        </button>
+        <PageHeaderActions 
+          onSearch={setFilter}
+          currentFilter={filter}
+          primaryAction={{
+            label: 'Novo',
+            onClick: () => navigate('/plans/new')
+          }}
+        />
       }
       footer={
         <div className="flex items-center justify-between">
@@ -81,12 +97,11 @@ export const PlansPage: React.FC = () => {
         </div>
       }
     >
-      <FilterInput onFilterChange={(value) => { setFilter(value); setPage(1); }} currentFilter={filter} />
-      
       <ResponsiveDataGrid 
         data={data?.data || []} 
         columns={columns} 
         renderMobileCard={renderMobileCard} 
+        mobileHeaderTitles={['Nome', 'Preço']}
         isLoading={isLoading}
       />
       
@@ -101,33 +116,3 @@ export const PlansPage: React.FC = () => {
   );
 };
 
-const FilterInput = React.memo(({ onFilterChange, currentFilter }: { onFilterChange: (v: string) => void, currentFilter: string }) => {
-  const [term, setTerm] = useState(currentFilter);
-
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-        onFilterChange(term);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [term, onFilterChange]);
-
-  return (
-    <div className="relative mt-4">
-      <input
-        type="text"
-        placeholder="Filtrar por nome..."
-        value={term}
-        onChange={(e) => setTerm(e.target.value)}
-        className="w-full border border-slate-300 rounded-md p-2 pr-10"
-      />
-      {term && (
-        <button 
-          onClick={() => { setTerm(''); onFilterChange(''); }}
-          className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
-        >
-          ✕
-        </button>
-      )}
-    </div>
-  );
-});

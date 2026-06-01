@@ -2,7 +2,7 @@
 
 Todas as decisões abaixo estão **fechadas**. O Cursor **não deve reperguntar** estes itens.
 
-Spec detalhada: [IPTV-MANAGER-SPEC-TEMP.md](../../IPTV-MANAGER-SPEC-TEMP.md) §12.
+Spec detalhada: [CLIENTE-MANAGER-SPEC-TEMP.md](../../CLIENTE-MANAGER-SPEC-TEMP.md) §12.
 
 ---
 
@@ -59,7 +59,7 @@ due_day: z.number().int().min(1).max(28);
 ### Monorepo
 
 ```
-iptv-manager/
+client-manager/
 ├── apps/
 │   ├── api/       # backend único
 │   ├── web/       # app revendedor (PWA)
@@ -83,4 +83,4 @@ iptv-manager/
 
 ## Quando alterar este arquivo
 
-Nova decisão do produto → adicionar em **Já decidido** + atualizar `IPTV-MANAGER-SPEC-TEMP.md` §12.
+Nova decisão do produto → adicionar em **Já decidido** + atualizar `CLIENTE-MANAGER-SPEC-TEMP.md` §12.

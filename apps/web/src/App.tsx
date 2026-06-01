@@ -9,9 +9,6 @@ import { EditPlanPage } from './features/plans/pages/EditPlanPage';
 import { ServersPage } from './features/servers/pages/ServersPage';
 import { CreateServerPage } from './features/servers/pages/CreateServerPage';
 import { EditServerPage } from './features/servers/pages/EditServerPage';
-import { TagsPage } from './features/tags/pages/TagsPage';
-import { CreateTagPage } from './features/tags/pages/CreateTagPage';
-import { EditTagPage } from './features/tags/pages/EditTagPage';
 import { CustomersPage } from './features/customers/pages/CustomersPage';
 import { CreateCustomerPage } from './features/customers/pages/CreateCustomerPage';
 import { EditCustomerPage } from './features/customers/pages/EditCustomerPage';
@@ -20,11 +17,24 @@ import { AccountsPage } from './features/admin/pages/AccountsPage';
 import { CreateAccountPage } from './features/admin/pages/CreateAccountPage';
 import { EditAccountPage } from './features/admin/pages/EditAccountPage';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
+import { DashboardPage } from './features/dashboard/pages/DashboardPage';
 import { UserProfilePage } from './features/auth/pages/UserProfilePage';
 import { AdminProfilePage } from './features/admin/pages/AdminProfilePage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const routerFutureFlags = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+} as const;
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
@@ -45,7 +55,7 @@ const AdminProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter future={routerFutureFlags}>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
@@ -55,8 +65,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <AppShell>
-                  <h1 className="text-2xl font-bold">Dashboard</h1>
-                  <p className="mt-4">Bem-vindo ao IPTV Manager. Use o menu lateral para navegar.</p>
+                  <DashboardPage />
                 </AppShell>
               </ProtectedRoute>
             } 
@@ -117,36 +126,6 @@ function App() {
               <ProtectedRoute>
                 <AppShell>
                   <EditServerPage />
-                </AppShell>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/tags" 
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <TagsPage />
-                </AppShell>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/tags/new" 
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <CreateTagPage />
-                </AppShell>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/tags/:id/edit" 
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <EditTagPage />
                 </AppShell>
               </ProtectedRoute>
             } 

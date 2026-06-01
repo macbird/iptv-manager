@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { AuthService } from './auth.service';
-import { loginSchema, registerSchema } from '@iptv-manager/shared';
+import { loginSchema, registerSchema } from '@client-manager/shared';
 
 const authService = new AuthService();
 

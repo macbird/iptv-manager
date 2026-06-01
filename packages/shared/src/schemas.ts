@@ -27,7 +27,7 @@ export const planSchema = z.object({
   price: z.number().min(0),
   billingCycle: z.enum(['monthly', 'quarterly', 'yearly']),
   maxConnections: z.number().int().min(1),
-  extraConnectionPrice: z.number().min(0).optional(),
+  extraConnectionPrice: z.preprocess((v) => (v === null || v === undefined ? 0 : v), z.number().min(0).default(0)),
   status: z.enum(['active', 'archived']).default('active'),
 });
 
@@ -50,11 +50,22 @@ export const tagSchema = z.object({
 
 export type TagInput = z.infer<typeof tagSchema>;
 
+export const connectionSchema = z.object({
+  serverId: z.string().uuid().or(z.literal('')),
+  macAddress: z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'MAC inválido'),
+  applicationName: z.string().min(1, 'Aplicativo obrigatório'),
+  label: z.string().optional().or(z.literal('')),
+});
+
 export const customerSchema = z.object({
   name: z.string().min(1),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().min(10, "Telefone inválido"),
   status: z.enum(['active', 'inactive']).default('active'),
+  planId: z.string().uuid().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+  expiresAt: z.preprocess((val) => val ? new Date(val as string) : undefined, z.date().optional()),
+  connections: z.array(connectionSchema).optional(),
 });
 
 export type CustomerInput = z.infer<typeof customerSchema>;
