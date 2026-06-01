@@ -6,7 +6,13 @@ import { plansApi } from '../../plans/api/plans.api';
 import { serversApi } from '../../servers/api/servers.api';
 import { Trash2, Plus } from 'lucide-react';
 import { TagInputChips } from '../../../shared/ui/forms/TagInputChips';
+import { MacAddressInput } from '../../../shared/ui/forms/MacAddressInput';
 import { CUSTOMER_STATUS_LABELS, CUSTOMER_STATUS_VALUES } from '@client-manager/shared';
+
+const MAC_ADDRESS_PATTERN = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
+
+const normalizeMacAddress = (value?: string) =>
+  value ? value.replace(/-/g, ':').toUpperCase() : '';
 
 interface CustomerFormProps {
   onSubmit: (data: any) => Promise<void>;
@@ -60,6 +66,7 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
             initialData.connections?.map((c: any) => ({
               ...c,
               serverId: c.server?.id || c.serverId,
+              macAddress: normalizeMacAddress(c.macAddress),
             })) || [],
           email: initialData.email || '',
           notes: initialData.notes || '',
@@ -182,10 +189,32 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
                   placeholder="Rótulo (ex: Backup)"
                   className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm"
                 />
-                <input
-                  {...register(`connections.${index}.macAddress`, { required: 'MAC obrigatório' })}
-                  placeholder="MAC (00:00:00:00:00:00)"
-                  className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm"
+                <Controller
+                  name={`connections.${index}.macAddress`}
+                  control={control}
+                  rules={{
+                    required: 'MAC obrigatório',
+                    validate: (value) =>
+                      MAC_ADDRESS_PATTERN.test(value ?? '') || 'MAC inválido',
+                  }}
+                  render={({ field }) => (
+                    <div className="w-full">
+                      <MacAddressInput
+                        ref={field.ref}
+                        name={field.name}
+                        value={field.value ?? ''}
+                        onBlur={field.onBlur}
+                        onChange={field.onChange}
+                        placeholder="00:00:00:00:00:00"
+                        className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm font-mono uppercase tracking-wide"
+                      />
+                      {errors.connections?.[index]?.macAddress && (
+                        <span className="text-red-500 text-[10px]">
+                          {errors.connections[index]?.macAddress?.message as string}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 />
                 <div className="w-full">
                   <input
