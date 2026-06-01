@@ -2,11 +2,27 @@ import { prisma } from '../../core/database';
 import { ServerInput } from '@client-manager/shared';
 
 export class ServersService {
-  async list(tenantId: string, page: number, pageSize: number, filter: string) {
+  async list(
+    tenantId: string,
+    page: number,
+    pageSize: number,
+    filter: string,
+    listFilters: Record<string, string> = {},
+  ) {
     const skip = (page - 1) * pageSize;
+    const trimmed = filter.trim();
+
     const where = {
       tenantId,
-      name: { contains: filter, mode: 'insensitive' as const },
+      ...(trimmed
+        ? {
+            OR: [
+              { name: { contains: trimmed, mode: 'insensitive' as const } },
+              { panelUrl: { contains: trimmed, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+      ...(listFilters.status ? { status: listFilters.status as never } : {}),
     };
 
     const [data, total] = await Promise.all([

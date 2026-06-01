@@ -2,6 +2,9 @@ import { FastifyInstance } from 'fastify';
 import { CustomersService } from './customers.service';
 import { customerSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
+import { pickListFilters } from '../../core/utils/parse-list-filters';
+
+const CUSTOMER_LIST_FILTER_KEYS = ['status', 'planId', 'expiresFrom', 'expiresTo'] as const;
 
 const customersService = new CustomersService();
 
@@ -17,11 +20,13 @@ export async function customersRoutes(app: FastifyInstance) {
       pageSize?: string;
       filter?: string;
     };
+    const listFilters = pickListFilters(request.query as Record<string, unknown>, CUSTOMER_LIST_FILTER_KEYS);
     return await customersService.list(
       tenantId,
       parseInt(page || '1', 10),
       parseInt(pageSize || '10', 10),
       filter || '',
+      listFilters,
     );
   });
 

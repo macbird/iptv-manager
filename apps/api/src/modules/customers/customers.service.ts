@@ -14,11 +14,40 @@ type PrismaLike = {
 export class CustomersService {
   constructor(private readonly db: PrismaLike = prisma) {}
 
-  async list(tenantId: string, page: number, pageSize: number, filter: string) {
+  async list(
+    tenantId: string,
+    page: number,
+    pageSize: number,
+    filter: string,
+    listFilters: Record<string, string> = {},
+  ) {
     const skip = (page - 1) * pageSize;
+    const trimmed = filter.trim();
+
     const where = {
       tenantId,
-      name: { contains: filter, mode: 'insensitive' as const },
+      ...(trimmed
+        ? {
+            OR: [
+              { name: { contains: trimmed, mode: 'insensitive' as const } },
+              { phone: { contains: trimmed, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+      ...(listFilters.status ? { status: listFilters.status as never } : {}),
+      ...(listFilters.planId ? { planId: listFilters.planId } : {}),
+      ...(listFilters.expiresFrom || listFilters.expiresTo
+        ? {
+            expiresAt: {
+              ...(listFilters.expiresFrom
+                ? { gte: new Date(`${listFilters.expiresFrom}T00:00:00.000Z`) }
+                : {}),
+              ...(listFilters.expiresTo
+                ? { lte: new Date(`${listFilters.expiresTo}T23:59:59.999Z`) }
+                : {}),
+            },
+          }
+        : {}),
     };
 
     const [rows, total] = await Promise.all([

@@ -191,7 +191,7 @@ Após PIX confirmado, item aparece em `/renewals`; marcar como renovado muda sta
 
 - [ ] `/` dashboard (home) + **P1.4** KPI renovações pendentes → `/renewals`
 - [ ] `/logs` + **P0.4** audit log nas ações críticas
-- [ ] `/settings` — PIX, WhatsApp, automação, relatórios, equipe (`account_user`)
+- [ ] `/settings` — **mesmo layout que admin**, porém: provider PIX/WhatsApp do **revendedor**; **preço do app = read-only** (vem do plano SaaS); preço dos **clientes** continua em `/plans`
 
 ### Critério de pronto
 

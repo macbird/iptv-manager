@@ -1,13 +1,11 @@
 import { api } from '../../../shared/api/api.client';
+import { toListQueryParams } from '../../../shared/api/list-params';
+import type { PaginatedListParams } from '../../../shared/hooks/usePaginatedList';
 import type { CustomerInput, CustomerListItem, PaginatedResponse } from '@client-manager/shared';
 
 export const customersApi = {
-  list: async (params: {
-    page: number;
-    pageSize: number;
-    filter: string;
-  }): Promise<PaginatedResponse<CustomerListItem>> => {
-    const response = await api.get('/customers', { params });
+  list: async (params: PaginatedListParams): Promise<PaginatedResponse<CustomerListItem>> => {
+    const response = await api.get('/customers', { params: toListQueryParams(params) });
     return response.data;
   },
   getById: async (id: string) => {

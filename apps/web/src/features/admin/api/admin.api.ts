@@ -1,5 +1,8 @@
 import { api } from '../../../shared/api/api.client';
 import type { AccountListItem, PaginatedResponse } from '@client-manager/shared';
+import type { BillingSnapshot } from '../../dashboard/api/dashboard.api';
+import type { MonthlyBillingPoint } from '../../../shared/ui/billing/BillingMonthlyBars';
+import type { RecentPaymentItem } from '../../../shared/ui/billing/RecentPaymentsList';
 
 export const adminAuthApi = {
   login: async (credentials: any) => {
@@ -49,8 +52,20 @@ export const tenantsApi = {
   },
 };
 
+export interface AdminDashboardStats {
+  totalAccounts: number;
+  activeAccounts: number;
+  suspendedAccounts: number;
+  totalUsers: number;
+  expectedMrrCents: number;
+  activeSubscriptions: number;
+  billing: BillingSnapshot;
+  monthlyBilling: MonthlyBillingPoint[];
+  recentPayments: RecentPaymentItem[];
+}
+
 export const adminDashboardApi = {
-  getStats: async () => {
+  getStats: async (): Promise<AdminDashboardStats> => {
     const response = await api.get('/admin/dashboard');
     return response.data;
   },

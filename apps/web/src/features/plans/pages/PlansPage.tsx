@@ -9,6 +9,9 @@ import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
+import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
+import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
+import { PLAN_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 
 export const PlansPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +26,10 @@ export const PlansPage: React.FC = () => {
     pageSize,
     filter,
     setFilter,
+    filters,
+    setFilters,
+    clearFilters,
+    activeFilterCount,
     goToPreviousPage,
     goToNextPage,
     isLoading,
@@ -30,6 +37,8 @@ export const PlansPage: React.FC = () => {
     queryKey: ['plans'],
     queryFn: plansApi.list,
   });
+
+  const filterModal = useListFilterModal(filters, setFilters, clearFilters);
 
   const deleteMutation = useMutation({
     mutationFn: plansApi.delete,
@@ -120,6 +129,8 @@ export const PlansPage: React.FC = () => {
         <PageHeaderActions
           onSearch={setFilter}
           currentFilter={filter}
+          onOpenFilters={filterModal.open}
+          activeFilterCount={activeFilterCount}
           primaryAction={{
             label: 'Novo',
             onClick: () => navigate('/plans/new'),
@@ -151,6 +162,16 @@ export const PlansPage: React.FC = () => {
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
         title="Excluir Plano"
         description="Tem certeza que deseja excluir este plano?"
+      />
+
+      <ListFiltersModal
+        isOpen={filterModal.isOpen}
+        onClose={() => filterModal.setIsOpen(false)}
+        fields={PLAN_FILTER_FIELDS}
+        draft={filterModal.draft}
+        onDraftChange={filterModal.setDraft}
+        onApply={filterModal.apply}
+        onClear={filterModal.clear}
       />
     </PageLayout>
   );

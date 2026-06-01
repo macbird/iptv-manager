@@ -9,6 +9,9 @@ import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
+import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
+import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
+import { SERVER_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 
 export const ServersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +26,10 @@ export const ServersPage: React.FC = () => {
     pageSize,
     filter,
     setFilter,
+    filters,
+    setFilters,
+    clearFilters,
+    activeFilterCount,
     goToPreviousPage,
     goToNextPage,
     isLoading,
@@ -30,6 +37,8 @@ export const ServersPage: React.FC = () => {
     queryKey: ['servers'],
     queryFn: serversApi.list,
   });
+
+  const filterModal = useListFilterModal(filters, setFilters, clearFilters);
 
   const deleteMutation = useMutation({
     mutationFn: serversApi.delete,
@@ -128,6 +137,8 @@ export const ServersPage: React.FC = () => {
         <PageHeaderActions
           onSearch={setFilter}
           currentFilter={filter}
+          onOpenFilters={filterModal.open}
+          activeFilterCount={activeFilterCount}
           primaryAction={{
             label: 'Novo',
             onClick: () => navigate('/servers/new'),
@@ -159,6 +170,16 @@ export const ServersPage: React.FC = () => {
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
         title="Excluir Servidor"
         description="Tem certeza que deseja excluir este servidor? Esta ação não poderá ser desfeita."
+      />
+
+      <ListFiltersModal
+        isOpen={filterModal.isOpen}
+        onClose={() => filterModal.setIsOpen(false)}
+        fields={SERVER_FILTER_FIELDS}
+        draft={filterModal.draft}
+        onDraftChange={filterModal.setDraft}
+        onApply={filterModal.apply}
+        onClear={filterModal.clear}
       />
     </PageLayout>
   );

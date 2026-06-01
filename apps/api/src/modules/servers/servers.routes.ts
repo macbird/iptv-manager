@@ -2,6 +2,9 @@ import { FastifyInstance } from 'fastify';
 import { ServersService } from './servers.service';
 import { serverSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
+import { pickListFilters } from '../../core/utils/parse-list-filters';
+
+const SERVER_LIST_FILTER_KEYS = ['status'] as const;
 
 const serversService = new ServersService();
 
@@ -17,11 +20,13 @@ export async function serversRoutes(app: FastifyInstance) {
       pageSize?: string;
       filter?: string;
     };
+    const listFilters = pickListFilters(request.query as Record<string, unknown>, SERVER_LIST_FILTER_KEYS);
     return await serversService.list(
       tenantId,
       parseInt(page || '1', 10),
       parseInt(pageSize || '10', 10),
       filter || '',
+      listFilters,
     );
   });
 

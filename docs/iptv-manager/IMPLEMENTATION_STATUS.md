@@ -1,6 +1,6 @@
 # Status da Implementação — Cliente Manager
 
-Documento vivo: última atualização após alinhamento do roadmap (Fase 2.5 nos guias 00, 01, 02, 09).
+Documento vivo: última atualização após núcleo de billing (Fase 2.5/3 parcial), filtros de listagem e cancelamento/recriação de faturas.
 
 Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [09-improvements-p0-p1.md](./09-improvements-p0-p1.md)
 
@@ -12,12 +12,12 @@ Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [09-impro
 |------|--------|--------|
 | **1** | App do revendedor (CRUD, dashboard, tags, conexões) | ✅ Concluída |
 | **2** | Painel admin plataforma | ✅ Concluída |
-| **2.5** | **Cobrança plataforma → tenant** (SaaS mensal) | 📋 Planejada |
-| **3** | Cobrança tenant → cliente final (PIX, faturas) | 📋 Planejada |
+| **2.5** | **Cobrança plataforma → tenant** (SaaS mensal) | ⚠️ **Parcial (MVP UI + API stub)** |
+| **3** | Cobrança tenant → cliente final (PIX, faturas) | ⚠️ **Parcial (mesmo motor, scope tenant)** |
 | **4** | Automação D-N + WhatsApp | 📋 Planejada |
 | **5** | Renovações pós-pagamento + relatórios | 📋 Planejada |
 
-**Próximo foco recomendado:** desenhar e implementar o **núcleo de billing compartilhado** (Fase 2.5 + 3 com o mesmo motor), começando pela cobrança mensal dos tenants no admin.
+**Próximo foco recomendado:** integração PIX real (Asaas) + webhooks idempotentes; job mensal de geração de faturas SaaS.
 
 ---
 
@@ -36,15 +36,17 @@ Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [09-impro
 - CRUD clientes, conexões (MAC, servidor, app), cascade delete, máscara MAC hex
 
 ### Passo 7 (parcial) — Dashboard tenant
-**Status:** Concluído (KPIs básicos, vencimentos próximos)  
+**Status:** Concluído (KPIs básicos, vencimentos próximos, KPIs de billing)  
 - Pendente: KPI “renovações pendentes” (depende Fase 5)
 
 ### Ajustes de UX/UI (transversal)
 **Status:** Concluído  
 - Paginação + busca unificadas (`usePaginatedList`, `PageHeaderActions`, `ListPagination`)
-- Listas mobile em cards (`ResponsiveDataGrid`)
+- **Filtros modais** em clientes, planos, servidores, faturas e pagamentos (`ListFiltersModal`, badge no header)
+- Listas mobile em cards (`ResponsiveDataGrid`), linhas clicáveis em billing
 - Modal de confirmação responsivo (action sheet mobile)
 - `CustomerStatus` enum, `requireTenantId`, DTO leve de listagem
+- Busca de clientes inclui **nome e telefone** na API
 
 ---
 
@@ -58,10 +60,68 @@ Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [09-impro
 | Contas (tenants) | Listagem paginada + busca (nome, slug, e-mail owner) |
 | CRUD conta | Criar tenant + owner, editar status (ativa/suspensa) |
 | Reset senha | Modal por conta |
-| Dashboard admin | KPIs + `PageLayout` / `StatCard` |
-| Shell admin | `AdminShell` com header mobile portal + footer estável |
+| Dashboard admin | KPIs + billing SaaS (MRR, inadimplência, gráfico mensal) |
+| Shell admin | `AdminShell` com nav: contas, faturas SaaS, pagamentos, configurações |
 
-**Não incluído na Fase 2 (previsto Fase 2.5):** cobrança mensal do uso SaaS, faturas para tenants, inadimplência/suspensão automática por falta de pagamento.
+---
+
+## ⚠️ Fase 2.5 — Cobrança plataforma → tenant
+
+**Objetivo:** o **admin** cobra cada **tenant** mensalmente pelo uso do Cliente Manager (SaaS).
+
+**Documentação:** [10-billing-dual-layer.md](./10-billing-dual-layer.md)
+
+### Entregue (MVP)
+
+| Item | Status |
+|------|--------|
+| Prisma: `Invoice`, `Payment`, configs plataforma/tenant, assinatura SaaS | ✅ |
+| Migrations + seed billing (`npm run seed:billing -w apps/api`) | ✅ |
+| Módulo `apps/api/modules/billing` (`scope: platform \| tenant`) | ✅ |
+| **`/admin/settings`** — preço SaaS + provider PIX/WA plataforma | ✅ |
+| **`/settings` (tenant)** — providers revenda + “Minha assinatura” read-only | ✅ |
+| Admin: `/admin/invoices`, `/admin/payments`, detalhes, cancelar/recriar fatura | ✅ |
+| Tenant: `/invoices`, `/payments`, detalhes, cancelar/recriar fatura | ✅ |
+| Dashboards admin + tenant com KPIs e pagamentos recentes | ✅ |
+| PIX stub + baixa manual (`generate-pix`, `mark-paid`) | ✅ stub |
+| Filtros de listagem (status, ciclo, datas) | ✅ |
+
+### Pendente (critério de pronto)
+
+| Item | Status |
+|------|--------|
+| Adapter PIX real (Asaas) na conta plataforma | ❌ |
+| Webhook idempotente → baixa automática | ❌ |
+| Job mensal automático (`billing_cycle_key`) | ❌ |
+| Suspensão automática por inadimplência | ❌ |
+| Tenant: copiar PIX da fatura SaaS em Configurações | ⚠️ parcial (via listagem/detalhe) |
+
+**Critério de pronto:** admin gera fatura de março; tenant paga via PIX sandbox; webhook marca paga; dashboard admin mostra receita do mês.
+
+---
+
+## ⚠️ Fase 3 — Cobrança tenant → cliente final
+
+Reutiliza o **mesmo motor** com `scope = tenant`.
+
+### Entregue
+
+| Item | Status |
+|------|--------|
+| Faturas + pagamentos por tenant (API + UI) | ✅ |
+| Config PIX tenant em `/settings` | ✅ UI (credenciais stub) |
+| Cancelamento + fatura substituta (histórico preservado) | ✅ |
+| Filtros em faturas/pagamentos | ✅ |
+
+### Pendente
+
+| Item | Status |
+|------|--------|
+| PIX real por tenant (Asaas do revendedor) | ❌ |
+| Webhook por tenant slug | ❌ |
+| Faturas no detalhe do cliente | ❌ |
+| P0.3 idempotência webhook, P0.5 copiar PIX + wa.me | ❌ |
+| Job D-N automático | ❌ (Fase 4) |
 
 ---
 
@@ -71,54 +131,18 @@ Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [09-impro
 |------|--------|
 | P0.2 Health check | ⚠️ Parcial (`GET /health` sem checagem DB/Redis) |
 | P0.6 Telefone E.164 | ❌ Pendente |
-| P1.3 Busca global clientes (nome/tel/MAC) | ⚠️ Parcial (só nome na API) |
+| P1.3 Busca global clientes (nome/tel/MAC) | ⚠️ Parcial (nome + tel; MAC pendente) |
 | P1.1–P1.2, P1.4–P1.6 | ❌ Pendente |
-| Demais P0 (seed unificado, audit, webhook, backup) | ❌ Pendente (dependem billing) |
+| P0.3 webhook idempotente | ❌ Pendente (billing stub) |
+| Demais P0 (seed unificado, audit, backup) | ❌ Pendente |
 
 Ver checklist completo em [09-improvements-p0-p1.md](./09-improvements-p0-p1.md).
 
 ---
 
-## 📋 Fase 2.5 — Cobrança plataforma → tenant (NOVA)
-
-**Objetivo:** o **admin** cobra cada **tenant** mensalmente pelo uso do Cliente Manager (SaaS), com o **mesmo modelo mental** que o tenant usará para cobrar seus clientes finais.
-
-**Documentação de arquitetura:** [10-billing-dual-layer.md](./10-billing-dual-layer.md)
-
-### Escopo mínimo (MVP)
-
-- [ ] Planos SaaS da plataforma (`platform_plan`: valor mensal, limites opcionais)
-- [ ] Assinatura por conta (`account_subscription`: plano, `due_day`, status)
-- [ ] Fatura mensal automática (`billing_cycle_key` = `YYYY-MM`)
-- [ ] Adapter PIX (Asaas) na **conta da plataforma** (não do tenant)
-- [ ] Webhook idempotente → baixa → opcional suspender tenant se inadimplente
-- [ ] Admin: listar faturas por tenant, gerar/cancelar, ver pagamentos
-- [ ] Tenant (opcional MVP): ver “Minha fatura SaaS” em settings (somente leitura + copiar PIX)
-
-### Critério de pronto
-
-Admin gera fatura de março para um tenant; tenant owner paga via PIX sandbox; webhook marca paga; dashboard admin mostra receita do mês.
-
----
-
-## 📋 Fase 3 — Cobrança tenant → cliente final
-
-**Objetivo:** revendedor cobra assinantes IPTV (spec original passo 4–6).
-
-Reutiliza o **núcleo de billing** da Fase 2.5 com `scope = tenant` e `tenant_payment_config`.
-
-### Escopo (referência [01-phase-1-tenant-app.md](./01-phase-1-tenant-app.md))
-
-- [ ] Faturas por cliente (`invoice` + `payment`)
-- [ ] PIX por tenant (credenciais Asaas do revendedor)
-- [ ] Front: `/invoices`, `/payments`, pagamentos no detalhe do cliente
-- [ ] P0.3 idempotência webhook, P0.5 copiar PIX + wa.me
-
----
-
 ## 📋 Fase 4 — Automação + WhatsApp
 
-- Job D-N: fatura + PIX + template WhatsApp ([01-phase-1](./01-phase-1-tenant-app.md) passo 5)
+- Job D-N: fatura + PIX + template WhatsApp
 - Evolution API ou oficial ([03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md))
 
 ---
@@ -134,16 +158,15 @@ Reutiliza o **núcleo de billing** da Fase 2.5 com `scope = tenant` e `tenant_pa
 
 ```mermaid
 flowchart TD
-  A[Fase 2.5: Billing core + Platform invoices] --> B[Fase 3: Tenant invoices]
+  A[Fase 2.5: PIX real + webhook + job mensal] --> B[Fase 3: PIX tenant + webhook]
   B --> C[Fase 4: Automation + WhatsApp]
   C --> D[Fase 5: Renewals + Reports]
   E[P0/P1 paralelo: E.164, busca MAC, health DB] -.-> A
 ```
 
-1. **Billing core** (Prisma, enums, services, `PaymentProvider`, eventos) — uma vez  
-2. **Platform billing** (admin cobra tenants) — valida o desenho  
-3. **Tenant billing** (tenants cobram clientes) — mesma API/UI patterns  
-4. Automação e renovações em cima do fluxo de pagamento confirmado  
+1. **Integração PSP** (Asaas factory, webhooks platform + tenant)  
+2. **Job mensal** de faturas SaaS + tenant  
+3. Automação D-N e renovações  
 
 ---
 
@@ -151,25 +174,26 @@ flowchart TD
 
 | Item | Notas |
 |------|--------|
-| `FormLayout` legado | Ainda no código; admin/tenant usam `PageLayout` |
-| Screenshots na raiz | Não versionados; remover ou `.gitignore` |
-| Testes API | Poucos (customers, require-tenant); ampliar com billing |
+| PIX / webhook | Stub; produção exige adapter + idempotência |
+| Fatura cancelada na listagem | Permanece no banco; pode “sumir” em páginas seguintes (ordenar/filtrar por status) |
+| `FormLayout` legado | Admin/tenant usam `PageLayout` |
+| Screenshots na raiz | Não versionados |
+| Testes API | Poucos; ampliar com billing |
 | CORS / secrets produção | Ver [RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md) |
-| Admin `CreateAccount` / `EditAccount` | Conta suspensa não testada end-to-end no login tenant |
 
 ---
 
 ## Commits recentes (referência)
 
-- `6f2cc16` — Admin UI alinhada, busca e paginação em contas  
+- *(este commit)* — Núcleo billing, filtros de listagem, cancel/recriar fatura  
+- `7118ddf` — Roadmap Fase 2.5 nos guias  
+- `6f2cc16` — Admin UI, busca e paginação em contas  
 - `d1d524e` — Máscara MAC hex  
-- `5e50b5a` — Cascade delete + modal mobile  
-- `445f192` — Login, P0 tenant, paginação listagens  
 
 ---
 
 ## 🚀 Próximo passo imediato
 
-1. Revisar e fechar decisões de produto em [10-billing-dual-layer.md](./10-billing-dual-layer.md) (preço SaaS, regra de suspensão, due_day).  
-2. Implementar **migrations + módulo `billing`** com suporte a `scope: platform | tenant`.  
-3. Tela admin **Faturas da plataforma** + job mensal de geração.
+1. **PaymentProvider** Asaas (platform + tenant factory).  
+2. **Webhooks** `POST /api/webhooks/pix/platform` e `/:tenantSlug` com idempotência.  
+3. **Job BullMQ** geração mensal de faturas SaaS.

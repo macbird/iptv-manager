@@ -24,7 +24,7 @@ Toda fatura tem:
 | `scope` | `platform` | `tenant` |
 | `accountId` | tenant cobrado | tenant credor |
 | `customerId` | `null` | cliente cobrado |
-| `amount` | valor do plano SaaS | valor do plano IPTV do cliente |
+| `amount` | valor do **PlatformPlan** (admin em Configurações) | valor do **`Plan`** do cliente (`/plans`) |
 | `billingCycleKey` | `2026-06` | `2026-06` |
 | `dueDate` | calculado por `due_day` da assinatura | `due_day` do cliente ou ciclo |
 | `status` | draft → open → paid / overdue / canceled | idem |
@@ -55,6 +55,97 @@ Webhooks:
 | `POST /api/webhooks/pix/:tenantSlug` | Faturas `scope=tenant` |
 
 Ambos: idempotência por `provider_payment_id`, audit log, evento interno `PaymentConfirmed`.
+
+---
+
+## Telas de configurações (admin e tenant)
+
+**Mesma UX**, rotas e permissões diferentes. Um layout compartilhado (`SettingsLayout` / abas) com seções que aparecem conforme o **papel**.
+
+| Rota | Quem acessa |
+|------|-------------|
+| `/admin/settings` | `platform_admin` |
+| `/settings` | `account_user` (revendedor) |
+
+### Onde entra o “preço” em cada mundo
+
+| Conceito | Onde se define | Onde aparece |
+|----------|---------------|--------------|
+| **Preço do app (SaaS)** | **Admin** em Configurações (`PlatformPlan` / valor mensal da plataforma) | Tenant: **somente leitura** em Configurações → “Minha assinatura” |
+| **Preço cobrado do cliente final** | **Tenant** em **Planos** (`/plans` — já existe `Plan.price`) | Faturas `scope=tenant` usam o plano vinculado ao `customer` |
+| **Providers (PIX / WhatsApp)** | Cada lado configura o **seu** PSP | Admin: credencial plataforma · Tenant: credencial revenda |
+
+Ou seja: na tela de configurações do **tenant não se edita o valor do Cliente Manager** — esse valor vem do **plano SaaS** que o admin atribuiu à conta. O tenant edita em **Planos** quanto cobra dos **clientes IPTV**.
+
+### Seções da tela (por papel)
+
+```mermaid
+flowchart LR
+  subgraph admin [Admin /admin/settings]
+    A1[Preço do app SaaS]
+    A2[Provider PIX plataforma]
+    A3[Provider WhatsApp plataforma - opcional]
+    A4[Regras inadimplência SaaS]
+  end
+  subgraph tenant [Tenant /settings]
+    T1[Minha assinatura - read-only]
+    T2[Provider PIX revenda]
+    T3[Provider WhatsApp revenda]
+    T4[Automação D-N - Fase 4]
+  end
+```
+
+| Seção | Admin | Tenant |
+|-------|-------|--------|
+| **Preço / plano SaaS** | Editar valor mensal (ou planos Starter/Pro), `due_day` default, trial | Exibir: “Você paga R$ X/mês — Plano Y”, próximo vencimento, link copiar PIX da fatura SaaS |
+| **PIX — provider** | Select: `asaas` \| `efi` \| `mercadopago` + API key, webhook secret (mascarado) | Idem, gravado em `tenant_payment_config` |
+| **WhatsApp — provider** | Opcional (avisos plataforma) | `evolution` \| `meta` + URL/token instância |
+| **Automação** | — | Dias antes do vencimento, horário, template (Fase 4) |
+| **Equipe** | — | `account_user` convites (backlog) |
+
+### Backend
+
+| Escopo | API |
+|--------|-----|
+| Plataforma | `GET/PATCH /api/admin/platform-settings` (preço, provider, credenciais criptografadas) |
+| Tenant | `GET/PATCH /api/settings` (só `tenant_payment_config`, whatsapp, automation) |
+| Tenant (assinatura) | `GET /api/settings/subscription` — read-only: plano SaaS, valor, status, próxima fatura |
+
+**Segurança:** API keys nunca retornam em claro após salvar (só `••••` + botão “substituir”). Secrets no banco criptografados (coluna ou app-level).
+
+### Frontend (reuso)
+
+```
+features/settings/
+├── pages/SettingsPage.tsx       # detecta admin vs tenant (prop ou rota)
+├── sections/
+│   ├── PlatformPricingSection.tsx   # só admin
+│   ├── MySubscriptionSection.tsx    # só tenant (read-only)
+│   ├── PaymentProviderSection.tsx   # ambos (scope via API)
+│   └── WhatsAppProviderSection.tsx
+└── api/settings.api.ts
+```
+
+Admin registra rota em `App.tsx` sob `AdminShell`; tenant sob `AppShell` — **mesmos componentes**, `variant: 'platform' | 'tenant'`.
+
+### Providers disponíveis (select na UI)
+
+**Pagamento (PIX):**
+
+| Valor | Label | MVP |
+|-------|-------|-----|
+| `asaas` | Asaas | ✅ primeiro |
+| `efi` | Efi (Gerencianet) | futuro |
+| `mercadopago` | Mercado Pago | futuro |
+
+**WhatsApp:**
+
+| Valor | Label | MVP |
+|-------|-------|-----|
+| `evolution` | Evolution API | ✅ Fase 4 |
+| `meta` | WhatsApp Business API | futuro |
+
+O factory em runtime lê `provider` da config e instancia o adapter correto.
 
 ---
 
@@ -222,11 +313,12 @@ apps/api/src/jobs/
 
 ### Fase 2.5 — MVP plataforma (2–3 sprints)
 
-1. Migrations `PlatformPlan`, `AccountSubscription`, `Invoice`, `Payment`
+1. Migrations `PlatformPlan`, `PlatformPaymentConfig`, `AccountSubscription`, `Invoice`, `Payment`
 2. `PaymentProvider` + webhook platform
-3. Admin: CRUD plano SaaS, assign plano à conta, listar faturas, botão “Gerar fatura do mês”
-4. Job mensal + suspensão por inadimplência (configurável)
-5. (Opcional) Tenant settings: “Assinatura Cliente Manager” read-only
+3. **`/admin/settings`** — preço SaaS + provider PIX plataforma
+4. **`/settings`** (tenant) — provider PIX revenda + seção **Minha assinatura** (preço SaaS read-only)
+5. Admin: assign plano à conta, listar faturas, botão “Gerar fatura do mês”
+6. Job mensal + suspensão por inadimplência (configurável)
 
 ### Fase 3 — MVP tenant
 
@@ -243,7 +335,7 @@ apps/api/src/jobs/
 
 ## Perguntas em aberto (fechar com produto)
 
-1. **Preço SaaS:** valor único ou planos Starter/Pro?
+1. **Preço SaaS:** um único valor em Configurações admin ou vários `PlatformPlan` (Starter/Pro)?
 2. **Cobrança por uso:** contar `customers` ativos e cobrar variável? (ex.: R$ base + R$ por cliente)
 3. **Trial:** conta nova tem 7 dias sem fatura?
 4. **Tenant vê fatura SaaS** no app dele ou só recebe e-mail/WhatsApp?

@@ -1,9 +1,11 @@
 import { api } from '../../../shared/api/api.client';
+import { toListQueryParams } from '../../../shared/api/list-params';
+import type { PaginatedListParams } from '../../../shared/hooks/usePaginatedList';
 import type { ServerInput } from '@client-manager/shared';
 
 export const serversApi = {
-  list: async (params: { page: number, pageSize: number, filter: string }) => {
-    const response = await api.get('/servers', { params });
+  list: async (params: PaginatedListParams) => {
+    const response = await api.get('/servers', { params: toListQueryParams(params) });
     return response.data;
   },
   getById: async (id: string) => {

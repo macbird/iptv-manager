@@ -19,6 +19,8 @@ export interface ResponsiveDataGridProps<T extends { id: string | number }> {
   isLoading?: boolean;
   /** Width of the right section on mobile; must match cards (default 55%). */
   mobileRightWidth?: string;
+  /** When set, rows/cards are clickable (use stopPropagation on action buttons). */
+  onRowClick?: (item: T) => void;
 }
 
 function alignClass(align: DataGridColumn<unknown>['align'], isLast: boolean): string {
@@ -35,6 +37,7 @@ export const ResponsiveDataGrid = <T extends { id: string | number }>({
   mobileHeaderTitles = [],
   isLoading,
   mobileRightWidth = '55%',
+  onRowClick,
 }: ResponsiveDataGridProps<T>) => {
   if (isLoading) {
     return (
@@ -84,7 +87,15 @@ export const ResponsiveDataGrid = <T extends { id: string | number }>({
                 </tr>
               ) : (
                 data.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50">
+                  <tr
+                    key={item.id}
+                    className={
+                      onRowClick
+                        ? 'cursor-pointer hover:bg-slate-50'
+                        : 'hover:bg-slate-50'
+                    }
+                    onClick={onRowClick ? () => onRowClick(item) : undefined}
+                  >
                     {columns.map((col, idx) => (
                       <td
                         key={idx}
@@ -132,7 +143,23 @@ export const ResponsiveDataGrid = <T extends { id: string | number }>({
             </p>
           ) : (
             data.map((item) => (
-              <div key={item.id} className="px-4 py-3 active:bg-slate-50 transition-colors">
+              <div
+                key={item.id}
+                className={`px-4 py-3 transition-colors ${onRowClick ? 'cursor-pointer active:bg-slate-50' : ''}`}
+                onClick={onRowClick ? () => onRowClick(item) : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onRowClick(item);
+                        }
+                      }
+                    : undefined
+                }
+                role={onRowClick ? 'button' : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
+              >
                 {renderMobileCard(item)}
               </div>
             ))

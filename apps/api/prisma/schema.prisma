@@ -47,6 +47,36 @@ enum CustomerStatus {
   cancelled
 }
 
+enum PaymentProviderType {
+  asaas
+  efi
+  mercadopago
+}
+
+enum WhatsAppProviderType {
+  evolution
+  meta
+}
+
+enum BillingScope {
+  platform
+  tenant
+}
+
+enum BillingInvoiceStatus {
+  draft
+  open
+  paid
+  overdue
+  canceled
+}
+
+enum SubscriptionStatus {
+  active
+  past_due
+  canceled
+}
+
 model Account {
   id         String        @id @default(uuid())
   name       String
@@ -60,7 +90,11 @@ model Account {
   plans      Plan[]
   servers    Server[]
   tags       Tag[]
-  customers  Customer[]
+  customers              Customer[]
+  subscription           AccountSubscription?
+  tenantPaymentConfig    TenantPaymentConfig?
+  tenantWhatsappConfig   TenantWhatsappConfig?
+  invoices               Invoice[]
 
   @@map("accounts")
 }
@@ -146,6 +180,7 @@ model Customer {
 
   connections Connection[]
   tags        Tag[]
+  invoices    Invoice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -176,4 +211,120 @@ model PlatformAdmin {
   updatedAt DateTime @updatedAt
 
   @@map("platform_admins")
+}
+
+model PlatformPlan {
+  id            String                @id @default(uuid())
+  name          String
+  priceCents    Int
+  billingCycle  BillingCycle          @default(monthly)
+  maxCustomers  Int?
+  active        Boolean               @default(true)
+  isDefault     Boolean               @default(false)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  subscriptions AccountSubscription[]
+
+  @@map("platform_plans")
+}
+
+model PlatformPaymentConfig {
+  id            String              @id @default("default")
+  provider      PaymentProviderType @default(asaas)
+  apiKey        String?
+  webhookToken  String?
+  overdueDays   Int                 @default(7)
+  updatedAt     DateTime            @updatedAt
+
+  @@map("platform_payment_config")
+}
+
+model PlatformWhatsappConfig {
+  id          String               @id @default("default")
+  provider    WhatsAppProviderType @default(evolution)
+  instanceUrl String?
+  apiKey      String?
+  updatedAt   DateTime             @updatedAt
+
+  @@map("platform_whatsapp_config")
+}
+
+model AccountSubscription {
+  id             String             @id @default(uuid())
+  accountId      String             @unique
+  account        Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  platformPlanId String
+  platformPlan   PlatformPlan       @relation(fields: [platformPlanId], references: [id])
+  dueDay         Int                @default(10)
+  status         SubscriptionStatus @default(active)
+  startedAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@map("account_subscriptions")
+}
+
+model TenantPaymentConfig {
+  id           String              @id @default(uuid())
+  accountId    String              @unique
+  account      Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  provider     PaymentProviderType @default(asaas)
+  apiKey       String?
+  webhookToken String?
+  updatedAt    DateTime            @updatedAt
+
+  @@map("tenant_payment_config")
+}
+
+model TenantWhatsappConfig {
+  id          String               @id @default(uuid())
+  accountId   String               @unique
+  account     Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  provider    WhatsAppProviderType @default(evolution)
+  instanceUrl String?
+  apiKey      String?
+  updatedAt   DateTime             @updatedAt
+
+  @@map("tenant_whatsapp_config")
+}
+
+model Invoice {
+  id                String               @id @default(uuid())
+  scope             BillingScope
+  accountId         String
+  account           Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  customerId        String?
+  customer          Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  billingCycleKey   String
+  amountCents       Int
+  dueDate           DateTime
+  status            BillingInvoiceStatus @default(open)
+  pixCopyPaste      String?
+  pixQrCodeBase64   String?
+  providerChargeId  String?              @unique
+  paidAt            DateTime?
+  replacesInvoiceId String?              @unique
+  replacesInvoice   Invoice?             @relation("InvoiceReplacement", fields: [replacesInvoiceId], references: [id], onDelete: SetNull)
+  replacement       Invoice?             @relation("InvoiceReplacement")
+  canceledAt        DateTime?
+  cancelReason      String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  payments          Payment[]
+
+  @@index([scope, accountId, customerId, billingCycleKey])
+  @@index([accountId, scope, status])
+  @@map("invoices")
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  invoiceId         String
+  invoice           Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amountCents       Int
+  method            String
+  providerPaymentId String?  @unique
+  paidAt            DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  @@map("payments")
 }

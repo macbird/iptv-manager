@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, Server, Tag, LogOut, Menu, X, UserCog } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Server, LogOut, Menu, X, UserCog, Settings, FileText, Wallet } from 'lucide-react';
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -16,13 +16,17 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     { name: 'Clientes', icon: Users, href: '/customers' },
     { name: 'Planos', icon: CreditCard, href: '/plans' },
     { name: 'Servidores', icon: Server, href: '/servers' },
+    { name: 'Faturas', icon: FileText, href: '/invoices' },
+    { name: 'Pagamentos', icon: Wallet, href: '/payments' },
+    { name: 'Configurações', icon: Settings, href: '/settings' },
     { name: 'Perfil', icon: UserCog, href: '/profile' },
   ];
 
   const NavContent = () => (
     <nav className="flex-1 px-2 py-4 space-y-1">
       {navItems.map((item) => {
-        const isActive = location.pathname === item.href;
+        const isActive =
+          location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
         return (
           <Link
             key={item.name}

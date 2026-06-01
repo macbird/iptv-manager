@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { customersApi } from '../api/customers.api';
+import { plansApi } from '../../plans/api/plans.api';
 import { Edit2, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../../shared/ui/modals/Modal';
@@ -9,6 +10,12 @@ import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
+import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
+import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
+import {
+  CUSTOMER_FILTER_FIELDS,
+  withPlanOptions,
+} from '../../../shared/ui/lists/list-filter-fields';
 import {
   CustomerStatus,
   getCustomerStatusBadgeClass,
@@ -29,6 +36,10 @@ export const CustomersPage: React.FC = () => {
     pageSize,
     filter,
     setFilter,
+    filters,
+    setFilters,
+    clearFilters,
+    activeFilterCount,
     goToPreviousPage,
     goToNextPage,
     isLoading,
@@ -36,6 +47,18 @@ export const CustomersPage: React.FC = () => {
     queryKey: ['customers'],
     queryFn: customersApi.list,
   });
+
+  const filterModal = useListFilterModal(filters, setFilters, clearFilters);
+
+  const { data: plansForFilter } = useQuery({
+    queryKey: ['plans-for-filter'],
+    queryFn: () => plansApi.list({ page: 1, pageSize: 100, filter: '' }),
+  });
+
+  const customerFilterFields = withPlanOptions(
+    CUSTOMER_FILTER_FIELDS,
+    plansForFilter?.data ?? [],
+  );
 
   const deleteMutation = useMutation({
     mutationFn: customersApi.delete,
@@ -162,6 +185,8 @@ export const CustomersPage: React.FC = () => {
         <PageHeaderActions
           onSearch={setFilter}
           currentFilter={filter}
+          onOpenFilters={filterModal.open}
+          activeFilterCount={activeFilterCount}
           primaryAction={{
             label: 'Novo',
             onClick: () => navigate('/customers/new'),
@@ -193,6 +218,16 @@ export const CustomersPage: React.FC = () => {
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
         title="Excluir Cliente"
         description="Tem certeza que deseja excluir este cliente? Esta ação não poderá ser desfeita."
+      />
+
+      <ListFiltersModal
+        isOpen={filterModal.isOpen}
+        onClose={() => filterModal.setIsOpen(false)}
+        fields={customerFilterFields}
+        draft={filterModal.draft}
+        onDraftChange={filterModal.setDraft}
+        onApply={filterModal.apply}
+        onClear={filterModal.clear}
       />
     </PageLayout>
   );

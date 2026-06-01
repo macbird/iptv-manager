@@ -1,4 +1,8 @@
 import { prisma } from '../../core/database';
+import {
+  getBillingSnapshot,
+  getMonthlyBillingTrend,
+} from '../billing/billing-dashboard.util';
 
 export class DashboardService {
   async getStats(tenantId: string) {
@@ -44,6 +48,12 @@ export class DashboardService {
       0,
     );
 
+    const [billing, monthlyBilling, recentPayments] = await Promise.all([
+      getBillingSnapshot('tenant', tenantId),
+      getMonthlyBillingTrend('tenant', tenantId),
+      this.getRecentPayments(tenantId, 5),
+    ]);
+
     return {
       totalCustomers,
       activeCustomers,
@@ -54,7 +64,35 @@ export class DashboardService {
       expiringSoon,
       expired,
       estimatedMrr,
+      billing,
+      monthlyBilling,
+      recentPayments,
     };
+  }
+
+  async getRecentPayments(tenantId: string, limit = 5) {
+    const rows = await prisma.payment.findMany({
+      where: { invoice: { scope: 'tenant', accountId: tenantId } },
+      orderBy: { paidAt: 'desc' },
+      take: limit,
+      include: {
+        invoice: {
+          select: {
+            billingCycleKey: true,
+            customer: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    return rows.map((p) => ({
+      id: p.id,
+      amountCents: p.amountCents,
+      method: p.method,
+      paidAt: p.paidAt.toISOString(),
+      customerName: p.invoice.customer?.name ?? null,
+      billingCycleKey: p.invoice.billingCycleKey,
+    }));
   }
 
   async getUpcomingExpirations(tenantId: string, limit = 5) {

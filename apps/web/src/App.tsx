@@ -19,7 +19,13 @@ import { EditAccountPage } from './features/admin/pages/EditAccountPage';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { DashboardPage } from './features/dashboard/pages/DashboardPage';
 import { UserProfilePage } from './features/auth/pages/UserProfilePage';
+import { TenantSettingsPage } from './features/settings/pages/TenantSettingsPage';
+import { InvoicesPage } from './features/billing/pages/InvoicesPage';
+import { InvoiceDetailPage } from './features/billing/pages/InvoiceDetailPage';
+import { PaymentsPage } from './features/billing/pages/PaymentsPage';
+import { PaymentDetailPage } from './features/billing/pages/PaymentDetailPage';
 import { AdminProfilePage } from './features/admin/pages/AdminProfilePage';
+import { AdminSettingsPage } from './features/admin/pages/AdminSettingsPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient({
@@ -170,6 +176,56 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <TenantSettingsPage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/invoices"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <InvoicesPage variant="tenant" />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/invoices/:id"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <InvoiceDetailPage variant="tenant" />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <PaymentsPage variant="tenant" />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payments/:id"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <PaymentDetailPage variant="tenant" />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route 
             path="/admin/dashboard" 
@@ -220,6 +276,56 @@ function App() {
                 </AdminShell>
               </AdminProtectedRoute>
             } 
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <AdminProtectedRoute>
+                <AdminShell>
+                  <AdminSettingsPage />
+                </AdminShell>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/invoices"
+            element={
+              <AdminProtectedRoute>
+                <AdminShell>
+                  <InvoicesPage variant="admin" />
+                </AdminShell>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/invoices/:id"
+            element={
+              <AdminProtectedRoute>
+                <AdminShell>
+                  <InvoiceDetailPage variant="admin" />
+                </AdminShell>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/payments"
+            element={
+              <AdminProtectedRoute>
+                <AdminShell>
+                  <PaymentsPage variant="admin" />
+                </AdminShell>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/payments/:id"
+            element={
+              <AdminProtectedRoute>
+                <AdminShell>
+                  <PaymentDetailPage variant="admin" />
+                </AdminShell>
+              </AdminProtectedRoute>
+            }
           />
         </Routes>
       </BrowserRouter>

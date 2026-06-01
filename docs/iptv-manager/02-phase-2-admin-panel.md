@@ -81,10 +81,12 @@ Implementado em **`apps/web`** com prefixo `/admin/*` (Opção B do guia origina
 
 | Rota | Descrição |
 |------|-----------|
-| `/admin/platform-plans` | CRUD planos SaaS |
+| `/admin/settings` | **Preço do app (SaaS)** + provider PIX/WhatsApp da **plataforma** |
 | `/admin/invoices` | Faturas para tenants |
 | `/admin/payments` | Pagamentos recebidos (plataforma) |
 | `/admin/accounts/:id` | Aba “Faturas SaaS” no detalhe da conta |
+
+> Preço cobrado dos **clientes finais** do revendedor **não** fica aqui — continua em `/plans` (tenant).
 
 ---
 

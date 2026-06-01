@@ -12,12 +12,19 @@ import {
   DollarSign,
   Plus,
   ArrowRight,
+  Receipt,
+  Wallet,
+  FileWarning,
+  TrendingUp,
 } from 'lucide-react';
 import { dashboardApi } from '../api/dashboard.api';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { StatCard } from '../../../shared/ui/layout/StatCard';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 import { isApiAuthError, isApiNetworkError } from '../../../shared/api/api-error';
+import { BillingMonthlyBars } from '../../../shared/ui/billing/BillingMonthlyBars';
+import { RecentPaymentsList } from '../../../shared/ui/billing/RecentPaymentsList';
+import { formatCents } from '../../../shared/ui/billing/format-billing';
 
 function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -148,6 +155,46 @@ export const DashboardPage: React.FC = () => {
     },
   ];
 
+  const billing = stats?.billing;
+  const billingCards = [
+    {
+      title: 'Recebido no mês',
+      value: formatCents(billing?.receivedCurrentMonthCents ?? 0),
+      subtitle: 'Pagamentos confirmados',
+      icon: Wallet,
+      iconColor: 'text-emerald-600',
+      iconBg: 'bg-emerald-100',
+      href: '/payments',
+    },
+    {
+      title: 'Faturas em aberto',
+      value: billing?.openInvoices ?? 0,
+      subtitle: formatCents(billing?.openAmountCents ?? 0),
+      icon: Receipt,
+      iconColor: 'text-blue-600',
+      iconBg: 'bg-blue-100',
+      href: '/invoices',
+    },
+    {
+      title: 'Faturas vencidas',
+      value: billing?.overdueInvoices ?? 0,
+      subtitle: 'Requer cobrança',
+      icon: FileWarning,
+      iconColor: 'text-red-600',
+      iconBg: 'bg-red-100',
+      href: '/invoices',
+    },
+    {
+      title: 'Taxa de cobrança',
+      value: `${billing?.collectionRate ?? 0}%`,
+      subtitle: 'Ciclo atual',
+      icon: TrendingUp,
+      iconColor: 'text-violet-600',
+      iconBg: 'bg-violet-100',
+      href: '/invoices',
+    },
+  ];
+
   const infraCards = [
     {
       title: 'Planos',
@@ -188,14 +235,24 @@ export const DashboardPage: React.FC = () => {
     <PageLayout title="Dashboard" noPadding>
       <div className="w-full px-4 py-4 lg:px-6 lg:py-6">
         <p className="text-slate-600 mb-6">
-          Visão geral da sua operação — clientes, vencimentos e infraestrutura.
+          Visão geral da sua operação — clientes, cobrança, pagamentos e infraestrutura.
         </p>
 
         {/* Mobile: 2 colunas por seção */}
         <div className="space-y-8 lg:hidden">
           <section>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
-              Clientes e cobrança
+              Cobrança e pagamentos
+            </h2>
+            <div className="grid grid-cols-2 gap-3 w-full mb-6">
+              {billingCards.map((card) => (
+                <StatCard key={card.title} {...card} />
+              ))}
+            </div>
+          </section>
+          <section>
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
+              Clientes e vencimentos
             </h2>
             <div className="grid grid-cols-2 gap-3 w-full">
               {kpiCards.map((card) => (
@@ -219,7 +276,22 @@ export const DashboardPage: React.FC = () => {
         <div className="hidden lg:block space-y-10 mb-10">
           <section>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
-              Clientes e cobrança
+              Cobrança e pagamentos
+            </h2>
+            <div className="grid grid-cols-6 gap-4 w-full mb-10">
+              {billingCards.map((card, index) => (
+                <div
+                  key={card.title}
+                  className={`min-w-0 ${index < 2 ? 'col-span-2' : 'col-span-1'}`}
+                >
+                  <StatCard {...card} />
+                </div>
+              ))}
+            </div>
+          </section>
+          <section>
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
+              Clientes e vencimentos
             </h2>
             <div className="grid grid-cols-6 gap-4 w-full">
               {kpiCards.map((card, index) => (
@@ -249,8 +321,25 @@ export const DashboardPage: React.FC = () => {
           </section>
         </div>
 
+        {stats?.monthlyBilling && stats.monthlyBilling.length > 0 && (
+          <div className="mb-6 w-full">
+            <BillingMonthlyBars
+              data={stats.monthlyBilling}
+              title="Cobrança dos clientes — últimos 6 meses"
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-        <section className="lg:col-span-2 bg-white rounded-lg border border-slate-200 shadow-sm">
+        {stats?.recentPayments && (
+          <div className="lg:col-span-1 order-2 lg:order-none">
+            <RecentPaymentsList
+              payments={stats.recentPayments}
+              paymentsHref="/payments"
+            />
+          </div>
+        )}
+        <section className="lg:col-span-2 bg-white rounded-lg border border-slate-200 shadow-sm order-1">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <h2 className="text-base font-semibold text-slate-900">Próximos vencimentos</h2>
             <Link
@@ -298,7 +387,7 @@ export const DashboardPage: React.FC = () => {
           )}
         </section>
 
-        <section className="bg-white rounded-lg border border-slate-200 shadow-sm p-5">
+        <section className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 order-3">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Ações rápidas</h2>
           <div className="space-y-2">
             <Link
@@ -328,6 +417,20 @@ export const DashboardPage: React.FC = () => {
             >
               <Server className="w-4 h-4" />
               Novo servidor
+            </Link>
+            <Link
+              to="/invoices"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
+              <Receipt className="w-4 h-4" />
+              Faturas
+            </Link>
+            <Link
+              to="/payments"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
+              <Wallet className="w-4 h-4" />
+              Pagamentos
             </Link>
           </div>
 

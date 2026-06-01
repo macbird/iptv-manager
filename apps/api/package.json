@@ -7,7 +7,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc",
     "start": "node -r dotenv/config dist/main.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed:billing": "ts-node src/scripts/seed-billing.ts"
   },
   "dependencies": {
     "@client-manager/shared": "*",
