@@ -2,9 +2,11 @@ import { prisma } from '../../core/database';
 import type { BillingScope, BillingInvoiceStatus, PaymentProviderType } from '@prisma/client';
 import { InvoiceActionError } from './invoice-errors';
 import { PaymentRouterService } from '../../integrations/payment/payment-router.service';
+import { PaymentConfirmationService } from './payment-confirmation.service';
 
 const CANCELABLE_STATUSES: BillingInvoiceStatus[] = ['draft', 'open', 'overdue'];
 const paymentRouter = new PaymentRouterService();
+const paymentConfirmation = new PaymentConfirmationService();
 
 export class InvoicesService {
   private invoiceWhere(scope: BillingScope, accountId: string | null, invoiceId: string) {
@@ -301,6 +303,92 @@ export class InvoicesService {
     }
   }
 
+  /**
+   * Creates a manual tenant invoice for a customer.
+   */
+  async createManual(
+    tenantId: string,
+    data: {
+      customerId: string;
+      amountCents: number;
+      dueDate: string;
+      billingCycleKey?: string;
+      registerPayment?: boolean;
+      paymentMethod?: string;
+      paymentNotes?: string;
+    },
+  ) {
+    if (!Number.isInteger(data.amountCents) || data.amountCents <= 0) {
+      throw new InvoiceActionError('Valor inválido', 'NOT_ALLOWED');
+    }
+
+    const dueDate = new Date(data.dueDate);
+    if (Number.isNaN(dueDate.getTime())) {
+      throw new InvoiceActionError('Data de vencimento inválida', 'NOT_ALLOWED');
+    }
+
+    const billingCycleKey =
+      data.billingCycleKey ??
+      `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}`;
+
+    const customer = await prisma.customer.findFirst({
+      where: { id: data.customerId, tenantId },
+    });
+    if (!customer) {
+      throw new InvoiceActionError('Cliente não encontrado', 'NOT_FOUND');
+    }
+
+    const conflict = await prisma.invoice.findFirst({
+      where: {
+        scope: 'tenant',
+        accountId: tenantId,
+        customerId: data.customerId,
+        billingCycleKey,
+        status: { not: 'canceled' },
+      },
+    });
+    if (conflict) {
+      throw new InvoiceActionError('Já existe uma fatura ativa para este ciclo', 'CONFLICT');
+    }
+
+    try {
+      const created = await prisma.invoice.create({
+        data: {
+          scope: 'tenant',
+          accountId: tenantId,
+          customerId: data.customerId,
+          billingCycleKey,
+          amountCents: data.amountCents,
+          dueDate,
+          status: 'open',
+        },
+      });
+
+      if (data.registerPayment) {
+        await paymentConfirmation.confirm({
+          invoiceId: created.id,
+          tenantId,
+          scope: 'tenant',
+          amountCents: data.amountCents,
+          method: data.paymentMethod ?? 'cash',
+          source: 'manual',
+          notes: data.paymentNotes,
+        });
+      }
+
+      const detail = await this.getById('tenant', created.id, tenantId);
+      if (!detail) {
+        throw new InvoiceActionError('Fatura não encontrada após criação', 'CONFLICT');
+      }
+      return detail;
+    } catch (error) {
+      if (error instanceof InvoiceActionError) {
+        throw error;
+      }
+      throw new InvoiceActionError('Não foi possível criar a fatura', 'CONFLICT');
+    }
+  }
+
   /** Stub: simulates PIX generation until PSP integration. */
   async generatePixStub(invoiceId: string, tenantId?: string) {
     const invoice = await prisma.invoice.findFirst({
@@ -338,7 +426,11 @@ export class InvoicesService {
     });
   }
 
-  async markPaidManual(invoiceId: string, tenantId?: string) {
+  async markPaidManual(
+    invoiceId: string,
+    tenantId?: string,
+    options?: { method?: string; notes?: string; paidAt?: string },
+  ) {
     const invoice = await prisma.invoice.findFirst({
       where: {
         id: invoiceId,
@@ -350,24 +442,19 @@ export class InvoicesService {
       throw new Error('Invoice not found');
     }
 
-    if (invoice.status === 'canceled') {
-      throw new Error('Invoice canceled');
+    try {
+      return await paymentConfirmation.confirm({
+        invoiceId,
+        tenantId,
+        scope: invoice.scope,
+        amountCents: invoice.amountCents,
+        method: options?.method ?? 'manual',
+        source: 'manual',
+        notes: options?.notes,
+        paidAt: options?.paidAt ? new Date(options.paidAt) : undefined,
+      });
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Payment confirmation failed');
     }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.payment.create({
-        data: {
-          invoiceId,
-          amountCents: invoice.amountCents,
-          method: 'manual',
-        },
-      });
-      await tx.invoice.update({
-        where: { id: invoiceId },
-        data: { status: 'paid', paidAt: new Date() },
-      });
-    });
-
-    return { ok: true };
   }
 }

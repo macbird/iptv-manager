@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Copy, CheckCircle } from 'lucide-react';
 import { platformBillingApi, tenantBillingApi } from '../api/billing.api';
+import { CreateInvoiceModal } from '../components/CreateInvoiceModal';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
+import { useOpenCreateModalFromRoute } from '../../../shared/hooks/useEntityFormModal';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { INVOICE_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 import {
@@ -54,12 +56,19 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
     queryFn: api.listInvoices,
   });
 
+  const [invoiceModalOpen, setInvoiceModalOpen] = React.useState(false);
   const filterModal = useListFilterModal(filters, setFilters, clearFilters);
+  useOpenCreateModalFromRoute(setInvoiceModalOpen);
 
   const invalidate = () => {
     queryClient.invalidateQueries({
       queryKey: variant === 'admin' ? ['admin-invoices'] : ['invoices'],
     });
+    if (variant === 'tenant') {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['activations'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    }
   };
 
   const isActionable = (status: string) =>
@@ -80,7 +89,9 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
       invalidate();
       showToast.success('Fatura marcada como paga');
     },
-    onError: () => showToast.error('Erro ao baixar fatura'),
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      showToast.error(err.response?.data?.message ?? 'Erro ao baixar fatura');
+    },
   });
 
   const copyPix = (pix: string | null) => {
@@ -202,7 +213,22 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
     <PageLayout
       title={title}
       noPadding
-      actions={<PageHeaderActions onSearch={setFilter} currentFilter={filter} onOpenFilters={filterModal.open} activeFilterCount={activeFilterCount} />}
+      actions={
+        <PageHeaderActions
+          onSearch={setFilter}
+          currentFilter={filter}
+          onOpenFilters={filterModal.open}
+          activeFilterCount={activeFilterCount}
+          primaryAction={
+            variant === 'tenant'
+              ? {
+                  label: 'Novo',
+                  onClick: () => setInvoiceModalOpen(true),
+                }
+              : undefined
+          }
+        />
+      }
       footer={
         <ListPagination
           page={page}
@@ -222,6 +248,10 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
         isLoading={isLoading}
         onRowClick={(i) => navigate(`${basePath}/invoices/${i.id}`)}
       />
+
+      {variant === 'tenant' ? (
+        <CreateInvoiceModal isOpen={invoiceModalOpen} onClose={() => setInvoiceModalOpen(false)} />
+      ) : null}
 
       <ListFiltersModal
         isOpen={filterModal.isOpen}

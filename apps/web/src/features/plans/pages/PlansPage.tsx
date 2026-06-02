@@ -2,21 +2,23 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { plansApi } from '../api/plans.api';
 import { Edit2, Trash2, CreditCard } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../../shared/ui/modals/Modal';
+import { PlanFormModal } from '../components/PlanFormModal';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
+import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { PLAN_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 
 export const PlansPage: React.FC = () => {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const formModal = useEntityFormModal();
+  useOpenFormFromRouteState(formModal);
 
   const {
     items,
@@ -68,7 +70,7 @@ export const PlansPage: React.FC = () => {
       accessor: (p: { id: string }) => (
         <div className="flex justify-end">
           <button
-            onClick={() => navigate(`/plans/${p.id}/edit`)}
+            onClick={() => formModal.openEdit(p.id)}
             className="text-slate-500 hover:text-indigo-600 p-2"
           >
             <Edit2 className="w-4 h-4" />
@@ -105,7 +107,7 @@ export const PlansPage: React.FC = () => {
 
         <div className="w-10 shrink-0 flex items-center justify-end">
           <button
-            onClick={() => navigate(`/plans/${p.id}/edit`)}
+            onClick={() => formModal.openEdit(p.id)}
             className="p-2 text-slate-400 hover:text-indigo-600"
           >
             <Edit2 className="w-4 h-4" />
@@ -133,7 +135,7 @@ export const PlansPage: React.FC = () => {
           activeFilterCount={activeFilterCount}
           primaryAction={{
             label: 'Novo',
-            onClick: () => navigate('/plans/new'),
+            onClick: formModal.openCreate,
           }}
         />
       }
@@ -155,6 +157,8 @@ export const PlansPage: React.FC = () => {
         mobileHeaderTitles={['Nome', 'Preço']}
         isLoading={isLoading}
       />
+
+      <PlanFormModal isOpen={formModal.isOpen} editId={formModal.editId} onClose={formModal.close} />
 
       <Modal
         isOpen={!!deleteId}

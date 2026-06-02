@@ -359,7 +359,8 @@ export const DashboardPage: React.FC = () => {
               {expirations.map((customer) => (
                 <li key={customer.id}>
                   <Link
-                    to={`/customers/${customer.id}/edit`}
+                    to="/customers"
+                    state={{ form: 'edit', id: customer.id }}
                     className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors"
                   >
                     <div className="min-w-0">
@@ -391,7 +392,8 @@ export const DashboardPage: React.FC = () => {
           <h2 className="text-base font-semibold text-slate-900 mb-4">Ações rápidas</h2>
           <div className="space-y-2">
             <Link
-              to="/customers/new"
+              to="/customers"
+              state={{ form: 'create' }}
               className="flex items-center gap-3 w-full px-4 py-3 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -405,14 +407,16 @@ export const DashboardPage: React.FC = () => {
               Gerenciar clientes
             </Link>
             <Link
-              to="/plans/new"
+              to="/plans"
+              state={{ form: 'create' }}
               className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
             >
               <CreditCard className="w-4 h-4" />
               Novo plano
             </Link>
             <Link
-              to="/servers/new"
+              to="/servers"
+              state={{ form: 'create' }}
               className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
             >
               <Server className="w-4 h-4" />

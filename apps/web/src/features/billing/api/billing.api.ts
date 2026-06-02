@@ -2,12 +2,14 @@ import { api } from '../../../shared/api/api.client';
 import { toListQueryParams } from '../../../shared/api/list-params';
 import type { PaginatedListParams } from '../../../shared/hooks/usePaginatedList';
 import type {
+  CreateManualInvoiceInput,
   InvoiceDetailDto,
   InvoiceListItem,
   PaginatedResponse,
   PaymentDetailDto,
   PaymentListItem,
   PlatformSettingsDto,
+  RegisterPaymentInput,
   TenantSettingsDto,
 } from '@client-manager/shared';
 
@@ -124,8 +126,16 @@ export const tenantBillingApi = {
     const { data } = await api.post(`/invoices/${invoiceId}/generate-pix`);
     return data;
   },
-  markPaid: async (invoiceId: string) => {
-    const { data } = await api.post(`/invoices/${invoiceId}/mark-paid`);
+  markPaid: async (invoiceId: string, payload?: RegisterPaymentInput) => {
+    const { data } = await api.post(`/invoices/${invoiceId}/mark-paid`, payload ?? {});
+    return data;
+  },
+  createInvoice: async (payload: CreateManualInvoiceInput): Promise<InvoiceDetailDto> => {
+    const { data } = await api.post('/invoices', payload);
+    return data;
+  },
+  registerPayment: async (invoiceId: string, payload: RegisterPaymentInput) => {
+    const { data } = await api.post(`/invoices/${invoiceId}/register-payment`, payload);
     return data;
   },
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { PasswordInput } from '../../../shared/ui/forms/PasswordInput';
+import { formInputClass, formLabelClass } from '../../../shared/ui/forms/form-styles';
 
 export interface AdminProfileFormValues {
   email: string;
@@ -60,12 +61,14 @@ export const AdminProfileForm = React.forwardRef<HTMLFormElement, AdminProfileFo
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">E-mail administrativo</label>
-          <input
-            type="email"
-            {...register('email', { required: 'E-mail obrigatório' })}
-            className="mt-1 block w-full max-w-md rounded-md border border-slate-300 p-2 shadow-sm"
-          />
+          <label className="block">
+            <span className={formLabelClass}>E-mail administrativo</span>
+            <input
+              type="email"
+              {...register('email', { required: 'E-mail obrigatório' })}
+              className={`${formInputClass} max-w-md`}
+            />
+          </label>
           {errors.email && (
             <span className="text-xs text-red-500">{errors.email.message}</span>
           )}

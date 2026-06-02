@@ -2,19 +2,21 @@ import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tenantsApi } from '../api/admin.api';
 import { Users, Key, Edit2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { ResetPasswordModal } from './ResetPasswordModal';
+import { AccountFormModal } from '../components/AccountFormModal';
+import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
 import { showToast } from '../../../shared/utils/toast';
 import type { AccountListItem } from '@client-manager/shared';
 
 export const AccountsPage: React.FC = () => {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const formModal = useEntityFormModal();
+  useOpenFormFromRouteState(formModal);
   const [resetUser, setResetUser] = React.useState<{
     id: string;
     name: string;
@@ -99,7 +101,7 @@ export const AccountsPage: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => navigate(`/admin/accounts/${a.id}/edit`)}
+            onClick={() => formModal.openEdit(a.id)}
             className="p-2 text-slate-500 hover:text-indigo-600"
             aria-label="Editar conta"
           >
@@ -146,7 +148,7 @@ export const AccountsPage: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => navigate(`/admin/accounts/${a.id}/edit`)}
+            onClick={() => formModal.openEdit(a.id)}
             className="p-2 text-slate-400 hover:text-indigo-600"
             aria-label="Editar conta"
           >
@@ -167,7 +169,7 @@ export const AccountsPage: React.FC = () => {
           currentFilter={filter}
           primaryAction={{
             label: 'Nova',
-            onClick: () => navigate('/admin/accounts/new'),
+            onClick: formModal.openCreate,
           }}
         />
       }
@@ -189,6 +191,8 @@ export const AccountsPage: React.FC = () => {
         mobileHeaderTitles={['Nome', 'Status']}
         isLoading={isLoading}
       />
+
+      <AccountFormModal isOpen={formModal.isOpen} editId={formModal.editId} onClose={formModal.close} />
 
       <ResetPasswordModal
         userId={resetUser?.id || null}

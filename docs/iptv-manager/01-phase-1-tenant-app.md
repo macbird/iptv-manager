@@ -115,8 +115,8 @@ Ver [03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md) e [10-b
 ### Checklist
 
 - [ ] Criar fatura manual e automática (`billing_cycle_key`)
-- [ ] `POST /invoices/:id/charge-pix` — router escolhe PSP por `amountCents`
-- [ ] Webhook `POST /api/webhooks/pix/:tenantSlug/:provider` com idempotência (P0.3)
+- [ ] `POST /invoices/:id/generate-payment` (alias `generate-pix`) — router escolhe PSP por `amountCents`; adapter define EMV ou link
+- [ ] Webhook `POST /api/webhooks/payment/:tenantSlug/:provider` com idempotência (P0.3)
 - [ ] Baixa manual `POST /payments` (method=manual)
 - [ ] Front: `/invoices`, `/payments`, aba no cliente
 

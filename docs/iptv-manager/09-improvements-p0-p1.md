@@ -47,7 +47,7 @@ Checklist de melhorias **recomendadas** para incluir na Fase 1 e fases de billin
 | **O quê** | UNIQUE em `payment.provider_payment_id`; ignorar replay com mesmo ID |
 | **Por quê** | PSP pode reenviar webhook → baixa duplicada |
 | **Onde** | Módulo `billing` — **Fase 2.5** (webhook platform) e **Fase 3** (webhook tenant) |
-| **Rotas** | `POST /api/webhooks/pix/platform` · `POST /api/webhooks/pix/:tenantSlug` |
+| **Rotas** | `POST /api/webhooks/payment/platform` · `POST /api/webhooks/payment/:tenantSlug/:provider` (alias legado `/webhooks/pix/...`) |
 | **Log** | `audit_log` se tentativa duplicada |
 
 ---

@@ -3,14 +3,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { customersApi } from '../api/customers.api';
 import { plansApi } from '../../plans/api/plans.api';
 import { Edit2, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../../shared/ui/modals/Modal';
+import { CustomerFormModal } from '../components/CustomerFormModal';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
+import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import {
   CUSTOMER_FILTER_FIELDS,
@@ -24,9 +25,10 @@ import {
 } from '@client-manager/shared';
 
 export const CustomersPage: React.FC = () => {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const formModal = useEntityFormModal();
+  useOpenFormFromRouteState(formModal);
 
   const {
     items,
@@ -91,7 +93,7 @@ export const CustomersPage: React.FC = () => {
       accessor: (c: CustomerListItem) => (
         <div className="flex justify-end">
           <button
-            onClick={() => navigate(`/customers/${c.id}/edit`)}
+            onClick={() => formModal.openEdit(c.id)}
             className="text-slate-500 hover:text-indigo-600 p-2"
           >
             <Edit2 className="w-4 h-4" />
@@ -156,7 +158,7 @@ export const CustomersPage: React.FC = () => {
             <div className="flex items-center justify-end">
               <button
                 type="button"
-                onClick={() => navigate(`/customers/${c.id}/edit`)}
+                onClick={() => formModal.openEdit(c.id)}
                 className="p-2 text-slate-400 hover:text-indigo-600"
                 aria-label="Editar cliente"
               >
@@ -189,7 +191,7 @@ export const CustomersPage: React.FC = () => {
           activeFilterCount={activeFilterCount}
           primaryAction={{
             label: 'Novo',
-            onClick: () => navigate('/customers/new'),
+            onClick: formModal.openCreate,
           }}
         />
       }
@@ -210,6 +212,12 @@ export const CustomersPage: React.FC = () => {
         renderMobileCard={renderMobileCard}
         mobileHeaderTitles={['Nome', 'Plano', 'Venc']}
         isLoading={isLoading}
+      />
+
+      <CustomerFormModal
+        isOpen={formModal.isOpen}
+        editId={formModal.editId}
+        onClose={formModal.close}
       />
 
       <Modal

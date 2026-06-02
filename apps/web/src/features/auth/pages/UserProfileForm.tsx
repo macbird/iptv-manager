@@ -1,6 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { PasswordInput } from '../../../shared/ui/forms/PasswordInput';
+import { formInputClass, formLabelClass } from '../../../shared/ui/forms/form-styles';
 
 export interface UserProfileFormValues {
   name: string;
@@ -76,22 +77,26 @@ export const UserProfileForm = React.forwardRef<HTMLFormElement, UserProfileForm
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Nome</label>
-            <input
-              {...register('name', { required: 'Nome obrigatório' })}
-              className="mt-1 block w-full rounded-md border border-slate-300 p-2 shadow-sm"
-            />
+            <label className="block">
+              <span className={formLabelClass}>Nome</span>
+              <input
+                {...register('name', { required: 'Nome obrigatório' })}
+                className={formInputClass}
+              />
+            </label>
             {errors.name && (
               <span className="text-xs text-red-500">{errors.name.message}</span>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">E-mail</label>
-            <input
-              type="email"
-              {...register('email', { required: 'E-mail obrigatório' })}
-              className="mt-1 block w-full rounded-md border border-slate-300 p-2 shadow-sm"
-            />
+            <label className="block">
+              <span className={formLabelClass}>E-mail</span>
+              <input
+                type="email"
+                {...register('email', { required: 'E-mail obrigatório' })}
+                className={formInputClass}
+              />
+            </label>
             {errors.email && (
               <span className="text-xs text-red-500">{errors.email.message}</span>
             )}

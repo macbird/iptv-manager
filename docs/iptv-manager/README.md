@@ -7,7 +7,7 @@ Documentação para implementar o sistema com **Cursor**, em **fases**, com **fr
 | [00-architecture-modular.md](./00-architecture-modular.md) | Monorepo, módulos, limites de dependência |
 | [01-phase-1-tenant-app.md](./01-phase-1-tenant-app.md) | Fase 1 — app revendedor; passos 4+ = Fase 3 (billing tenant) |
 | [02-phase-2-admin-panel.md](./02-phase-2-admin-panel.md) | Fase 2 — painel admin (✅) + rotas/telas previstas 2.5 |
-| [03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md) | PIX, WhatsApp, adapters |
+| [03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md) | PIX híbrido (EMV + link), WhatsApp, adapters (Asaas, MP, PushinPay, InfinitePay) |
 | [04-open-questions.md](./04-open-questions.md) | Decisões de produto (fechadas) |
 | [09-improvements-p0-p1.md](./09-improvements-p0-p1.md) | **Melhorias P0 + P1 (checklist)** |
 | [10-billing-dual-layer.md](./10-billing-dual-layer.md) | **Cobrança dupla: plataforma → tenant e tenant → cliente** |
@@ -15,6 +15,7 @@ Documentação para implementar o sistema com **Cursor**, em **fases**, com **fr
 | [06-pwa-responsive.md](./06-pwa-responsive.md) | **PWA + layout responsivo (obrigatório)** |
 | [07-mobile-cards-ux.md](./07-mobile-cards-ux.md) | **Listas em cards (não tabelas)** |
 | [08-mobile-desktop-experience.md](./08-mobile-desktop-experience.md) | **UX celular + navegador desktop** |
+| [11-payment-and-activations.md](./11-payment-and-activations.md) | **Automação D-N, ativações pendentes, pagamento manual** |
 | [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) | **Progresso real da implementação** |
 | [RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md) | **Checklist de release (staging/prod)** |
 | [../CLIENTE-MANAGER-SPEC-TEMP.md](../../CLIENTE-MANAGER-SPEC-TEMP.md) | Especificação funcional completa |

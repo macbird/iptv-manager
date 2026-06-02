@@ -1,5 +1,16 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
+const MODAL_SIZE_CLASS: Record<ModalSize, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-2xl',
+  '2xl': 'max-w-3xl',
+};
 
 interface ModalProps {
   isOpen: boolean;
@@ -11,6 +22,8 @@ interface ModalProps {
   cancelLabel?: string;
   /** Destructive actions (delete) use red styling; default is danger when onConfirm is set. */
   confirmTone?: 'danger' | 'primary';
+  size?: ModalSize;
+  footer?: React.ReactNode;
   children?: React.ReactNode;
 }
 
@@ -23,6 +36,8 @@ export const Modal: React.FC<ModalProps> = ({
   confirmLabel = 'Excluir',
   cancelLabel = 'Cancelar',
   confirmTone = 'danger',
+  size = 'md',
+  footer,
   children,
 }) => {
   const isConfirmDialog = Boolean(onConfirm) && !children;
@@ -47,6 +62,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
+  const sizeClass = MODAL_SIZE_CLASS[size];
+
   const confirmButtonClass =
     confirmTone === 'danger'
       ? 'text-red-600 active:bg-red-50'
@@ -57,7 +74,7 @@ export const Modal: React.FC<ModalProps> = ({
       ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500/30'
       : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500/30';
 
-  return (
+  const modalContent = (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-4"
       role="dialog"
@@ -138,7 +155,7 @@ export const Modal: React.FC<ModalProps> = ({
       ) : (
         <>
           {/* Mobile: content bottom sheet */}
-          <div className="relative z-10 flex max-h-[min(92dvh,640px)] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl md:hidden animate-modal-sheet">
+          <div className={`relative z-10 flex max-h-[min(92dvh,720px)] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl md:hidden animate-modal-sheet ${sizeClass}`}>
             <div className="flex shrink-0 justify-center pt-2">
               <span className="h-1 w-10 rounded-full bg-slate-200" aria-hidden />
             </div>
@@ -159,10 +176,11 @@ export const Modal: React.FC<ModalProps> = ({
               {description && <p className="mb-4 text-sm text-slate-600">{description}</p>}
               {children}
             </div>
+            {footer ? <div className="shrink-0 border-t border-slate-100 px-4 py-4">{footer}</div> : null}
           </div>
 
           {/* Desktop: content dialog */}
-          <div className="relative z-10 hidden w-full max-w-md md:block animate-modal-dialog">
+          <div className={`relative z-10 hidden w-full ${sizeClass} md:block animate-modal-dialog`}>
             <div className="flex max-h-[min(90vh,720px)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/5">
               <div className="flex shrink-0 items-start justify-between border-b border-slate-100 px-5 py-4">
                 <h3 id="modal-title" className="text-lg font-semibold text-slate-900">
@@ -181,10 +199,13 @@ export const Modal: React.FC<ModalProps> = ({
                 {description && <p className="mb-4 text-sm text-slate-600">{description}</p>}
                 {children}
               </div>
+              {footer ? <div className="shrink-0 border-t border-slate-100 px-5 py-4">{footer}</div> : null}
             </div>
           </div>
         </>
       )}
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

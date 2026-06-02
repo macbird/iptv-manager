@@ -5,7 +5,8 @@ import { ArrowLeft, Copy, RotateCcw, XCircle } from 'lucide-react';
 import { platformBillingApi, tenantBillingApi } from '../api/billing.api';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
-import { Modal } from '../../../shared/ui/modals/Modal';
+import { FormModal } from '../../../shared/ui/modals/FormModal';
+import { formInputClass, formLabelClass, formTextareaClass } from '../../../shared/ui/forms/form-styles';
 import { DetailGrid, DetailItem, DetailSection } from '../components/BillingDetailFields';
 import { formatCents, formatPaymentMethod } from '../../../shared/ui/billing/format-billing';
 import {
@@ -317,76 +318,65 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
         </DetailSection>
       </div>
 
-      <Modal
+      <FormModal
         isOpen={cancelOpen}
         onClose={() => setCancelOpen(false)}
         title="Cancelar fatura?"
         description="A fatura não poderá receber pagamentos. Você poderá emitir uma substituta em seguida."
+        saveLabel="Cancelar fatura"
+        pendingLabel="Cancelando..."
+        saveTone="danger"
+        isPending={cancelMutation.isPending}
+        onSave={() => cancelMutation.mutate()}
       >
         <label className="block">
-          <span className="text-xs font-medium text-slate-500">Motivo (opcional)</span>
+          <span className={formLabelClass}>Motivo (opcional)</span>
           <textarea
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}
             rows={2}
-            className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+            className={formTextareaClass}
             placeholder="Ex.: valor incorreto"
           />
         </label>
-        <div className="mt-4 flex gap-2">
-          <button
-            type="button"
-            onClick={() => setCancelOpen(false)}
-            className="flex-1 rounded-md border border-slate-200 py-2.5 text-sm font-medium text-slate-700"
-          >
-            Voltar
-          </button>
-          <button
-            type="button"
-            disabled={cancelMutation.isPending}
-            onClick={() => cancelMutation.mutate()}
-            className="flex-1 rounded-md bg-red-600 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-          >
-            {cancelMutation.isPending ? 'Cancelando...' : 'Cancelar fatura'}
-          </button>
-        </div>
-      </Modal>
+      </FormModal>
 
-      <Modal isOpen={recreateOpen} onClose={() => setRecreateOpen(false)} title="Emitir fatura substituta">
+      <FormModal
+        isOpen={recreateOpen}
+        onClose={() => setRecreateOpen(false)}
+        title="Emitir fatura substituta"
+        saveLabel="Criar fatura substituta"
+        pendingLabel="Criando..."
+        isPending={recreateMutation.isPending}
+        onSave={() => recreateMutation.mutate()}
+        size="md"
+      >
         <p className="text-sm text-slate-600">
           Mesmo ciclo <strong>{invoice.billingCycleKey}</strong>. A fatura cancelada permanece no
           histórico.
         </p>
         <div className="mt-4 space-y-4">
           <label className="block">
-            <span className="text-xs font-medium text-slate-500">Valor (R$)</span>
+            <span className={formLabelClass}>Valor (R$)</span>
             <input
               type="text"
               inputMode="decimal"
               value={amountReais}
               onChange={(e) => setAmountReais(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              className={formInputClass}
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-slate-500">Vencimento</span>
+            <span className={formLabelClass}>Vencimento</span>
             <input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              className={formInputClass}
             />
           </label>
-          <button
-            type="button"
-            disabled={recreateMutation.isPending}
-            onClick={() => recreateMutation.mutate()}
-            className="w-full rounded-md bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {recreateMutation.isPending ? 'Criando...' : 'Criar fatura substituta'}
-          </button>
         </div>
-      </Modal>
+      </FormModal>
     </PageLayout>
   );
 };

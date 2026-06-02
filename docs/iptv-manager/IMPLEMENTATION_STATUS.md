@@ -1,8 +1,8 @@
 # Status da Implementação — Cliente Manager
 
-Documento vivo: última atualização após **roteamento de PSP por valor** (credenciais multi-PSP, regras, UI em `/settings`, `PaymentRouter` no stub de PIX).
+Documento vivo: última atualização após **documentação de pagamento híbrido** (EMV copia e cola + link InfinitePay; PushinPay; contratos `PaymentProvider.createCharge`; WhatsApp `{{payment_block}}`).
 
-Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [09-improvements-p0-p1.md](./09-improvements-p0-p1.md)
+Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md) · [09-improvements-p0-p1.md](./09-improvements-p0-p1.md)
 
 ---
 
@@ -13,11 +13,12 @@ Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [09-impro
 | **1** | App do revendedor (CRUD, dashboard, tags, conexões) | ✅ Concluída |
 | **2** | Painel admin plataforma | ✅ Concluída |
 | **2.5** | **Cobrança plataforma → tenant** (SaaS mensal) | ⚠️ **Parcial (MVP UI + API stub)** |
-| **3** | Cobrança tenant → cliente final (PIX, faturas) | ⚠️ **Parcial (mesmo motor, scope tenant)** |
+| **3** | Cobrança tenant → cliente final (pagamento, faturas) | ⚠️ **Parcial (mesmo motor, scope tenant)** |
+| **3.1** | **Pagamento híbrido** (EMV + checkout link) | 📋 **Doc pronta; código pendente** |
 | **4** | Automação D-N + WhatsApp | 📋 Planejada |
 | **5** | Renovações pós-pagamento + relatórios | 📋 Planejada |
 
-**Próximo foco recomendado:** adapters PIX reais (Asaas + Mercado Pago/Efi), webhooks idempotentes por tenant+provider, job mensal de faturas SaaS.
+**Próximo foco recomendado:** adapters EMV reais (Asaas + Mercado Pago), webhooks idempotentes, depois campos híbridos (`paymentDeliveryType`, `checkoutUrl`) + InfinitePay.
 
 ---
 
@@ -83,15 +84,15 @@ Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [09-impro
 | Admin: `/admin/invoices`, `/admin/payments`, detalhes, cancelar/recriar fatura | ✅ |
 | Tenant: `/invoices`, `/payments`, detalhes, cancelar/recriar fatura | ✅ |
 | Dashboards admin + tenant com KPIs e pagamentos recentes | ✅ |
-| PIX stub + baixa manual (`generate-pix`, `mark-paid`) | ✅ stub |
+| Pagamento stub + baixa manual (`generate-pix`, `mark-paid`) | ✅ stub (só EMV fake) |
 | Filtros de listagem (status, ciclo, datas) | ✅ |
 
 ### Pendente (critério de pronto)
 
 | Item | Status |
 |------|--------|
-| Adapter PIX real (Asaas) na conta plataforma | ❌ |
-| Webhook idempotente → baixa automática | ❌ |
+| Adapter EMV real (Asaas) na conta plataforma | ❌ |
+| Webhook idempotente → baixa automática (`/webhooks/payment/...`) | ❌ |
 | Job mensal automático (`billing_cycle_key`) | ❌ |
 | Suspensão automática por inadimplência | ❌ |
 | Tenant: copiar PIX da fatura SaaS em Configurações | ⚠️ parcial (via listagem/detalhe) |
@@ -126,11 +127,31 @@ Reutiliza o **mesmo motor** com `scope = tenant`.
 
 | Item | Status |
 |------|--------|
-| PIX real por tenant (Asaas + PSP percentual) | ❌ |
+| PIX real por tenant (Asaas + PSP percentual EMV) | ❌ |
 | Webhook por tenant slug **e** provider | ❌ |
 | Faturas no detalhe do cliente | ❌ |
 | P0.3 idempotência webhook, P0.5 copiar PIX + wa.me | ❌ |
 | Job D-N automático | ❌ (Fase 4) |
+
+---
+
+## 📋 Fase 3.1 — Pagamento híbrido (EMV + link)
+
+**Documentação:** [03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md) · [10-billing-dual-layer.md](./10-billing-dual-layer.md#fase-31--pagamento-híbrido-emv--link)
+
+| Item | Status |
+|------|--------|
+| Doc: dois formatos (`emv` \| `checkout_link`) | ✅ |
+| Doc: PushinPay (EMV) + InfinitePay (link no Zap) | ✅ |
+| Doc: contrato `PaymentProvider.createCharge` | ✅ |
+| Doc: WhatsApp `{{payment_block}}` | ✅ |
+| Migration `paymentDeliveryType`, `checkoutUrl` | ❌ |
+| `generatePayment` (alias `generate-pix`) | ❌ |
+| Adapters Asaas + Mercado Pago (EMV) | ❌ |
+| Adapter InfinitePay (`checkoutUrl`) | ❌ |
+| Adapter PushinPay (opcional) | ❌ |
+| UI: copiar PIX vs abrir/copiar link | ❌ |
+| Enum Prisma: `pushinpay`, `infinitypay` | ❌ |
 
 ---
 
@@ -151,7 +172,7 @@ Ver checklist completo em [09-improvements-p0-p1.md](./09-improvements-p0-p1.md)
 
 ## 📋 Fase 4 — Automação + WhatsApp
 
-- Job D-N: fatura + PIX + template WhatsApp
+- Job D-N: fatura + pagamento + template WhatsApp com **`{{payment_block}}`** (PIX ou link)
 - Evolution API ou oficial ([03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md))
 
 ---
@@ -167,15 +188,17 @@ Ver checklist completo em [09-improvements-p0-p1.md](./09-improvements-p0-p1.md)
 
 ```mermaid
 flowchart TD
-  A[Fase 2.5: PIX real + webhook + job mensal] --> B[Fase 3: PIX tenant + webhook]
-  B --> C[Fase 4: Automation + WhatsApp]
-  C --> D[Fase 5: Renewals + Reports]
-  E[P0/P1 paralelo: E.164, busca MAC, health DB] -.-> A
+  A[Fase 2.5: EMV real + webhook + job mensal] --> B[Fase 3: EMV tenant + webhook]
+  B --> C[Fase 3.1: híbrido + InfinitePay link]
+  C --> D[Fase 4: Automation + WhatsApp payment_block]
+  D --> E[Fase 5: Renewals + Reports]
+  F[P0/P1 paralelo: E.164, busca MAC, health DB] -.-> A
 ```
 
-1. **Integração PSP real** (Asaas + percentual, factory + webhooks platform + tenant)  
-2. **Job mensal** de faturas SaaS + tenant  
-3. Automação D-N e renovações  
+1. **Integração PSP EMV** (Asaas + Mercado Pago, factory + webhooks platform + tenant)  
+2. **Campos híbridos** + adapter InfinitePay (link no Zap)  
+3. **Job mensal** de faturas SaaS + tenant  
+4. Automação D-N com `payment_block` e renovações  
 
 ---
 
@@ -183,7 +206,8 @@ flowchart TD
 
 | Item | Notas |
 |------|--------|
-| PIX / webhook | Stub; roteamento por valor pronto; falta adapter real + idempotência |
+| Pagamento / webhook | Stub EMV-only; roteamento por valor pronto; falta híbrido + adapters reais + idempotência |
+| Providers no código | Enum Prisma ainda só `asaas`, `efi`, `mercadopago` — doc prevê `pushinpay`, `infinitypay` |
 | Fatura cancelada na listagem | Permanece no banco; pode “sumir” em páginas seguintes (ordenar/filtrar por status) |
 | `FormLayout` legado | Admin/tenant usam `PageLayout` |
 | Screenshots na raiz | Não versionados |
@@ -194,7 +218,8 @@ flowchart TD
 
 ## Commits recentes (referência)
 
-- *(este commit)* — Roteamento PSP por valor: migration, API, UI settings, PaymentRouter, docs  
+- *(doc)* — Pagamento híbrido: EMV + checkout link, PushinPay, InfinitePay, WhatsApp `payment_block`  
+- *(anterior)* — Roteamento PSP por valor: migration, API, UI settings, PaymentRouter, docs  
 - `069f110` — Núcleo billing, filtros de listagem, cancel/recriar fatura  
 - `7118ddf` — Roadmap Fase 2.5 nos guias  
 - `6f2cc16` — Admin UI, busca e paginação em contas  
@@ -204,6 +229,8 @@ flowchart TD
 
 ## 🚀 Próximo passo imediato
 
-1. **`AsaasPaymentProvider`** + adapter percentual (Mercado Pago ou Efi).  
-2. **Webhooks** `POST /api/webhooks/pix/platform` e `/:tenantSlug/:provider` com idempotência.  
-3. **Job BullMQ** geração mensal de faturas SaaS.
+1. **`AsaasPaymentProvider`** + **`MercadoPagoPaymentProvider`** (EMV).  
+2. **Webhooks** `POST /api/webhooks/payment/platform` e `/:tenantSlug/:provider` com idempotência.  
+3. Migration **`paymentDeliveryType`**, **`checkoutUrl`** + **`InfinityPayProvider`** (link).  
+4. **`payment-message.util`** + template **`{{payment_block}}`** (preparar Fase 4).  
+5. **Job BullMQ** geração mensal de faturas SaaS.

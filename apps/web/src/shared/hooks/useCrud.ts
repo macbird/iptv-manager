@@ -9,6 +9,8 @@ interface CrudOptions<TData, TInput> {
   deleteFn?: (id: string) => Promise<void>;
   listPath: string;
   entityName: string;
+  navigateOnSuccess?: boolean;
+  onSuccess?: () => void;
 }
 
 export function useCrud<TData, TInput>({
@@ -18,6 +20,8 @@ export function useCrud<TData, TInput>({
   deleteFn,
   listPath,
   entityName,
+  navigateOnSuccess = true,
+  onSuccess,
 }: CrudOptions<TData, TInput>) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -27,7 +31,10 @@ export function useCrud<TData, TInput>({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       showToast.success(`${entityName} criado com sucesso!`);
-      navigate(listPath);
+      onSuccess?.();
+      if (navigateOnSuccess) {
+        navigate(listPath);
+      }
     },
     onError: (err: any) => showToast.error(err.response?.data?.message || `Erro ao criar ${entityName.toLowerCase()}`),
   });
@@ -37,7 +44,10 @@ export function useCrud<TData, TInput>({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       showToast.success(`${entityName} atualizado com sucesso!`);
-      navigate(listPath);
+      onSuccess?.();
+      if (navigateOnSuccess) {
+        navigate(listPath);
+      }
     },
     onError: (err: any) => showToast.error(err.response?.data?.message || `Erro ao atualizar ${entityName.toLowerCase()}`),
   });

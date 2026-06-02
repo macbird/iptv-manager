@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { platformBillingApi, tenantBillingApi } from '../api/billing.api';
+import { RegisterPaymentModal } from '../components/RegisterPaymentModal';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ListPagination } from '../../../shared/ui/lists/ListPagination';
@@ -9,7 +11,8 @@ import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { PAYMENT_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
-import type { PaymentListItem } from '@client-manager/shared';
+import type { PaymentListItem, RegisterPaymentInput } from '@client-manager/shared';
+import { showToast } from '../../../shared/utils/toast';
 
 interface PaymentsPageProps {
   variant: 'admin' | 'tenant';
@@ -21,9 +24,27 @@ function formatBrl(cents: number) {
 
 export const PaymentsPage: React.FC<PaymentsPageProps> = ({ variant }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const api = variant === 'admin' ? platformBillingApi : tenantBillingApi;
   const title = variant === 'admin' ? 'Pagamentos SaaS' : 'Pagamentos';
   const basePath = variant === 'admin' ? '/admin' : '';
+  const [registerOpen, setRegisterOpen] = React.useState(false);
+
+  const registerMutation = useMutation({
+    mutationFn: ({ invoiceId, payload }: { invoiceId: string; payload: RegisterPaymentInput }) =>
+      tenantBillingApi.registerPayment(invoiceId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['activations'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      setRegisterOpen(false);
+      showToast.success('Pagamento registrado');
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      showToast.error(err.response?.data?.message ?? 'Erro ao registrar pagamento');
+    },
+  });
 
   const { items, total, totalPages, page, pageSize, filters, setFilters, clearFilters, activeFilterCount, goToPreviousPage, goToNextPage, isLoading } =
     usePaginatedList<PaymentListItem>({
@@ -100,6 +121,14 @@ export const PaymentsPage: React.FC<PaymentsPageProps> = ({ variant }) => {
           showSearch={false}
           onOpenFilters={filterModal.open}
           activeFilterCount={activeFilterCount}
+          primaryAction={
+            variant === 'tenant'
+              ? {
+                  label: 'Novo',
+                  onClick: () => setRegisterOpen(true),
+                }
+              : undefined
+          }
         />
       }
       footer={
@@ -131,6 +160,15 @@ export const PaymentsPage: React.FC<PaymentsPageProps> = ({ variant }) => {
         onApply={filterModal.apply}
         onClear={filterModal.clear}
       />
+
+      {variant === 'tenant' ? (
+        <RegisterPaymentModal
+          isOpen={registerOpen}
+          isPending={registerMutation.isPending}
+          onClose={() => setRegisterOpen(false)}
+          onSubmit={(invoiceId, payload) => registerMutation.mutate({ invoiceId, payload })}
+        />
+      ) : null}
     </PageLayout>
   );
 };

@@ -3,6 +3,7 @@ import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { planSchema, type PlanInput } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
+import { formInputClass, formLabelClass, formSelectClass, formTextareaClass } from '../../../shared/ui/forms/form-styles';
 
 interface PlanFormProps {
   onSubmit: (data: PlanInput) => Promise<void>;
@@ -66,44 +67,43 @@ export const PlanForm = React.forwardRef<HTMLFormElement, PlanFormProps>(
         className="space-y-4"
       >
         <div>
-          <label className="block text-sm font-medium text-slate-700">Nome</label>
-          <input
-            {...register('name')}
-            className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-          />
+          <label className="block">
+            <span className={formLabelClass}>Nome</span>
+            <input {...register('name')} className={formInputClass} />
+          </label>
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Descrição</label>
-          <textarea
-            {...register('description')}
-            className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-          />
+          <label className="block">
+            <span className={formLabelClass}>Descrição</span>
+            <textarea {...register('description')} className={formTextareaClass} />
+          </label>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Preço (R$)</label>
-            <input
-              type="number"
-              step="0.01"
-              {...register('price', { valueAsNumber: true })}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-            />
+            <label className="block">
+              <span className={formLabelClass}>Preço (R$)</span>
+              <input
+                type="number"
+                step="0.01"
+                {...register('price', { valueAsNumber: true })}
+                className={formInputClass}
+              />
+            </label>
             {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Ciclo</label>
-            <select
-              {...register('billingCycle')}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-            >
-              <option value="monthly">Mensal</option>
-              <option value="quarterly">Trimestral</option>
-              <option value="yearly">Anual</option>
-            </select>
+            <label className="block">
+              <span className={formLabelClass}>Ciclo</span>
+              <select {...register('billingCycle')} className={formSelectClass}>
+                <option value="monthly">Mensal</option>
+                <option value="quarterly">Trimestral</option>
+                <option value="yearly">Anual</option>
+              </select>
+            </label>
             {errors.billingCycle && (
               <p className="text-red-500 text-xs mt-1">{errors.billingCycle.message}</p>
             )}
@@ -112,26 +112,27 @@ export const PlanForm = React.forwardRef<HTMLFormElement, PlanFormProps>(
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Conexões</label>
-            <input
-              type="number"
-              {...register('maxConnections', { valueAsNumber: true })}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-            />
+            <label className="block">
+              <span className={formLabelClass}>Conexões</span>
+              <input
+                type="number"
+                {...register('maxConnections', { valueAsNumber: true })}
+                className={formInputClass}
+              />
+            </label>
             {errors.maxConnections && (
               <p className="text-red-500 text-xs mt-1">{errors.maxConnections.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Status</label>
-            <select
-              {...register('status')}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
-            >
-              <option value="active">Ativo</option>
-              <option value="archived">Arquivado</option>
-            </select>
+            <label className="block">
+              <span className={formLabelClass}>Status</span>
+              <select {...register('status')} className={formSelectClass}>
+                <option value="active">Ativo</option>
+                <option value="archived">Arquivado</option>
+              </select>
+            </label>
           </div>
         </div>
       </form>

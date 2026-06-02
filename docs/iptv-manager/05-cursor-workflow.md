@@ -34,7 +34,7 @@ alwaysApply: true
 - New backend code: one module per domain under apps/api/src/modules/.
 - New frontend code: one feature under apps/web/src/features/.
 - Business rules: read docs/SPEC.md and docs/client-manager/01-phase-1-tenant-app.md.
-- PIX: use PaymentProvider adapter only; no direct PSP calls outside integrations/payment.
+- PIX / pagamento: use `PaymentProvider` adapter only (`emv` ou `checkout_link`); no direct PSP calls outside integrations/payment. Ver docs/iptv-manager/03-integrations-pix-whatsapp.md.
 - WhatsApp: use WhatsAppProvider adapter only.
 - Language: user-facing app strings PT-BR; code, commits, javadoc/comments EN.
 - Do not implement Phase 2 admin routes until Phase 1 checklist is done.

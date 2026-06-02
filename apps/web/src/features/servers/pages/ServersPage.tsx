@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { serversApi } from '../api/servers.api';
 import { Edit2, Trash2, Server, ExternalLink } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../../shared/ui/modals/Modal';
+import { ServerFormModal } from '../components/ServerFormModal';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
@@ -12,11 +12,13 @@ import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { SERVER_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
+import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
 
 export const ServersPage: React.FC = () => {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const formModal = useEntityFormModal();
+  useOpenFormFromRouteState(formModal);
 
   const {
     items,
@@ -71,7 +73,7 @@ export const ServersPage: React.FC = () => {
       accessor: (s: { id: string }) => (
         <div className="flex justify-end">
           <button
-            onClick={() => navigate(`/servers/${s.id}/edit`)}
+            onClick={() => formModal.openEdit(s.id)}
             className="text-slate-500 hover:text-indigo-600 p-2"
           >
             <Edit2 className="w-4 h-4" />
@@ -113,7 +115,7 @@ export const ServersPage: React.FC = () => {
 
         <div className="w-10 shrink-0 flex items-center justify-end">
           <button
-            onClick={() => navigate(`/servers/${s.id}/edit`)}
+            onClick={() => formModal.openEdit(s.id)}
             className="p-2 text-slate-400 hover:text-indigo-600"
           >
             <Edit2 className="w-4 h-4" />
@@ -141,7 +143,7 @@ export const ServersPage: React.FC = () => {
           activeFilterCount={activeFilterCount}
           primaryAction={{
             label: 'Novo',
-            onClick: () => navigate('/servers/new'),
+            onClick: formModal.openCreate,
           }}
         />
       }
@@ -163,6 +165,8 @@ export const ServersPage: React.FC = () => {
         mobileHeaderTitles={['Nome', 'Conex.']}
         isLoading={isLoading}
       />
+
+      <ServerFormModal isOpen={formModal.isOpen} editId={formModal.editId} onClose={formModal.close} />
 
       <Modal
         isOpen={!!deleteId}

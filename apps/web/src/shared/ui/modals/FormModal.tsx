@@ -1,0 +1,74 @@
+import React from 'react';
+import { Modal, type ModalSize } from './Modal';
+import {
+  formCancelButtonClass,
+  formDangerSubmitButtonClass,
+  formSubmitButtonClass,
+} from '../forms/form-styles';
+
+interface FormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  onSave: () => void;
+  isPending?: boolean;
+  saveLabel?: string;
+  pendingLabel?: string;
+  cancelLabel?: string;
+  size?: ModalSize;
+  hideCancel?: boolean;
+  saveDisabled?: boolean;
+  saveTone?: 'primary' | 'danger';
+}
+
+export const FormModal: React.FC<FormModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  description,
+  children,
+  onSave,
+  isPending = false,
+  saveLabel = 'Salvar',
+  pendingLabel = 'Salvando...',
+  cancelLabel = 'Cancelar',
+  size = 'md',
+  hideCancel = false,
+  saveDisabled = false,
+  saveTone = 'primary',
+}) => {
+  const submitClass = saveTone === 'danger' ? formDangerSubmitButtonClass : formSubmitButtonClass;
+
+  const footer = (
+    <div className="flex gap-2">
+      {!hideCancel ? (
+        <button type="button" onClick={onClose} className={formCancelButtonClass} disabled={isPending}>
+          {cancelLabel}
+        </button>
+      ) : null}
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={isPending || saveDisabled}
+        className={`${submitClass}${hideCancel ? ' w-full' : ''}`}
+      >
+        {isPending ? pendingLabel : saveLabel}
+      </button>
+    </div>
+  );
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      description={description}
+      size={size}
+      footer={footer}
+    >
+      {children}
+    </Modal>
+  );
+};

@@ -127,12 +127,13 @@ apps/web/src/
 
 ```
 apps/api/src/integrations/payment/
-├── payment-provider.interface.ts
+├── payment-provider.interface.ts   # emv | checkout_link
 ├── asaas.provider.ts
+├── infinitypay.provider.ts         # futuro — checkout_link
 └── payment-provider.factory.ts   # credencial platform vs tenant
 ```
 
-Webhooks: `POST /api/webhooks/pix/platform` e `POST /api/webhooks/pix/:tenantSlug` — ver [10-billing-dual-layer.md](./10-billing-dual-layer.md).
+Webhooks: `POST /api/webhooks/payment/platform` e `POST /api/webhooks/payment/:tenantSlug/:provider` — ver [10-billing-dual-layer.md](./10-billing-dual-layer.md) e [03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md).
 
 ### Regras (frontend)
 

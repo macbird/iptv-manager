@@ -119,6 +119,19 @@ export const INVOICE_FILTER_FIELDS: ListFilterFieldDef[] = [
   },
 ];
 
+export const ACTIVATION_FILTER_FIELDS: ListFilterFieldDef[] = [
+  {
+    key: 'status',
+    label: 'Status',
+    type: 'select',
+    options: [
+      { value: 'pending', label: 'Pendente' },
+      { value: 'completed', label: 'Concluída' },
+      { value: 'cancelled', label: 'Cancelada' },
+    ],
+  },
+];
+
 export const PAYMENT_FILTER_FIELDS: ListFilterFieldDef[] = [
   {
     key: 'method',

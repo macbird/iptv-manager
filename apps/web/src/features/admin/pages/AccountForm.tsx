@@ -1,6 +1,11 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { PasswordInput } from '../../../shared/ui/forms/PasswordInput';
+import {
+  formInputClass,
+  formLabelClass,
+  formSelectClass,
+} from '../../../shared/ui/forms/form-styles';
 
 export interface AccountCreateInput {
   name: string;
@@ -74,33 +79,32 @@ export const AccountForm = React.forwardRef<HTMLFormElement, AccountFormProps>(
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Nome da conta</label>
+            <label className="block">
+              <span className={formLabelClass}>Nome da conta</span>
               <input
                 {...register('name')}
                 disabled
-                className="mt-1 block w-full cursor-not-allowed rounded-md border border-slate-200 bg-slate-100 p-2 text-slate-600 shadow-sm"
+                className={`${formInputClass} cursor-not-allowed bg-slate-100 text-slate-600`}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Slug</label>
+            </label>
+            <label className="block">
+              <span className={formLabelClass}>Slug</span>
               <input
                 {...register('slug')}
                 disabled
-                className="mt-1 block w-full cursor-not-allowed rounded-md border border-slate-200 bg-slate-100 p-2 font-mono text-sm text-slate-600 shadow-sm"
+                className={`${formInputClass} cursor-not-allowed bg-slate-100 font-mono text-slate-600`}
               />
-            </div>
+            </label>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Status da conta</label>
-            <select
-              {...register('status', { required: true })}
-              className="mt-1 block w-full max-w-xs rounded-md border border-slate-300 p-2 shadow-sm"
-            >
-              <option value="active">Ativa</option>
-              <option value="suspended">Suspensa</option>
-            </select>
+            <label className="block">
+              <span className={formLabelClass}>Status da conta</span>
+              <select {...register('status', { required: true })} className={`${formSelectClass} max-w-xs`}>
+                <option value="active">Ativa</option>
+                <option value="suspended">Suspensa</option>
+              </select>
+            </label>
             <p className="mt-1 text-xs text-slate-500">
               Contas suspensas não conseguem fazer login no app do revendedor.
             </p>
@@ -134,20 +138,24 @@ export const AccountForm = React.forwardRef<HTMLFormElement, AccountFormProps>(
       <form ref={ref} onSubmit={onSubmitHandler} className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Nome da empresa/revenda</label>
-            <input
-              {...register('name', { required: true })}
-              className="mt-1 block w-full rounded-md border border-slate-300 p-2 shadow-sm"
-              placeholder="Ex: Revenda Master"
-            />
+            <label className="block">
+              <span className={formLabelClass}>Nome da empresa/revenda</span>
+              <input
+                {...register('name', { required: true })}
+                className={formInputClass}
+                placeholder="Ex: Revenda Master"
+              />
+            </label>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">Slug (URL)</label>
-            <input
-              {...register('slug')}
-              className="mt-1 block w-full rounded-md border border-slate-300 p-2 shadow-sm"
-              placeholder="ex: revenda-master"
-            />
+            <label className="block">
+              <span className={formLabelClass}>Slug (URL)</span>
+              <input
+                {...register('slug')}
+                className={formInputClass}
+                placeholder="ex: revenda-master"
+              />
+            </label>
           </div>
         </div>
 
@@ -155,21 +163,25 @@ export const AccountForm = React.forwardRef<HTMLFormElement, AccountFormProps>(
           <h3 className="mb-4 text-sm font-medium text-slate-900">Dados do proprietário</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Nome do usuário</label>
-              <input
-                {...register('ownerName', { required: true })}
-                className="mt-1 block w-full rounded-md border border-slate-300 p-2 shadow-sm"
-                placeholder="Ex: João Silva"
-              />
+              <label className="block">
+                <span className={formLabelClass}>Nome do usuário</span>
+                <input
+                  {...register('ownerName', { required: true })}
+                  className={formInputClass}
+                  placeholder="Ex: João Silva"
+                />
+              </label>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">E-mail de acesso</label>
-              <input
-                type="email"
-                {...register('ownerEmail', { required: true })}
-                className="mt-1 block w-full rounded-md border border-slate-300 p-2 shadow-sm"
-                placeholder="joao@email.com"
-              />
+              <label className="block">
+                <span className={formLabelClass}>E-mail de acesso</span>
+                <input
+                  type="email"
+                  {...register('ownerEmail', { required: true })}
+                  className={formInputClass}
+                  placeholder="joao@email.com"
+                />
+              </label>
             </div>
           </div>
 

@@ -4,18 +4,10 @@ import { ChangePasswordPage } from './features/auth/pages/ChangePasswordPage';
 import { AppShell } from './app/layouts/AppShell';
 import { AdminShell } from './app/layouts/AdminShell';
 import { PlansPage } from './features/plans/pages/PlansPage';
-import { CreatePlanPage } from './features/plans/pages/CreatePlanPage';
-import { EditPlanPage } from './features/plans/pages/EditPlanPage';
 import { ServersPage } from './features/servers/pages/ServersPage';
-import { CreateServerPage } from './features/servers/pages/CreateServerPage';
-import { EditServerPage } from './features/servers/pages/EditServerPage';
 import { CustomersPage } from './features/customers/pages/CustomersPage';
-import { CreateCustomerPage } from './features/customers/pages/CreateCustomerPage';
-import { EditCustomerPage } from './features/customers/pages/EditCustomerPage';
 import { AdminLoginPage } from './features/admin/pages/AdminLoginPage';
 import { AccountsPage } from './features/admin/pages/AccountsPage';
-import { CreateAccountPage } from './features/admin/pages/CreateAccountPage';
-import { EditAccountPage } from './features/admin/pages/EditAccountPage';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { DashboardPage } from './features/dashboard/pages/DashboardPage';
 import { UserProfilePage } from './features/auth/pages/UserProfilePage';
@@ -24,8 +16,10 @@ import { InvoicesPage } from './features/billing/pages/InvoicesPage';
 import { InvoiceDetailPage } from './features/billing/pages/InvoiceDetailPage';
 import { PaymentsPage } from './features/billing/pages/PaymentsPage';
 import { PaymentDetailPage } from './features/billing/pages/PaymentDetailPage';
+import { ActivationsPage } from './features/activations/pages/ActivationsPage';
 import { AdminProfilePage } from './features/admin/pages/AdminProfilePage';
 import { AdminSettingsPage } from './features/admin/pages/AdminSettingsPage';
+import { CreateFormRedirect, EditFormRedirect } from './app/routes/FormRouteRedirect';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient({
@@ -66,115 +60,61 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <AppShell>
                   <DashboardPage />
                 </AppShell>
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/plans" 
+          <Route
+            path="/plans"
             element={
               <ProtectedRoute>
                 <AppShell>
                   <PlansPage />
                 </AppShell>
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/plans/new" 
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <CreatePlanPage />
-                </AppShell>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/plans/:id/edit" 
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <EditPlanPage />
-                </AppShell>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/servers" 
+          <Route path="/plans/new" element={<CreateFormRedirect to="/plans" />} />
+          <Route path="/plans/:id/edit" element={<EditFormRedirect to="/plans" />} />
+          <Route
+            path="/servers"
             element={
               <ProtectedRoute>
                 <AppShell>
                   <ServersPage />
                 </AppShell>
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/servers/new" 
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <CreateServerPage />
-                </AppShell>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/servers/:id/edit" 
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <EditServerPage />
-                </AppShell>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/customers" 
+          <Route path="/servers/new" element={<CreateFormRedirect to="/servers" />} />
+          <Route path="/servers/:id/edit" element={<EditFormRedirect to="/servers" />} />
+          <Route
+            path="/customers"
             element={
               <ProtectedRoute>
                 <AppShell>
                   <CustomersPage />
                 </AppShell>
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/customers/new" 
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <CreateCustomerPage />
-                </AppShell>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/customers/:id/edit" 
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <EditCustomerPage />
-                </AppShell>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/profile" 
+          <Route path="/customers/new" element={<CreateFormRedirect to="/customers" />} />
+          <Route path="/customers/:id/edit" element={<EditFormRedirect to="/customers" />} />
+          <Route
+            path="/profile"
             element={
               <ProtectedRoute>
                 <AppShell>
                   <UserProfilePage />
                 </AppShell>
               </ProtectedRoute>
-            } 
+            }
           />
           <Route
             path="/settings"
@@ -196,6 +136,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/invoices/new" element={<CreateFormRedirect to="/invoices" />} />
           <Route
             path="/invoices/:id"
             element={
@@ -226,57 +167,49 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/activations"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <ActivationsPage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
           <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route 
-            path="/admin/dashboard" 
+          <Route
+            path="/admin/dashboard"
             element={
               <AdminProtectedRoute>
                 <AdminShell>
                   <AdminDashboardPage />
                 </AdminShell>
               </AdminProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/admin/profile" 
+          <Route
+            path="/admin/profile"
             element={
               <AdminProtectedRoute>
                 <AdminShell>
                   <AdminProfilePage />
                 </AdminShell>
               </AdminProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/admin/accounts" 
+          <Route
+            path="/admin/accounts"
             element={
               <AdminProtectedRoute>
                 <AdminShell>
                   <AccountsPage />
                 </AdminShell>
               </AdminProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/admin/accounts/new" 
-            element={
-              <AdminProtectedRoute>
-                <AdminShell>
-                  <CreateAccountPage />
-                </AdminShell>
-              </AdminProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/accounts/:id/edit" 
-            element={
-              <AdminProtectedRoute>
-                <AdminShell>
-                  <EditAccountPage />
-                </AdminShell>
-              </AdminProtectedRoute>
-            } 
-          />
+          <Route path="/admin/accounts/new" element={<CreateFormRedirect to="/admin/accounts" />} />
+          <Route path="/admin/accounts/:id/edit" element={<EditFormRedirect to="/admin/accounts" />} />
           <Route
             path="/admin/settings"
             element={

@@ -8,6 +8,12 @@ import { Trash2, Plus } from 'lucide-react';
 import { TagInputChips } from '../../../shared/ui/forms/TagInputChips';
 import { MacAddressInput } from '../../../shared/ui/forms/MacAddressInput';
 import { CUSTOMER_STATUS_LABELS, CUSTOMER_STATUS_VALUES } from '@client-manager/shared';
+import {
+  formInputClass,
+  formLabelClass,
+  formSelectClass,
+  formTextareaClass,
+} from '../../../shared/ui/forms/form-styles';
 
 const MAC_ADDRESS_PATTERN = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
 
@@ -92,26 +98,26 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
       <form ref={ref} onSubmit={onSubmitHandler} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Nome</label>
+            <label className="block text-xs font-medium text-slate-500">Nome</label>
             <input
               {...register('name', { required: true })}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+              className={formInputClass}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">E-mail</label>
+            <label className="block text-xs font-medium text-slate-500">E-mail</label>
             <input
               type="email"
               {...register('email')}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+              className={formInputClass}
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Telefone</label>
+            <label className="block text-xs font-medium text-slate-500">Telefone</label>
             <Controller
               name="phone"
               control={control}
@@ -120,17 +126,17 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
                   {...field}
                   format="(##) #####-####"
                   mask="_"
-                  className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+                  className={formInputClass}
                 />
               )}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Plano</label>
+            <label className="block text-xs font-medium text-slate-500">Plano</label>
             <select
               {...register('planId')}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+              className={formInputClass}
             >
               <option value="">Selecione um plano</option>
               {plans?.data?.map((plan: { id: string; name: string }) => (
@@ -142,10 +148,10 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Status</label>
+            <label className="block text-xs font-medium text-slate-500">Status</label>
             <select
               {...register('status')}
-              className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+              className={formInputClass}
             >
               {CUSTOMER_STATUS_VALUES.map((value) => (
                 <option key={value} value={value}>
@@ -175,7 +181,7 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
               >
                 <select
                   {...register(`connections.${index}.serverId`, { required: 'Servidor obrigatório' })}
-                  className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm"
+                  className={`${formInputClass} text-sm`}
                 >
                   <option value="">Servidor</option>
                   {servers?.data?.map((server: { id: string; name: string }) => (
@@ -187,7 +193,7 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
                 <input
                   {...register(`connections.${index}.label`)}
                   placeholder="Rótulo (ex: Backup)"
-                  className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm"
+                  className={`${formInputClass} text-sm`}
                 />
                 <Controller
                   name={`connections.${index}.macAddress`}
@@ -206,7 +212,7 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
                         onBlur={field.onBlur}
                         onChange={field.onChange}
                         placeholder="00:00:00:00:00:00"
-                        className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm font-mono uppercase tracking-wide"
+                        className={`${formInputClass} font-mono uppercase tracking-wide`}
                       />
                       {errors.connections?.[index]?.macAddress && (
                         <span className="text-red-500 text-[10px]">
@@ -222,7 +228,7 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
                       required: 'App obrigatório',
                     })}
                     placeholder="Aplicativo"
-                    className="w-full border border-slate-300 rounded-md shadow-sm p-2 text-sm"
+                    className={`${formInputClass} text-sm`}
                   />
                   {errors.connections?.[index]?.applicationName && (
                     <span className="text-red-500 text-[10px]">App obrigatório</span>
@@ -241,20 +247,20 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Data de Vencimento</label>
+          <label className="block text-xs font-medium text-slate-500">Data de Vencimento</label>
           <input
             type="date"
             {...register('expiresAt', { setValueAs: (v) => (v ? new Date(v) : undefined) })}
-            className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+            className={formInputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Observações</label>
+          <label className="block text-xs font-medium text-slate-500">Observações</label>
           <textarea
             {...register('notes')}
             rows={3}
-            className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"
+            className={formInputClass}
           />
         </div>
 

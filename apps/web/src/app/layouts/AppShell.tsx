@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, Server, LogOut, Menu, X, UserCog, Settings, FileText, Wallet } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Server, LogOut, Menu, X, UserCog, Settings, FileText, Wallet, CheckCircle2 } from 'lucide-react';
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -18,6 +18,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     { name: 'Servidores', icon: Server, href: '/servers' },
     { name: 'Faturas', icon: FileText, href: '/invoices' },
     { name: 'Pagamentos', icon: Wallet, href: '/payments' },
+    { name: 'Ativações pendentes', icon: CheckCircle2, href: '/activations' },
     { name: 'Configurações', icon: Settings, href: '/settings' },
     { name: 'Perfil', icon: UserCog, href: '/profile' },
   ];

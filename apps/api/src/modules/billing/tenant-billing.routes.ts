@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { createManualInvoiceSchema, registerPaymentSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
 import { TenantSettingsService } from './tenant-settings.service';
 import { TenantPaymentSettingsService } from './tenant-payment-settings.service';
@@ -107,6 +108,22 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     );
   });
 
+  app.post('/invoices', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+
+    const parsed = createManualInvoiceSchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({ message: parsed.error.errors[0]?.message ?? 'Invalid payload' });
+    }
+
+    try {
+      return await invoicesService.createManual(tenantId, parsed.data);
+    } catch (error) {
+      return handleInvoiceActionError(reply, error);
+    }
+  });
+
   app.get('/payments', async (request, reply) => {
     const tenantId = requireTenantId(request, reply);
     if (!tenantId) return;
@@ -182,10 +199,40 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     const tenantId = requireTenantId(request, reply);
     if (!tenantId) return;
     const { id } = request.params as { id: string };
+    const body = (request.body ?? {}) as { method?: string; notes?: string; paidAt?: string };
     try {
-      return await invoicesService.markPaidManual(id, tenantId);
-    } catch {
+      return await invoicesService.markPaidManual(id, tenantId, body);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Invoice not found';
+      if (message.includes('not found') || message.includes('not supported') || message.includes('canceled') || message.includes('paid')) {
+        return reply.status(400).send({ message });
+      }
       return reply.status(404).send({ message: 'Invoice not found' });
+    }
+  });
+
+  app.post('/invoices/:id/register-payment', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+    const { id } = request.params as { id: string };
+
+    const parsed = registerPaymentSchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({ message: parsed.error.errors[0]?.message ?? 'Invalid payload' });
+    }
+
+    try {
+      return await invoicesService.markPaidManual(id, tenantId, {
+        method: parsed.data.method,
+        notes: parsed.data.notes,
+        paidAt: parsed.data.paidAt,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Payment registration failed';
+      if (message.includes('not found')) {
+        return reply.status(404).send({ message });
+      }
+      return reply.status(400).send({ message });
     }
   });
 }
