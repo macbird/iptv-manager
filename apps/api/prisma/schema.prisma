@@ -12,7 +12,7 @@ datasource db {
 
 enum AccountStatus {
   active
-  suspended
+  inactive
 }
 
 enum UserRole {
@@ -30,13 +30,14 @@ enum BillingCycle {
 
 enum PlanStatus {
   active
-  archived
+  inactive
 }
 
 enum ServerStatus {
   active
   maintenance
   full
+  inactive
 }
 
 enum CustomerStatus {
@@ -44,7 +45,7 @@ enum CustomerStatus {
   trial
   overdue
   blocked
-  cancelled
+  inactive
 }
 
 enum PaymentProviderType {
@@ -151,6 +152,8 @@ model Server {
   account        Account      @relation(fields: [tenantId], references: [id])
   name           String
   panelUrl       String
+  panelUsername  String?
+  panelPasswordEncrypted String?
   panelNotes     String?
   maxConnections Int?
   status         ServerStatus @default(active)
@@ -209,7 +212,8 @@ model Connection {
   server          Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
   macAddress      String
   applicationName String
-  label           String?  // Novo campo para o apelido/referência
+  label           String?
+  m3u8Link        String?
   connectionRenewalTasks ConnectionRenewalTask[]
 
   createdAt       DateTime @default(now())
@@ -399,8 +403,8 @@ model ConnectionRenewalTask {
   account      Account                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customerId   String
   customer     Customer                @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  connectionId String
-  connection   Connection              @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  connectionId String?
+  connection   Connection?             @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   paymentId    String
   payment      Payment                 @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   invoiceId    String?
@@ -412,6 +416,7 @@ model ConnectionRenewalTask {
   createdAt    DateTime                @default(now())
   updatedAt    DateTime                @updatedAt
 
+  @@unique([paymentId])
   @@index([tenantId, status, paidAt])
   @@index([customerId, status])
   @@map("connection_renewal_tasks")

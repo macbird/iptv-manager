@@ -38,7 +38,7 @@ export const planSchema = z.object({
     (v) => (v === null || v === undefined || v === '' ? 0 : v),
     z.coerce.number().min(0).default(0),
   ),
-  status: z.enum(['active', 'archived']).default('active'),
+  status: z.enum(['active', 'inactive']).default('active'),
 });
 
 export type PlanInput = z.infer<typeof planSchema>;
@@ -46,9 +46,17 @@ export type PlanInput = z.infer<typeof planSchema>;
 export const serverSchema = z.object({
   name: z.string().min(1),
   panelUrl: z.string().url(),
+  panelUsername: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : String(val).trim()),
+    z.string().min(1, 'Informe o usuário do painel').optional(),
+  ),
+  panelPassword: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : String(val)),
+    z.string().optional(),
+  ),
   panelNotes: z.string().optional(),
   maxConnections: z.number().int().min(1).optional(),
-  status: z.enum(['active', 'maintenance', 'full']).default('active'),
+  status: z.enum(['active', 'maintenance', 'full', 'inactive']).default('active'),
 });
 
 export type ServerInput = z.infer<typeof serverSchema>;
@@ -61,22 +69,49 @@ export const tagSchema = z.object({
 export type TagInput = z.infer<typeof tagSchema>;
 
 export const connectionSchema = z.object({
-  serverId: z.string().uuid().or(z.literal('')),
-  macAddress: z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'MAC inválido'),
+  serverId: z.string().uuid('Selecione o servidor'),
+  macAddress: z
+    .string()
+    .regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'MAC inválido'),
   applicationName: z.string().min(1, 'Aplicativo obrigatório'),
-  label: z.string().optional().or(z.literal('')),
+  label: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : String(val)),
+    z.string().optional(),
+  ),
+  m3u8Link: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : String(val).trim()),
+    z.string().url('Informe um link M3U8 válido').optional(),
+  ),
 });
 
 export const customerSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email().optional().or(z.literal('')),
-  phone: z.string().min(10, "Telefone inválido"),
+  name: z.string().trim().min(1, 'Informe o nome do cliente'),
+  email: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? '' : String(val)),
+    z.string().email('E-mail inválido').optional().or(z.literal('')),
+  ),
+  phone: z.preprocess(
+    (val) => String(val ?? '').replace(/\D/g, ''),
+    z.string().min(10, 'Informe um telefone válido com DDD'),
+  ),
   status: z.enum(CUSTOMER_STATUS_VALUES).default(CustomerStatus.ACTIVE),
   tagIds: z.array(z.string().uuid()).optional(),
-  planId: z.string().uuid().optional().or(z.literal('')),
-  notes: z.string().optional().or(z.literal('')),
-  expiresAt: z.preprocess((val) => val ? new Date(val as string) : undefined, z.date().optional()),
-  connections: z.array(connectionSchema).optional(),
+  planId: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : val),
+    z.string().uuid().optional(),
+  ),
+  notes: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : String(val)),
+    z.string().optional(),
+  ),
+  expiresAt: z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined) return undefined;
+    if (val instanceof Date) return val;
+    return new Date(val as string);
+  }, z.date().optional()),
+  connections: z
+    .array(connectionSchema)
+    .min(1, 'Adicione ao menos uma conexão'),
 });
 
 export type CustomerInput = z.infer<typeof customerSchema>;

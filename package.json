@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "api:dev": "npm run dev -w apps/api",
+    "api:dev": "npm run build -w packages/shared && npm run dev -w apps/api",
     "web:dev": "npm run dev -w apps/web",
     "web:dev:force": "npm run dev -w apps/web -- --force",
     "build": "npm run build -w packages/shared && npm run build --workspaces --if-present",

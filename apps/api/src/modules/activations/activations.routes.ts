@@ -37,6 +37,20 @@ export async function activationsRoutes(app: FastifyInstance) {
     return { count };
   });
 
+  app.get('/activations/:id', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const tenantId = (request as { tenantId?: string }).tenantId;
+    if (!tenantId) {
+      return reply.status(403).send({ message: 'Tenant required' });
+    }
+
+    const { id } = request.params as { id: string };
+    const activation = await activationsService.findById(tenantId, id);
+    if (!activation) {
+      return reply.status(404).send({ message: 'Activation not found' });
+    }
+    return activation;
+  });
+
   app.post('/activations/:id/complete', { preHandler: [app.authenticate] }, async (request, reply) => {
     const tenantId = (request as { tenantId?: string }).tenantId;
     if (!tenantId) {

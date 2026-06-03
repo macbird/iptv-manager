@@ -150,7 +150,7 @@ export const PlanForm = React.forwardRef<HTMLFormElement, PlanFormProps>(
               <span className={formLabelClass}>Status</span>
               <select {...register('status')} className={formSelectClass}>
                 <option value="active">Ativo</option>
-                <option value="archived">Arquivado</option>
+                <option value="inactive">Desativado</option>
               </select>
             </label>
           </div>

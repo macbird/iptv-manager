@@ -1,6 +1,6 @@
 export enum AccountStatus {
   ACTIVE = 'active',
-  SUSPENDED = 'suspended',
+  INACTIVE = 'inactive',
 }
 
 export enum UserRole {
@@ -15,7 +15,7 @@ export enum CustomerStatus {
   TRIAL = 'trial',
   OVERDUE = 'overdue',
   BLOCKED = 'blocked',
-  CANCELLED = 'cancelled',
+  INACTIVE = 'inactive',
 }
 
 export enum ConnectionStatus {

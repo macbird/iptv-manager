@@ -19,6 +19,10 @@ export class AuthService {
       throw new Error('Invalid credentials');
     }
 
+    if (user.account.status === 'inactive') {
+      throw new Error('Conta desativada');
+    }
+
     return user;
   }
 

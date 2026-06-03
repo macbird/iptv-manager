@@ -20,8 +20,12 @@ export const plansApi = {
     const response = await api.put(`/plans/${id}`, data);
     return response.data;
   },
-  delete: async (id: string) => {
-    const response = await api.delete(`/plans/${id}`);
+  deactivate: async (id: string) => {
+    const response = await api.patch(`/plans/${id}/deactivate`);
+    return response.data;
+  },
+  activate: async (id: string) => {
+    const response = await api.patch(`/plans/${id}/activate`);
     return response.data;
   },
 };

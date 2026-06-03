@@ -55,7 +55,7 @@ export const createTenantAccountSchema = z.object({
 export type CreateTenantAccountInput = z.infer<typeof createTenantAccountSchema>;
 
 export const updateTenantAccountSchema = z.object({
-  status: z.enum(['active', 'suspended']).optional(),
+  status: z.enum(['active', 'inactive']).optional(),
   dueDate: z.string().min(1).optional(),
 });
 

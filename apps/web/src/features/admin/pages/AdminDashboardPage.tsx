@@ -58,8 +58,8 @@ export const AdminDashboardPage: React.FC = () => {
       href: '/admin/accounts',
     },
     {
-      title: 'Contas suspensas',
-      value: stats?.suspendedAccounts ?? 0,
+      title: 'Contas desativadas',
+      value: stats?.inactiveAccounts ?? 0,
       icon: ShieldAlert,
       iconColor: 'text-red-600',
       iconBg: 'bg-red-100',

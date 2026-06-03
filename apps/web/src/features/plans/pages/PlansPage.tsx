@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { plansApi } from '../api/plans.api';
-import { Edit2, Trash2, CreditCard } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import { Modal } from '../../../shared/ui/modals/Modal';
 import { PlanFormModal } from '../components/PlanFormModal';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
@@ -13,10 +13,25 @@ import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
 import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { PLAN_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
+import { EntityLifecycleActions } from '../../../shared/ui/buttons/EntityLifecycleActions';
+import { ENTITY_LIFECYCLE_LABELS, ENTITY_INACTIVE_STATUS } from '@client-manager/shared';
+import { showToast } from '../../../shared/utils/toast';
+
+type PlanRow = {
+  id: string;
+  name: string;
+  maxConnections: number;
+  price: string | number;
+  status: string;
+};
 
 export const PlansPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [lifecycleTarget, setLifecycleTarget] = useState<{
+    id: string;
+    name: string;
+    action: 'deactivate' | 'activate';
+  } | null>(null);
   const formModal = useEntityFormModal();
   useOpenFormFromRouteState(formModal);
 
@@ -35,63 +50,89 @@ export const PlansPage: React.FC = () => {
     goToPreviousPage,
     goToNextPage,
     isLoading,
-  } = usePaginatedList({
+  } = usePaginatedList<PlanRow>({
     queryKey: ['plans'],
     queryFn: plansApi.list,
   });
 
   const filterModal = useListFilterModal(filters, setFilters, clearFilters);
 
-  const deleteMutation = useMutation({
-    mutationFn: plansApi.delete,
-    onSuccess: () => {
+  const lifecycleMutation = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'deactivate' | 'activate' }) =>
+      action === 'deactivate' ? plansApi.deactivate(id) : plansApi.activate(id),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
-      setDeleteId(null);
+      setLifecycleTarget(null);
+      showToast.success(
+        variables.action === 'deactivate' ? 'Plano desativado' : 'Plano reativado',
+      );
     },
+    onError: () => showToast.error('Não foi possível alterar o status do plano'),
   });
 
+  const renderActions = (row: PlanRow) => (
+    <div className="flex justify-end">
+      <button
+        onClick={() => formModal.openEdit(row.id)}
+        className="text-slate-500 hover:text-indigo-600 p-2"
+      >
+        <Edit2 className="w-4 h-4" />
+      </button>
+      <EntityLifecycleActions
+        status={row.status}
+        isPending={lifecycleMutation.isPending}
+        entityLabel="plano"
+        onDeactivate={() =>
+          setLifecycleTarget({ id: row.id, name: row.name, action: 'deactivate' })
+        }
+        onActivate={() =>
+          setLifecycleTarget({ id: row.id, name: row.name, action: 'activate' })
+        }
+      />
+    </div>
+  );
+
   const columns = [
-    { header: 'Nome', accessor: (p: { name: string }) => p.name, width: '40%' },
+    { header: 'Nome', accessor: (p: PlanRow) => p.name, width: '34%' },
+    {
+      header: 'Status',
+      accessor: (p: PlanRow) => (
+        <span
+          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+            p.status === ENTITY_INACTIVE_STATUS
+              ? 'bg-slate-100 text-slate-500'
+              : 'bg-green-100 text-green-700'
+          }`}
+        >
+          {p.status === ENTITY_INACTIVE_STATUS
+            ? ENTITY_LIFECYCLE_LABELS.inactive
+            : ENTITY_LIFECYCLE_LABELS.active}
+        </span>
+      ),
+      width: '16%',
+    },
     {
       header: 'Conexões',
-      accessor: (p: { maxConnections: number }) => p.maxConnections,
+      accessor: (p: PlanRow) => p.maxConnections,
       width: '15%',
       align: 'center' as const,
     },
     {
       header: 'Preço',
-      accessor: (p: { price: string | number }) => `R$ ${Number(p.price).toFixed(2)}`,
+      accessor: (p: PlanRow) => `R$ ${Number(p.price).toFixed(2)}`,
       width: '20%',
     },
     {
       header: 'Ações',
       width: '120px',
       align: 'right' as const,
-      accessor: (p: { id: string }) => (
-        <div className="flex justify-end">
-          <button
-            onClick={() => formModal.openEdit(p.id)}
-            className="text-slate-500 hover:text-indigo-600 p-2"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setDeleteId(p.id)}
-            className="text-slate-500 hover:text-red-600 p-2"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      ),
+      accessor: (p: PlanRow) => renderActions(p),
     },
   ];
 
-  const renderMobileCard = (p: { id: string; name: string; maxConnections: number; price: string | number }) => (
+  const renderMobileCard = (p: PlanRow) => (
     <div className="flex items-center justify-between group h-12">
       <div className="flex items-center space-x-3 overflow-hidden flex-1">
-        <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-          <CreditCard className="w-5 h-5 text-slate-400" />
-        </div>
         <div className="overflow-hidden">
           <div className="text-sm font-bold text-slate-900 truncate leading-tight">{p.name}</div>
           <div className="text-[10px] text-slate-400 truncate leading-tight">
@@ -100,25 +141,9 @@ export const PlansPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center shrink-0 gap-2 w-[55%]">
-        <div className="flex-1 text-center">
-          <div className="text-sm font-medium text-slate-900">R$ {Number(p.price).toFixed(2)}</div>
-        </div>
-
-        <div className="w-10 shrink-0 flex items-center justify-end">
-          <button
-            onClick={() => formModal.openEdit(p.id)}
-            className="p-2 text-slate-400 hover:text-indigo-600"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setDeleteId(p.id)}
-            className="p-2 text-slate-400 hover:text-red-600"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="flex items-center shrink-0 gap-2">
+        <div className="text-sm font-medium text-slate-900">R$ {Number(p.price).toFixed(2)}</div>
+        {renderActions(p)}
       </div>
     </div>
   );
@@ -161,11 +186,20 @@ export const PlansPage: React.FC = () => {
       <PlanFormModal isOpen={formModal.isOpen} editId={formModal.editId} onClose={formModal.close} />
 
       <Modal
-        isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        title="Excluir Plano"
-        description="Tem certeza que deseja excluir este plano?"
+        isOpen={!!lifecycleTarget}
+        onClose={() => setLifecycleTarget(null)}
+        onConfirm={() =>
+          lifecycleTarget &&
+          lifecycleMutation.mutate({ id: lifecycleTarget.id, action: lifecycleTarget.action })
+        }
+        confirmTone="primary"
+        confirmLabel={lifecycleTarget?.action === 'deactivate' ? 'Desativar' : 'Reativar'}
+        title={lifecycleTarget?.action === 'deactivate' ? 'Desativar plano' : 'Reativar plano'}
+        description={
+          lifecycleTarget?.action === 'deactivate'
+            ? `Desativar "${lifecycleTarget?.name}"? O plano não aparecerá em novos cadastros de clientes.`
+            : `Reativar "${lifecycleTarget?.name}"?`
+        }
       />
 
       <ListFiltersModal

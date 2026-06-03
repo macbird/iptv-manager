@@ -38,18 +38,21 @@ describe('CustomersService tenant isolation', () => {
     );
   });
 
-  it('delete requires matching tenant before delete', async () => {
+  it('deactivate requires matching tenant before update', async () => {
     const findFirstOrThrow = vi.fn().mockResolvedValue({ id: 'c1' });
-    const deleteFn = vi.fn().mockResolvedValue({ id: 'c1' });
+    const update = vi.fn().mockResolvedValue({ id: 'c1', status: 'inactive' });
     const service = new CustomersService({
-      customer: { findFirstOrThrow, delete: deleteFn },
+      customer: { findFirstOrThrow, update },
     } as never);
 
-    await service.delete('tenant-c', 'c1');
+    await service.deactivate('tenant-c', 'c1');
 
     expect(findFirstOrThrow).toHaveBeenCalledWith({
       where: { id: 'c1', tenantId: 'tenant-c' },
     });
-    expect(deleteFn).toHaveBeenCalledWith({ where: { id: 'c1' } });
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'c1' },
+      data: { status: 'inactive' },
+    });
   });
 });

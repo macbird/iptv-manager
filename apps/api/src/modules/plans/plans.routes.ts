@@ -3,6 +3,7 @@ import { PlansService } from './plans.service';
 import { planSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
+import { isSelectableOnlyQuery } from '../../core/utils/parse-selectable-only';
 
 const PLAN_LIST_FILTER_KEYS = ['status', 'billingCycle', 'minPrice', 'maxPrice'] as const;
 
@@ -20,13 +21,16 @@ export async function plansRoutes(app: FastifyInstance) {
       pageSize?: string;
       filter?: string;
     };
-    const listFilters = pickListFilters(request.query as Record<string, unknown>, PLAN_LIST_FILTER_KEYS);
+    const query = request.query as Record<string, unknown>;
+    const listFilters = pickListFilters(query, PLAN_LIST_FILTER_KEYS);
+    const selectableOnly = isSelectableOnlyQuery(query);
     return await plansService.list(
       tenantId,
       parseInt(page || '1', 10),
       parseInt(pageSize || '10', 10),
       filter || '',
       listFilters,
+      selectableOnly,
     );
   });
 
@@ -70,11 +74,19 @@ export async function plansRoutes(app: FastifyInstance) {
     return reply.status(204).send();
   });
 
-  app.delete('/:id', async (request, reply) => {
+  app.patch('/:id/deactivate', async (request, reply) => {
     const tenantId = requireTenantId(request, reply);
     if (!tenantId) return;
 
     const { id } = request.params as { id: string };
-    return await plansService.delete(tenantId, id);
+    return await plansService.deactivate(tenantId, id);
+  });
+
+  app.patch('/:id/activate', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+
+    const { id } = request.params as { id: string };
+    return await plansService.activate(tenantId, id);
   });
 }

@@ -1,11 +1,10 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { customersApi } from '../api/customers.api';
-import { CustomerForm } from '../pages/CustomerForm';
+import { CustomerForm, type CustomerFormPayload } from '../pages/CustomerForm';
 import { FormModal } from '../../../shared/ui/modals/FormModal';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
-import { useCrud } from '../../../shared/hooks/useCrud';
-import type { CustomerInput } from '@client-manager/shared';
+import { showToast } from '../../../shared/utils/toast';
 
 interface CustomerFormModalProps {
   isOpen: boolean;
@@ -18,25 +17,47 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
   editId,
   onClose,
 }) => {
-  const formRef = React.useRef<HTMLFormElement>(null);
+  const queryClient = useQueryClient();
+  const formId = editId ? `customer-form-edit-${editId}` : 'customer-form-create';
 
-  const { data: customer, isLoading } = useQuery({
+  const {
+    data: customer,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['customers', editId],
     queryFn: () => customersApi.getById(editId!),
     enabled: isOpen && Boolean(editId),
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
-  const { create, update, isCreating, isUpdating } = useCrud<unknown, CustomerInput>({
-    queryKey: ['customers'],
-    createFn: customersApi.create,
-    updateFn: customersApi.update,
-    listPath: '/customers',
-    entityName: 'Cliente',
-    navigateOnSuccess: false,
-    onSuccess: onClose,
+  const createMutation = useMutation({
+    mutationFn: customersApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      showToast.success('Cliente criado com sucesso!');
+      onClose();
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      showToast.error(err.response?.data?.message ?? 'Erro ao criar cliente');
+    },
   });
 
-  const isPending = isCreating || isUpdating;
+  const updateMutation = useMutation({
+    mutationFn: (args: { id: string; data: CustomerFormPayload }) =>
+      customersApi.update(args.id, args.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      showToast.success('Cliente atualizado com sucesso!');
+      onClose();
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      showToast.error(err.response?.data?.message ?? 'Erro ao atualizar cliente');
+    },
+  });
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <FormModal
@@ -44,24 +65,32 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
       onClose={onClose}
       title={editId ? 'Editar cliente' : 'Novo cliente'}
       size="2xl"
+      formId={!editId || customer ? formId : undefined}
       isPending={isPending}
-      onSave={() => formRef.current?.requestSubmit()}
+      saveLabel={editId ? 'Salvar' : 'Criar'}
     >
-      {editId && isLoading ? (
+      {!editId ? (
+        <CustomerForm
+          key="create"
+          formId={formId}
+          onSubmit={async (data) => {
+            await createMutation.mutateAsync(data);
+          }}
+          onCancel={onClose}
+        />
+      ) : isLoading ? (
         <div className="relative h-40">
           <LoadingSpinner />
         </div>
+      ) : isError || !customer ? (
+        <p className="text-sm text-red-600">Não foi possível carregar os dados do cliente.</p>
       ) : (
         <CustomerForm
-          key={editId ?? 'create'}
-          ref={formRef}
-          initialData={editId ? customer : undefined}
+          key={`${editId}-${customer.updatedAt}`}
+          formId={formId}
+          initialData={customer}
           onSubmit={async (data) => {
-            if (editId) {
-              await update(editId, data);
-              return;
-            }
-            await create(data);
+            await updateMutation.mutateAsync({ id: editId, data });
           }}
           onCancel={onClose}
         />

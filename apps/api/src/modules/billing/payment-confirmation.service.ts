@@ -42,15 +42,42 @@ export class PaymentConfirmationService {
       throw new Error('Invoice canceled');
     }
 
-    if (invoice.status === 'paid') {
-      throw new Error('Invoice already paid');
-    }
-
     if (input.amountCents !== invoice.amountCents) {
       throw new Error('Partial payments are not supported');
     }
 
     const paidAt = input.paidAt ?? new Date();
+
+    if (invoice.status === 'paid') {
+      const existingPayment = [...invoice.payments].sort(
+        (a, b) => b.paidAt.getTime() - a.paidAt.getTime(),
+      )[0];
+      if (!existingPayment) {
+        throw new Error('Invoice already paid');
+      }
+
+      if (invoice.scope === 'tenant' && invoice.customerId) {
+        const activationTasks = await activationsService.createTasksForPayment(
+          {
+            tenantId: invoice.accountId,
+            customerId: invoice.customerId,
+            paymentId: existingPayment.id,
+            invoiceId: invoice.id,
+            paidAt: existingPayment.paidAt,
+          },
+        );
+
+        return {
+          paymentId: existingPayment.id,
+          invoiceId: invoice.id,
+          activationTasksCreated: activationTasks.length,
+          activationTasks,
+          idempotent: true,
+        };
+      }
+
+      throw new Error('Invoice already paid');
+    }
 
     return prisma.$transaction(async (tx) => {
       const payment = await tx.payment.create({
@@ -90,6 +117,7 @@ export class PaymentConfirmationService {
         invoiceId: invoice.id,
         activationTasksCreated: activationTasks.length,
         activationTasks,
+        idempotent: false,
       };
     });
   }

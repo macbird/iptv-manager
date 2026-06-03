@@ -12,6 +12,8 @@ export interface PaginatedListParams {
   pageSize: number;
   filter: string;
   filters?: ListFilterValues;
+  /** When true, API returns only records eligible for form comboboxes. */
+  selectableOnly?: boolean;
 }
 
 interface UsePaginatedListOptions<T> {

@@ -79,7 +79,7 @@ export async function tenantsRoutes(app: FastifyInstance) {
 
   app.patch('/:id/status', async (request) => {
     const { id } = request.params as { id: string };
-    const { status } = request.body as { status: 'active' | 'suspended' };
+    const { status } = request.body as { status: 'active' | 'inactive' };
     return await tenantsService.toggleStatus(id, status);
   });
 }

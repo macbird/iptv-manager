@@ -75,7 +75,7 @@ function mapAccount(account: {
     id: account.id,
     name: account.name,
     slug: account.slug,
-    status: account.status as 'active' | 'suspended',
+    status: account.status as 'active' | 'inactive',
     users: account.users,
     subscription: mapSubscription(account.subscription),
   };
@@ -200,7 +200,7 @@ export class TenantsService {
 
   async update(
     id: string,
-    input: { status?: 'active' | 'suspended'; dueDate?: string },
+    input: { status?: 'active' | 'inactive'; dueDate?: string },
   ) {
     const account = await prisma.account.findUnique({ where: { id } });
     if (!account) {
@@ -226,7 +226,7 @@ export class TenantsService {
           platformPlanId,
           dueDay,
           nextDueDate,
-          status: input.status === 'suspended' ? 'past_due' : 'active',
+          status: input.status === 'inactive' ? 'past_due' : 'active',
         },
         update: {
           dueDay,
@@ -238,7 +238,7 @@ export class TenantsService {
     return this.findById(id);
   }
 
-  async toggleStatus(id: string, status: 'active' | 'suspended') {
+  async toggleStatus(id: string, status: 'active' | 'inactive') {
     return this.update(id, { status });
   }
 

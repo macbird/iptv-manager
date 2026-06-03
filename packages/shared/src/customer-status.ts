@@ -1,4 +1,5 @@
 import { CustomerStatus } from './enums';
+import { ENTITY_LIFECYCLE_LABELS } from './entity-lifecycle';
 
 /** Values accepted by API and forms (matches Prisma CustomerStatus). */
 export const CUSTOMER_STATUS_VALUES = [
@@ -6,7 +7,7 @@ export const CUSTOMER_STATUS_VALUES = [
   CustomerStatus.TRIAL,
   CustomerStatus.OVERDUE,
   CustomerStatus.BLOCKED,
-  CustomerStatus.CANCELLED,
+  CustomerStatus.INACTIVE,
 ] as const;
 
 export type CustomerStatusValue = (typeof CUSTOMER_STATUS_VALUES)[number];
@@ -16,7 +17,7 @@ export const CUSTOMER_STATUS_LABELS: Record<CustomerStatusValue, string> = {
   [CustomerStatus.TRIAL]: 'Teste',
   [CustomerStatus.OVERDUE]: 'Vencido',
   [CustomerStatus.BLOCKED]: 'Bloqueado',
-  [CustomerStatus.CANCELLED]: 'Cancelado',
+  [CustomerStatus.INACTIVE]: ENTITY_LIFECYCLE_LABELS.inactive,
 };
 
 export const CUSTOMER_STATUS_BADGE_CLASSES: Record<CustomerStatusValue, string> = {
@@ -24,7 +25,7 @@ export const CUSTOMER_STATUS_BADGE_CLASSES: Record<CustomerStatusValue, string> 
   [CustomerStatus.TRIAL]: 'bg-amber-100 text-amber-700',
   [CustomerStatus.OVERDUE]: 'bg-red-100 text-red-700',
   [CustomerStatus.BLOCKED]: 'bg-slate-100 text-slate-700',
-  [CustomerStatus.CANCELLED]: 'bg-slate-100 text-slate-500',
+  [CustomerStatus.INACTIVE]: 'bg-slate-100 text-slate-500',
 };
 
 export function getCustomerStatusLabel(status: string): string {

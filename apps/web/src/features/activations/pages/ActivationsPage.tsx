@@ -1,8 +1,9 @@
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { activationsApi } from '../api/activations.api';
 import { ActivationStatusModal } from '../components/ActivationStatusModal';
+import { ActivationDetailModal } from '../components/ActivationDetailModal';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ListPagination } from '../../../shared/ui/lists/ListPagination';
@@ -53,6 +54,8 @@ export const ActivationsPage: React.FC = () => {
 
   const filterModal = useListFilterModal(filters, setFilters, clearFilters);
   const [statusModalOpen, setStatusModalOpen] = React.useState(false);
+  const [detailModalOpen, setDetailModalOpen] = React.useState(false);
+  const [selectedActivationId, setSelectedActivationId] = React.useState<string | null>(null);
   const [selectedActivation, setSelectedActivation] = React.useState<ActivationListItem | null>(null);
 
   const invalidate = () => {
@@ -61,10 +64,12 @@ export const ActivationsPage: React.FC = () => {
   };
 
   const completeMutation = useMutation({
-    mutationFn: (id: string) => activationsApi.complete(id),
+    mutationFn: ({ id, notes }: { id: string; notes?: string }) => activationsApi.complete(id, notes),
     onSuccess: (data: { newExpiresAt?: string | null; customerExpiresAtUpdated?: boolean }) => {
       invalidate();
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      setDetailModalOpen(false);
+      setSelectedActivationId(null);
       if (data.customerExpiresAtUpdated && data.newExpiresAt) {
         showToast.success(
           `Ativação concluída. Vencimento atualizado para ${new Date(data.newExpiresAt).toLocaleDateString('pt-BR')}.`,
@@ -75,11 +80,6 @@ export const ActivationsPage: React.FC = () => {
     },
     onError: () => showToast.error('Erro ao concluir ativação'),
   });
-
-  const handleComplete = (id: string, event?: React.MouseEvent) => {
-    event?.stopPropagation();
-    completeMutation.mutate(id);
-  };
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status, notes }: { id: string; status: ActivationStatusInputValue; notes?: string }) =>
@@ -95,6 +95,11 @@ export const ActivationsPage: React.FC = () => {
       showToast.error(err.response?.data?.message ?? 'Erro ao alterar status');
     },
   });
+
+  const openDetail = (activation: ActivationListItem) => {
+    setSelectedActivationId(activation.id);
+    setDetailModalOpen(true);
+  };
 
   const openStatusModal = (activation: ActivationListItem, event?: React.MouseEvent) => {
     event?.stopPropagation();
@@ -116,34 +121,20 @@ export const ActivationsPage: React.FC = () => {
           <RefreshCw className="h-4 w-4" />
         </button>
       ) : null}
-      {row.status === 'pending' ? (
-        <button
-          type="button"
-          onClick={(e) => handleComplete(row.id, e)}
-          disabled={completeMutation.isPending}
-          className="p-2 text-slate-400 hover:text-green-600 disabled:opacity-50"
-          title="Concluir ativação no servidor"
-          aria-label="Concluir ativação no servidor"
-        >
-          <CheckCircle2 className="h-4 w-4" />
-        </button>
-      ) : null}
     </div>
   );
 
+  const connectionCountLabel = (count: number) =>
+    count === 1 ? '1 conexão' : `${count} conexões`;
+
   const columns = [
-    { header: 'Cliente', accessor: (row: ActivationListItem) => row.customer.name, width: '20%' },
+    { header: 'Cliente', accessor: (row: ActivationListItem) => row.customer.name, width: '24%' },
     {
-      header: 'Servidor',
-      accessor: (row: ActivationListItem) => row.connection.server.name,
-      width: '16%',
-    },
-    {
-      header: 'MAC',
+      header: 'Conexões',
       accessor: (row: ActivationListItem) => (
-        <span className="font-mono text-xs text-slate-600">{row.connection.macAddress}</span>
+        <span className="text-sm text-slate-600">{connectionCountLabel(row.connectionCount)}</span>
       ),
-      width: '16%',
+      width: '14%',
     },
     {
       header: 'Pago em',
@@ -173,11 +164,11 @@ export const ActivationsPage: React.FC = () => {
           {CONNECTION_RENEWAL_STATUS_LABELS[row.status]}
         </span>
       ),
-      width: '10%',
+      width: '12%',
     },
     {
       header: 'Ações',
-      width: '100px',
+      width: '72px',
       align: 'right' as const,
       accessor: (row: ActivationListItem) => renderActions(row),
     },
@@ -201,36 +192,26 @@ export const ActivationsPage: React.FC = () => {
             <div className="text-sm font-bold text-slate-900 truncate leading-tight mb-0.5">
               {row.customer.name}
             </div>
-            <div className="flex flex-col">
-              <div className="text-[10px] text-slate-400 truncate leading-none mb-1">
-                {row.connection.server.name}
-              </div>
-              <div className="text-[9px] font-mono text-slate-500 truncate leading-none">
-                {row.connection.macAddress}
-              </div>
+            <div className="text-[10px] text-slate-400 truncate leading-none">
+              {connectionCountLabel(row.connectionCount)} · {formatCents(row.payment.amountCents)}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center shrink-0 gap-2 w-[55%]">
-          <div className="flex-1 text-center min-w-0">
-            <div className="text-[10px] text-slate-400 truncate">
-              {formatCents(row.payment.amountCents)}
-            </div>
-            <div className="text-[11px] font-bold text-slate-900 truncate">
+        <div className="flex items-center shrink-0 gap-2">
+          <div className="text-right">
+            <div className="text-[11px] font-bold text-slate-900">
               {row.customer.expiresAt
                 ? new Date(row.customer.expiresAt).toLocaleDateString('pt-BR')
                 : '-'}
             </div>
-          </div>
-          <div className="shrink-0 flex flex-col items-end gap-1 min-w-[4.5rem]">
             <span
-              className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${getConnectionRenewalStatusBadgeClass(row.status)}`}
+              className={`inline-flex mt-0.5 rounded px-1.5 py-0.5 text-[8px] font-bold uppercase ${getConnectionRenewalStatusBadgeClass(row.status)}`}
             >
               {CONNECTION_RENEWAL_STATUS_LABELS[row.status]}
             </span>
-            <div className="flex items-center gap-1">{renderActions(row)}</div>
           </div>
+          <div className="flex items-center">{renderActions(row)}</div>
         </div>
       </div>
     );
@@ -244,7 +225,7 @@ export const ActivationsPage: React.FC = () => {
         <PageHeaderActions
           onSearch={setFilter}
           currentFilter={filter}
-          placeholder="Buscar cliente, MAC ou servidor..."
+          placeholder="Buscar cliente ou telefone..."
           onOpenFilters={filterModal.open}
           activeFilterCount={activeFilterCount}
         />
@@ -266,6 +247,7 @@ export const ActivationsPage: React.FC = () => {
         renderMobileCard={renderMobileCard}
         mobileHeaderTitles={['Cliente', 'Vencimento']}
         isLoading={isLoading}
+        onRowClick={openDetail}
       />
 
       <ListFiltersModal
@@ -276,6 +258,20 @@ export const ActivationsPage: React.FC = () => {
         onDraftChange={filterModal.setDraft}
         onApply={filterModal.apply}
         onClear={filterModal.clear}
+      />
+
+      <ActivationDetailModal
+        activationId={selectedActivationId}
+        isOpen={detailModalOpen}
+        isCompleting={completeMutation.isPending}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setSelectedActivationId(null);
+        }}
+        onComplete={(notes) => {
+          if (!selectedActivationId) return;
+          completeMutation.mutate({ id: selectedActivationId, notes });
+        }}
       />
 
       <ActivationStatusModal

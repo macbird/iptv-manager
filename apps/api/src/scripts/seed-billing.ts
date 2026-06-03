@@ -27,6 +27,7 @@ function monthLabel(key: string) {
 }
 
 async function clearBillingData() {
+  await prisma.connectionRenewalTask.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.invoice.deleteMany();
 }
@@ -133,7 +134,7 @@ async function main() {
         platformPlanId: plan.id,
         dueDay: 10,
         nextDueDate: dueDateForCycle(cycleKey(new Date().getFullYear(), new Date().getMonth()), 10),
-        status: account.status === 'suspended' ? 'past_due' : 'active',
+        status: account.status === 'inactive' ? 'past_due' : 'active',
       },
       update: { platformPlanId: plan.id },
     });

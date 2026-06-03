@@ -40,7 +40,7 @@ export const AccountsPage: React.FC = () => {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: (args: { id: string; status: 'active' | 'suspended' }) =>
+    mutationFn: (args: { id: string; status: 'active' | 'inactive' }) =>
       tenantsApi.toggleStatus(args.id, args.status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
@@ -94,7 +94,7 @@ export const AccountsPage: React.FC = () => {
             a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
           }`}
         >
-          {a.status === 'active' ? 'Ativa' : 'Suspensa'}
+          {a.status === 'active' ? 'Ativa' : 'Desativada'}
         </span>
       ),
     },
@@ -119,12 +119,12 @@ export const AccountsPage: React.FC = () => {
             onClick={() =>
               toggleMutation.mutate({
                 id: a.id,
-                status: a.status === 'active' ? 'suspended' : 'active',
+                status: a.status === 'active' ? 'inactive' : 'active',
               })
             }
             className="text-xs font-semibold text-slate-600 hover:text-indigo-600"
           >
-            {a.status === 'active' ? 'Suspender' : 'Reativar'}
+            {a.status === 'active' ? 'Desativar' : 'Reativar'}
           </button>
           <button
             type="button"
@@ -174,7 +174,7 @@ export const AccountsPage: React.FC = () => {
               a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
             }`}
           >
-            {a.status === 'active' ? 'Ativa' : 'Suspensa'}
+            {a.status === 'active' ? 'Ativa' : 'Desativada'}
           </span>
         </div>
 

@@ -25,7 +25,7 @@ export class AdminDashboardService {
     return {
       totalAccounts,
       activeAccounts,
-      suspendedAccounts: totalAccounts - activeAccounts,
+      inactiveAccounts: totalAccounts - activeAccounts,
       totalUsers,
       expectedMrrCents,
       activeSubscriptions,

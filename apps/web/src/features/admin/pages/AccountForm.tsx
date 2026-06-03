@@ -18,7 +18,7 @@ export interface AccountCreateInput {
 }
 
 export interface AccountEditInput {
-  status: 'active' | 'suspended';
+  status: 'active' | 'inactive';
   dueDate: string;
 }
 
@@ -58,7 +58,7 @@ type AccountFormProps = {
         id?: string;
         name?: string;
         slug?: string;
-        status?: 'active' | 'suspended';
+        status?: 'active' | 'inactive';
         subscription?: { nextDueDate?: string; platformPlan?: { name: string; priceCents: number } } | null;
         users?: Array<{ name?: string; email?: string; role?: string }>;
       };
@@ -176,7 +176,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({
               <span className={formLabelClass}>Status da conta</span>
               <select {...register('status', { required: true })} className={formSelectClass}>
                 <option value="active">Ativa</option>
-                <option value="suspended">Suspensa</option>
+                <option value="inactive">Desativada</option>
               </select>
             </label>
             <p className="mt-1 text-xs text-slate-500">

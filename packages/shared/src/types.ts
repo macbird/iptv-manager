@@ -173,7 +173,7 @@ export interface AccountListItem {
   id: string;
   name: string;
   slug: string;
-  status: 'active' | 'suspended';
+  status: 'active' | 'inactive';
   subscription: {
     dueDay: number;
     nextDueDate: string;

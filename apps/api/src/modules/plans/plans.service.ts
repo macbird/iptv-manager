@@ -1,5 +1,5 @@
 import { prisma } from '../../core/database';
-import { PlanInput } from '@client-manager/shared';
+import { ENTITY_ACTIVE_STATUS, ENTITY_INACTIVE_STATUS, PlanInput } from '@client-manager/shared';
 
 export class PlansService {
   async list(
@@ -8,6 +8,7 @@ export class PlansService {
     pageSize: number,
     filter: string,
     listFilters: Record<string, string> = {},
+    selectableOnly = false,
   ) {
     const skip = (page - 1) * pageSize;
     const trimmed = filter.trim();
@@ -16,6 +17,7 @@ export class PlansService {
 
     const where = {
       tenantId,
+      ...(selectableOnly ? { status: ENTITY_ACTIVE_STATUS } : {}),
       ...(trimmed ? { name: { contains: trimmed, mode: 'insensitive' as const } } : {}),
       ...(listFilters.status ? { status: listFilters.status as never } : {}),
       ...(listFilters.billingCycle ? { billingCycle: listFilters.billingCycle as never } : {}),
@@ -57,7 +59,6 @@ export class PlansService {
   }
 
   async update(tenantId: string, id: string, input: PlanInput) {
-    console.log('DEBUG: Updating plan:', id, input);
     // Ensure it belongs to the tenant
     await prisma.plan.findFirstOrThrow({
       where: { id, tenantId },
@@ -69,13 +70,25 @@ export class PlansService {
     });
   }
 
-  async delete(tenantId: string, id: string) {
+  async deactivate(tenantId: string, id: string) {
     await prisma.plan.findFirstOrThrow({
       where: { id, tenantId },
     });
 
-    return await prisma.plan.delete({
+    return await prisma.plan.update({
       where: { id },
+      data: { status: ENTITY_INACTIVE_STATUS },
+    });
+  }
+
+  async activate(tenantId: string, id: string) {
+    await prisma.plan.findFirstOrThrow({
+      where: { id, tenantId },
+    });
+
+    return await prisma.plan.update({
+      where: { id },
+      data: { status: ENTITY_ACTIVE_STATUS },
     });
   }
 }

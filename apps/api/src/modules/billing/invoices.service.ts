@@ -386,6 +386,9 @@ export class InvoicesService {
     if (!customer) {
       throw new InvoiceActionError('Cliente não encontrado', 'NOT_FOUND');
     }
+    if (customer.status === 'inactive') {
+      throw new InvoiceActionError('Cliente desativado', 'NOT_ALLOWED');
+    }
 
     const conflict = await prisma.invoice.findFirst({
       where: {

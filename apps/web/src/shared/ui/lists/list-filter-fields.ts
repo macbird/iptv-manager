@@ -3,18 +3,20 @@ import {
   BILLING_INVOICE_STATUS_VALUES,
   CUSTOMER_STATUS_LABELS,
   CUSTOMER_STATUS_VALUES,
+  ENTITY_LIFECYCLE_LABELS,
 } from '@client-manager/shared';
 import type { ListFilterFieldDef } from './ListFiltersModal';
 
 const PLAN_STATUS_OPTIONS = [
-  { value: 'active', label: 'Ativo' },
-  { value: 'archived', label: 'Arquivado' },
+  { value: 'active', label: ENTITY_LIFECYCLE_LABELS.active },
+  { value: 'inactive', label: ENTITY_LIFECYCLE_LABELS.inactive },
 ];
 
 const SERVER_STATUS_OPTIONS = [
-  { value: 'active', label: 'Ativo' },
+  { value: 'active', label: ENTITY_LIFECYCLE_LABELS.active },
   { value: 'maintenance', label: 'Manutenção' },
   { value: 'full', label: 'Lotado' },
+  { value: 'inactive', label: ENTITY_LIFECYCLE_LABELS.inactive },
 ];
 
 const BILLING_CYCLE_OPTIONS = [

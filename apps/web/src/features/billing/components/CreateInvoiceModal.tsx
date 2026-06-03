@@ -36,7 +36,8 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
 
   const { data: customersPage, isLoading: loadingCustomers } = useQuery({
     queryKey: ['customers', 'invoice-form'],
-    queryFn: () => customersApi.list({ page: 1, pageSize: 100, filter: '' }),
+    queryFn: () =>
+      customersApi.list({ page: 1, pageSize: 100, filter: '', selectableOnly: true }),
     enabled: isOpen,
   });
 

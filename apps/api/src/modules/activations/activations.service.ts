@@ -1,21 +1,39 @@
 import { prisma } from '../../core/database';
+import { safeDecryptCredential } from '../../core/crypto/credential-crypto';
 import type { BillingCycle, ConnectionRenewalStatus, Prisma } from '@prisma/client';
 import { extendExpiryFromDate, resolveRenewalBaseDate } from './activation-expiry.util';
 
-function mapTask(row: {
+const listInclude = {
+  customer: {
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      expiresAt: true,
+      _count: { select: { connections: true } },
+    },
+  },
+  payment: {
+    select: { id: true, amountCents: true, method: true, paidAt: true },
+  },
+  invoice: {
+    select: { id: true, billingCycleKey: true },
+  },
+} as const;
+
+function mapListItem(row: {
   id: string;
   status: ConnectionRenewalStatus;
   paidAt: Date;
   completedAt: Date | null;
   notes: string | null;
   createdAt: Date;
-  customer: { id: string; name: string; phone: string | null; expiresAt: Date | null };
-  connection: {
+  customer: {
     id: string;
-    macAddress: string;
-    applicationName: string;
-    label: string | null;
-    server: { id: string; name: string };
+    name: string;
+    phone: string | null;
+    expiresAt: Date | null;
+    _count: { connections: number };
   };
   payment: { id: string; amountCents: number; method: string; paidAt: Date };
   invoice: { id: string; billingCycleKey: string } | null;
@@ -27,18 +45,12 @@ function mapTask(row: {
     completedAt: row.completedAt?.toISOString() ?? null,
     notes: row.notes,
     createdAt: row.createdAt.toISOString(),
+    connectionCount: row.customer._count.connections,
     customer: {
       id: row.customer.id,
       name: row.customer.name,
       phone: row.customer.phone,
       expiresAt: row.customer.expiresAt?.toISOString() ?? null,
-    },
-    connection: {
-      id: row.connection.id,
-      macAddress: row.connection.macAddress,
-      applicationName: row.connection.applicationName,
-      label: row.connection.label,
-      server: row.connection.server,
     },
     payment: {
       id: row.payment.id,
@@ -50,30 +62,41 @@ function mapTask(row: {
   };
 }
 
-const taskInclude = {
-  customer: {
-    select: { id: true, name: true, phone: true, expiresAt: true },
-  },
-  connection: {
-    select: {
-      id: true,
-      macAddress: true,
-      applicationName: true,
-      label: true,
-      server: { select: { id: true, name: true } },
+function mapConnectionDetail(connection: {
+  id: string;
+  label: string | null;
+  macAddress: string;
+  applicationName: string;
+  m3u8Link: string | null;
+  server: {
+    id: string;
+    name: string;
+    panelUrl: string;
+    panelUsername: string | null;
+    panelPasswordEncrypted: string | null;
+    panelNotes: string | null;
+  };
+}) {
+  return {
+    id: connection.id,
+    label: connection.label,
+    macAddress: connection.macAddress,
+    applicationName: connection.applicationName,
+    m3u8Link: connection.m3u8Link,
+    server: {
+      id: connection.server.id,
+      name: connection.server.name,
+      panelUrl: connection.server.panelUrl,
+      panelUsername: connection.server.panelUsername,
+      panelPassword: safeDecryptCredential(connection.server.panelPasswordEncrypted),
+      panelNotes: connection.server.panelNotes,
     },
-  },
-  payment: {
-    select: { id: true, amountCents: true, method: true, paidAt: true },
-  },
-  invoice: {
-    select: { id: true, billingCycleKey: true },
-  },
-} as const;
+  };
+}
 
 export class ActivationsService {
   /**
-   * Lists connection renewal tasks (Ativações pendentes) for a tenant.
+   * Lists payment activations (one per payment) for a tenant.
    */
   async list(
     tenantId: string,
@@ -92,8 +115,20 @@ export class ActivationsService {
         ? {
             OR: [
               { customer: { name: { contains: trimmed, mode: 'insensitive' as const } } },
-              { connection: { macAddress: { contains: trimmed, mode: 'insensitive' as const } } },
-              { connection: { server: { name: { contains: trimmed, mode: 'insensitive' as const } } } },
+              { customer: { phone: { contains: trimmed, mode: 'insensitive' as const } } },
+              {
+                customer: {
+                  connections: {
+                    some: {
+                      OR: [
+                        { macAddress: { contains: trimmed, mode: 'insensitive' as const } },
+                        { applicationName: { contains: trimmed, mode: 'insensitive' as const } },
+                        { server: { name: { contains: trimmed, mode: 'insensitive' as const } } },
+                      ],
+                    },
+                  },
+                },
+              },
             ],
           }
         : {}),
@@ -105,13 +140,13 @@ export class ActivationsService {
         orderBy: [{ status: 'asc' }, { paidAt: 'desc' }],
         skip,
         take: pageSize,
-        include: taskInclude,
+        include: listInclude,
       }),
       prisma.connectionRenewalTask.count({ where }),
     ]);
 
     return {
-      data: rows.map(mapTask),
+      data: rows.map(mapListItem),
       total,
     };
   }
@@ -126,7 +161,41 @@ export class ActivationsService {
   }
 
   /**
-   * Creates one pending task per customer connection after a tenant-scope payment is confirmed.
+   * Returns activation with all customer connections and server credentials for the work screen.
+   */
+  async findById(tenantId: string, id: string) {
+    const task = await prisma.connectionRenewalTask.findFirst({
+      where: { id, tenantId },
+      include: listInclude,
+    });
+
+    if (!task) return null;
+
+    const connections = await prisma.connection.findMany({
+      where: { customerId: task.customerId },
+      include: {
+        server: {
+          select: {
+            id: true,
+            name: true,
+            panelUrl: true,
+            panelUsername: true,
+            panelPasswordEncrypted: true,
+            panelNotes: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return {
+      ...mapListItem(task),
+      connections: connections.map(mapConnectionDetail),
+    };
+  }
+
+  /**
+   * Creates a single pending activation per payment (idempotent).
    */
   async createTasksForPayment(
     params: {
@@ -138,61 +207,41 @@ export class ActivationsService {
     },
     tx: Prisma.TransactionClient = prisma,
   ) {
-    const connections = await tx.connection.findMany({
+    const connectionCount = await tx.connection.count({
       where: { customerId: params.customerId },
-      select: { id: true },
     });
 
-    if (connections.length === 0) {
+    if (connectionCount === 0) {
       throw new Error(
         'Cliente não possui conexões cadastradas. Cadastre um MAC antes de registrar o pagamento.',
       );
     }
 
-    const tasks = await Promise.all(
-      connections.map((connection) =>
-        tx.connectionRenewalTask.create({
-          data: {
-            tenantId: params.tenantId,
-            customerId: params.customerId,
-            connectionId: connection.id,
-            paymentId: params.paymentId,
-            invoiceId: params.invoiceId,
-            paidAt: params.paidAt,
-            status: 'pending',
-          },
-          include: taskInclude,
-        }),
-      ),
-    );
+    const task = await tx.connectionRenewalTask.upsert({
+      where: { paymentId: params.paymentId },
+      create: {
+        tenantId: params.tenantId,
+        customerId: params.customerId,
+        paymentId: params.paymentId,
+        invoiceId: params.invoiceId,
+        paidAt: params.paidAt,
+        status: 'pending',
+      },
+      update: {},
+      include: listInclude,
+    });
 
-    return tasks.map(mapTask);
+    return [mapListItem(task)];
   }
 
   /**
-   * Marks an activation as completed on the server and extends customer expiry when all
-   * tasks for the same payment are done.
+   * Completes the activation and renews customer expiry per plan billing cycle.
    */
   async complete(taskId: string, tenantId: string, notes?: string) {
     const task = await prisma.connectionRenewalTask.findFirst({
       where: { id: taskId, tenantId },
       include: {
         customer: { include: { plan: true } },
-        connection: {
-          select: {
-            id: true,
-            macAddress: true,
-            applicationName: true,
-            label: true,
-            server: { select: { id: true, name: true } },
-          },
-        },
-        payment: {
-          select: { id: true, amountCents: true, method: true, paidAt: true },
-        },
-        invoice: {
-          select: { id: true, billingCycleKey: true },
-        },
       },
     });
 
@@ -205,52 +254,34 @@ export class ActivationsService {
     }
 
     const completedAt = new Date();
+    const billingCycle: BillingCycle = task.customer.plan?.billingCycle ?? 'monthly';
+    const baseDate = resolveRenewalBaseDate(task.customer.expiresAt, completedAt);
+    const newExpiresAt = extendExpiryFromDate(baseDate, billingCycle);
 
-    await prisma.connectionRenewalTask.update({
-      where: { id: taskId },
-      data: {
-        status: 'completed',
-        completedAt,
-        notes: notes?.trim() || task.notes,
-      },
-    });
-
-    const pendingForPayment = await prisma.connectionRenewalTask.count({
-      where: {
-        paymentId: task.paymentId,
-        status: 'pending',
-      },
-    });
-
-    if (pendingForPayment === 0) {
-      const billingCycle: BillingCycle = task.customer.plan?.billingCycle ?? 'monthly';
-      const baseDate = resolveRenewalBaseDate(task.customer.expiresAt, completedAt);
-      const newExpiresAt = extendExpiryFromDate(baseDate, billingCycle);
-
-      await prisma.customer.update({
+    await prisma.$transaction([
+      prisma.connectionRenewalTask.update({
+        where: { id: taskId },
+        data: {
+          status: 'completed',
+          completedAt,
+          notes: notes?.trim() || task.notes,
+        },
+      }),
+      prisma.customer.update({
         where: { id: task.customerId },
         data: { expiresAt: newExpiresAt },
-      });
-    }
+      }),
+    ]);
 
-    const updated = await prisma.connectionRenewalTask.findFirst({
-      where: { id: taskId },
-      include: taskInclude,
-    });
-
-    if (!updated) {
+    const detail = await this.findById(tenantId, taskId);
+    if (!detail) {
       throw new Error('Activation not found after update');
     }
 
-    const customer = await prisma.customer.findUnique({
-      where: { id: task.customerId },
-      select: { expiresAt: true },
-    });
-
     return {
-      ...mapTask({ ...updated, customer: { ...updated.customer, expiresAt: customer?.expiresAt ?? null } }),
-      customerExpiresAtUpdated: pendingForPayment === 0,
-      newExpiresAt: pendingForPayment === 0 ? customer?.expiresAt?.toISOString() ?? null : null,
+      ...detail,
+      customerExpiresAtUpdated: true,
+      newExpiresAt: newExpiresAt.toISOString(),
     };
   }
 
@@ -294,10 +325,10 @@ export class ActivationsService {
           completedAt: null,
           notes: notes?.trim() || task.notes,
         },
-        include: taskInclude,
+        include: listInclude,
       });
 
-      return mapTask(updated);
+      return mapListItem(updated);
     }
 
     if (status === 'pending') {
@@ -312,10 +343,10 @@ export class ActivationsService {
           completedAt: null,
           notes: notes?.trim() || task.notes,
         },
-        include: taskInclude,
+        include: listInclude,
       });
 
-      return mapTask(updated);
+      return mapListItem(updated);
     }
 
     throw new Error('Invalid status transition');

@@ -6,5 +6,6 @@ export function toListQueryParams(params: PaginatedListParams) {
     pageSize: params.pageSize,
     filter: params.filter,
     ...params.filters,
+    ...(params.selectableOnly ? { selectableOnly: 'true' } : {}),
   };
 }

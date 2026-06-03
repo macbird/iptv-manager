@@ -64,7 +64,10 @@ export const ActivationStatusModal: React.FC<ActivationStatusModalProps> = ({
     >
       <div className="space-y-4">
         <p className="text-sm text-slate-600">
-          {activation.customer.name} · {activation.connection.macAddress}
+          {activation.customer.name} ·{' '}
+          {activation.connectionCount === 1
+            ? '1 conexão'
+            : `${activation.connectionCount} conexões`}
         </p>
 
         <div className="rounded-md bg-slate-50 px-3 py-2 text-sm">

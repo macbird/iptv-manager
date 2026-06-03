@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { serversApi } from '../api/servers.api';
-import { Edit2, Trash2, Server, ExternalLink } from 'lucide-react';
+import { Edit2, Server, ExternalLink } from 'lucide-react';
 import { Modal } from '../../../shared/ui/modals/Modal';
 import { ServerFormModal } from '../components/ServerFormModal';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
@@ -13,10 +13,25 @@ import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { SERVER_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
+import { EntityLifecycleActions } from '../../../shared/ui/buttons/EntityLifecycleActions';
+import { ENTITY_INACTIVE_STATUS, ENTITY_LIFECYCLE_LABELS } from '@client-manager/shared';
+import { showToast } from '../../../shared/utils/toast';
+
+type ServerRow = {
+  id: string;
+  name: string;
+  panelUrl: string;
+  maxConnections?: number | null;
+  status: string;
+};
 
 export const ServersPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [lifecycleTarget, setLifecycleTarget] = useState<{
+    id: string;
+    name: string;
+    action: 'deactivate' | 'activate';
+  } | null>(null);
   const formModal = useEntityFormModal();
   useOpenFormFromRouteState(formModal);
 
@@ -35,27 +50,73 @@ export const ServersPage: React.FC = () => {
     goToPreviousPage,
     goToNextPage,
     isLoading,
-  } = usePaginatedList({
+  } = usePaginatedList<ServerRow>({
     queryKey: ['servers'],
     queryFn: serversApi.list,
   });
 
   const filterModal = useListFilterModal(filters, setFilters, clearFilters);
 
-  const deleteMutation = useMutation({
-    mutationFn: serversApi.delete,
-    onSuccess: () => {
+  const lifecycleMutation = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'deactivate' | 'activate' }) =>
+      action === 'deactivate' ? serversApi.deactivate(id) : serversApi.activate(id),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['servers'] });
-      setDeleteId(null);
+      setLifecycleTarget(null);
+      showToast.success(
+        variables.action === 'deactivate' ? 'Servidor desativado' : 'Servidor reativado',
+      );
     },
+    onError: () => showToast.error('Não foi possível alterar o status do servidor'),
   });
 
+  const renderActions = (row: ServerRow) => (
+    <div className="flex justify-end">
+      <button
+        onClick={() => formModal.openEdit(row.id)}
+        className="text-slate-500 hover:text-indigo-600 p-2"
+      >
+        <Edit2 className="w-4 h-4" />
+      </button>
+      <EntityLifecycleActions
+        status={row.status}
+        isPending={lifecycleMutation.isPending}
+        entityLabel="servidor"
+        onDeactivate={() =>
+          setLifecycleTarget({ id: row.id, name: row.name, action: 'deactivate' })
+        }
+        onActivate={() =>
+          setLifecycleTarget({ id: row.id, name: row.name, action: 'activate' })
+        }
+      />
+    </div>
+  );
+
   const columns = [
-    { header: 'Nome', accessor: (s: { name: string }) => s.name, width: '25%' },
+    { header: 'Nome', accessor: (s: ServerRow) => s.name, width: '22%' },
+    {
+      header: 'Status',
+      accessor: (s: ServerRow) => (
+        <span
+          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+            s.status === ENTITY_INACTIVE_STATUS
+              ? 'bg-slate-100 text-slate-500'
+              : 'bg-green-100 text-green-700'
+          }`}
+        >
+          {s.status === ENTITY_INACTIVE_STATUS
+            ? ENTITY_LIFECYCLE_LABELS.inactive
+            : s.status === 'active'
+              ? ENTITY_LIFECYCLE_LABELS.active
+              : s.status}
+        </span>
+      ),
+      width: '14%',
+    },
     {
       header: 'Painel',
-      width: '55%',
-      accessor: (s: { panelUrl: string }) => (
+      width: '48%',
+      accessor: (s: ServerRow) => (
         <a
           href={s.panelUrl}
           target="_blank"
@@ -70,31 +131,11 @@ export const ServersPage: React.FC = () => {
       header: 'Ações',
       width: '120px',
       align: 'right' as const,
-      accessor: (s: { id: string }) => (
-        <div className="flex justify-end">
-          <button
-            onClick={() => formModal.openEdit(s.id)}
-            className="text-slate-500 hover:text-indigo-600 p-2"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setDeleteId(s.id)}
-            className="text-slate-500 hover:text-red-600 p-2"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      ),
+      accessor: (s: ServerRow) => renderActions(s),
     },
   ];
 
-  const renderMobileCard = (s: {
-    id: string;
-    name: string;
-    panelUrl: string;
-    maxConnections?: number | null;
-  }) => (
+  const renderMobileCard = (s: ServerRow) => (
     <div className="flex items-center justify-between group h-12">
       <div className="flex items-center space-x-3 overflow-hidden flex-1">
         <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
@@ -106,27 +147,9 @@ export const ServersPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center shrink-0 gap-2 w-[55%]">
-        <div className="flex-1 text-center min-w-0">
-          <div className="text-sm font-medium text-slate-900 truncate">
-            {s.maxConnections ?? 0}
-          </div>
-        </div>
-
-        <div className="w-10 shrink-0 flex items-center justify-end">
-          <button
-            onClick={() => formModal.openEdit(s.id)}
-            className="p-2 text-slate-400 hover:text-indigo-600"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setDeleteId(s.id)}
-            className="p-2 text-slate-400 hover:text-red-600"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="flex items-center shrink-0 gap-2">
+        <div className="text-sm font-medium text-slate-900">{s.maxConnections ?? 0}</div>
+        {renderActions(s)}
       </div>
     </div>
   );
@@ -169,11 +192,22 @@ export const ServersPage: React.FC = () => {
       <ServerFormModal isOpen={formModal.isOpen} editId={formModal.editId} onClose={formModal.close} />
 
       <Modal
-        isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        title="Excluir Servidor"
-        description="Tem certeza que deseja excluir este servidor? Esta ação não poderá ser desfeita."
+        isOpen={!!lifecycleTarget}
+        onClose={() => setLifecycleTarget(null)}
+        onConfirm={() =>
+          lifecycleTarget &&
+          lifecycleMutation.mutate({ id: lifecycleTarget.id, action: lifecycleTarget.action })
+        }
+        confirmTone="primary"
+        confirmLabel={lifecycleTarget?.action === 'deactivate' ? 'Desativar' : 'Reativar'}
+        title={
+          lifecycleTarget?.action === 'deactivate' ? 'Desativar servidor' : 'Reativar servidor'
+        }
+        description={
+          lifecycleTarget?.action === 'deactivate'
+            ? `Desativar "${lifecycleTarget?.name}"? O servidor não aparecerá em novas conexões.`
+            : `Reativar "${lifecycleTarget?.name}"?`
+        }
       />
 
       <ListFiltersModal

@@ -1,5 +1,10 @@
 import { prisma } from '../../core/database';
-import { CustomerInput } from '@client-manager/shared';
+import { CustomerInput, ENTITY_INACTIVE_STATUS } from '@client-manager/shared';
+import {
+  assertCustomerSelectable,
+  assertSelectablePlan,
+  assertSelectableServers,
+} from '../../core/validators/selectable-entities';
 type PrismaLike = {
   customer: {
     findMany: typeof prisma.customer.findMany;
@@ -7,7 +12,7 @@ type PrismaLike = {
     findFirst: typeof prisma.customer.findFirst;
     findFirstOrThrow: typeof prisma.customer.findFirstOrThrow;
     create: typeof prisma.customer.create;
-    delete: typeof prisma.customer.delete;
+    update: typeof prisma.customer.update;
   };
 };
 
@@ -20,12 +25,14 @@ export class CustomersService {
     pageSize: number,
     filter: string,
     listFilters: Record<string, string> = {},
+    selectableOnly = false,
   ) {
     const skip = (page - 1) * pageSize;
     const trimmed = filter.trim();
 
     const where = {
       tenantId,
+      ...(selectableOnly ? { status: { not: ENTITY_INACTIVE_STATUS } } : {}),
       ...(trimmed
         ? {
             OR: [
@@ -98,6 +105,16 @@ export class CustomersService {
   async create(tenantId: string, input: CustomerInput & { tagIds?: string[] }) {
     const { connections, planId, tagIds, email, notes, ...customerData } = input;
 
+    if (!connections?.length) {
+      throw new Error('Adicione ao menos uma conexão');
+    }
+
+    await assertSelectablePlan(tenantId, planId);
+    await assertSelectableServers(
+      tenantId,
+      connections.map((connection) => connection.serverId),
+    );
+
     return await this.db.customer.create({
       data: {
         ...customerData,
@@ -105,7 +122,7 @@ export class CustomersService {
         notes: notes || null,
         tenantId,
         planId: planId || null,
-        connections: connections?.length ? { create: connections } : undefined,
+        connections: { create: connections },
         tags: tagIds?.length ? { connect: tagIds.map((id) => ({ id })) } : undefined,
       },
       include: {
@@ -119,9 +136,19 @@ export class CustomersService {
   async update(tenantId: string, id: string, input: CustomerInput & { tagIds?: string[] }) {
     const { connections, tagIds, email, notes, ...customerData } = input;
 
+    if (!connections?.length) {
+      throw new Error('Adicione ao menos uma conexão');
+    }
+
     await this.db.customer.findFirstOrThrow({
       where: { id, tenantId },
     });
+
+    await assertSelectablePlan(tenantId, customerData.planId);
+    await assertSelectableServers(
+      tenantId,
+      connections.map((connection) => connection.serverId),
+    );
 
     return await prisma.$transaction(async (tx) => {
       await tx.customer.update({
@@ -136,12 +163,10 @@ export class CustomersService {
         },
       });
 
-      if (connections) {
-        await tx.connection.deleteMany({ where: { customerId: id } });
-        await tx.connection.createMany({
-          data: connections.map((c) => ({ ...c, customerId: id })),
-        });
-      }
+      await tx.connection.deleteMany({ where: { customerId: id } });
+      await tx.connection.createMany({
+        data: connections.map((c) => ({ ...c, customerId: id })),
+      });
 
       return await tx.customer.findUniqueOrThrow({
         where: { id },
@@ -154,14 +179,25 @@ export class CustomersService {
     });
   }
 
-  async delete(tenantId: string, id: string) {
+  async deactivate(tenantId: string, id: string) {
     await this.db.customer.findFirstOrThrow({
       where: { id, tenantId },
     });
 
-    return await prisma.$transaction(async (tx) => {
-      await tx.connection.deleteMany({ where: { customerId: id } });
-      return await tx.customer.delete({ where: { id } });
+    return await this.db.customer.update({
+      where: { id },
+      data: { status: ENTITY_INACTIVE_STATUS },
+    });
+  }
+
+  async activate(tenantId: string, id: string) {
+    await this.db.customer.findFirstOrThrow({
+      where: { id, tenantId },
+    });
+
+    return await this.db.customer.update({
+      where: { id },
+      data: { status: 'active' },
     });
   }
 }

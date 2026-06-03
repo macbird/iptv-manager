@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { customersApi } from '../api/customers.api';
 import { plansApi } from '../../plans/api/plans.api';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import { Modal } from '../../../shared/ui/modals/Modal';
+import { EntityLifecycleActions } from '../../../shared/ui/buttons/EntityLifecycleActions';
+import { showToast } from '../../../shared/utils/toast';
 import { CustomerFormModal } from '../components/CustomerFormModal';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
@@ -26,7 +28,11 @@ import {
 
 export const CustomersPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [lifecycleTarget, setLifecycleTarget] = useState<{
+    id: string;
+    name: string;
+    action: 'deactivate' | 'activate';
+  } | null>(null);
   const formModal = useEntityFormModal();
   useOpenFormFromRouteState(formModal);
 
@@ -62,12 +68,17 @@ export const CustomersPage: React.FC = () => {
     plansForFilter?.data ?? [],
   );
 
-  const deleteMutation = useMutation({
-    mutationFn: customersApi.delete,
-    onSuccess: () => {
+  const lifecycleMutation = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'deactivate' | 'activate' }) =>
+      action === 'deactivate' ? customersApi.deactivate(id) : customersApi.activate(id),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
-      setDeleteId(null);
+      setLifecycleTarget(null);
+      showToast.success(
+        variables.action === 'deactivate' ? 'Cliente desativado' : 'Cliente reativado',
+      );
     },
+    onError: () => showToast.error('Não foi possível alterar o status do cliente'),
   });
 
   const columns = [
@@ -98,12 +109,17 @@ export const CustomersPage: React.FC = () => {
           >
             <Edit2 className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setDeleteId(c.id)}
-            className="text-slate-500 hover:text-red-600 p-2"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <EntityLifecycleActions
+            status={c.status}
+            isPending={lifecycleMutation.isPending}
+            entityLabel="cliente"
+            onDeactivate={() =>
+              setLifecycleTarget({ id: c.id, name: c.name, action: 'deactivate' })
+            }
+            onActivate={() =>
+              setLifecycleTarget({ id: c.id, name: c.name, action: 'activate' })
+            }
+          />
         </div>
       ),
     },
@@ -164,14 +180,17 @@ export const CustomersPage: React.FC = () => {
               >
                 <Edit2 className="w-4 h-4" />
               </button>
-              <button
-                type="button"
-                onClick={() => setDeleteId(c.id)}
-                className="p-2 text-slate-400 hover:text-red-600"
-                aria-label="Excluir cliente"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <EntityLifecycleActions
+                status={c.status}
+                isPending={lifecycleMutation.isPending}
+                entityLabel="cliente"
+                onDeactivate={() =>
+                  setLifecycleTarget({ id: c.id, name: c.name, action: 'deactivate' })
+                }
+                onActivate={() =>
+                  setLifecycleTarget({ id: c.id, name: c.name, action: 'activate' })
+                }
+              />
             </div>
           </div>
         </div>
@@ -221,11 +240,22 @@ export const CustomersPage: React.FC = () => {
       />
 
       <Modal
-        isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        title="Excluir Cliente"
-        description="Tem certeza que deseja excluir este cliente? Esta ação não poderá ser desfeita."
+        isOpen={!!lifecycleTarget}
+        onClose={() => setLifecycleTarget(null)}
+        onConfirm={() =>
+          lifecycleTarget &&
+          lifecycleMutation.mutate({ id: lifecycleTarget.id, action: lifecycleTarget.action })
+        }
+        confirmTone="primary"
+        confirmLabel={lifecycleTarget?.action === 'deactivate' ? 'Desativar' : 'Reativar'}
+        title={
+          lifecycleTarget?.action === 'deactivate' ? 'Desativar cliente' : 'Reativar cliente'
+        }
+        description={
+          lifecycleTarget?.action === 'deactivate'
+            ? `Desativar "${lifecycleTarget?.name}"? Faturas e pagamentos permanecem no histórico. O cliente não aparecerá em novos cadastros.`
+            : `Reativar "${lifecycleTarget?.name}"?`
+        }
       />
 
       <ListFiltersModal

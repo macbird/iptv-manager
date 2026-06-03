@@ -1,5 +1,10 @@
 import { api } from '../../../shared/api/api.client';
-import type { ActivationListItem, PaginatedResponse, UpdateActivationStatusInput } from '@client-manager/shared';
+import type {
+  ActivationDetail,
+  ActivationListItem,
+  PaginatedResponse,
+  UpdateActivationStatusInput,
+} from '@client-manager/shared';
 import type { PaginatedListParams } from '../../../shared/api/list-params';
 import { toListQueryParams } from '../../../shared/api/list-params';
 
@@ -8,6 +13,11 @@ export const activationsApi = {
     params: PaginatedListParams & { status?: string },
   ): Promise<PaginatedResponse<ActivationListItem>> => {
     const { data } = await api.get('/activations', { params: toListQueryParams(params) });
+    return data;
+  },
+
+  getById: async (id: string): Promise<ActivationDetail> => {
+    const { data } = await api.get(`/activations/${id}`);
     return data;
   },
 

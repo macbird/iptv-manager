@@ -48,7 +48,7 @@ export const tenantsApi = {
     const response = await api.post(`/admin/tenants/${id}/invoices`);
     return response.data;
   },
-  toggleStatus: async (id: string, status: 'active' | 'suspended') => {
+  toggleStatus: async (id: string, status: 'active' | 'inactive') => {
     const response = await api.patch(`/admin/tenants/${id}/status`, { status });
     return response.data;
   },
@@ -61,7 +61,7 @@ export const tenantsApi = {
 export interface AdminDashboardStats {
   totalAccounts: number;
   activeAccounts: number;
-  suspendedAccounts: number;
+  inactiveAccounts: number;
   totalUsers: number;
   expectedMrrCents: number;
   activeSubscriptions: number;
