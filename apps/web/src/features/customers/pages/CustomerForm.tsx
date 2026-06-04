@@ -297,90 +297,94 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
               {fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="grid grid-cols-1 items-start gap-3 rounded-[10px] bg-form-field p-3 md:grid-cols-[1fr_1.25fr_1fr_1fr_auto]"
+                  className="space-y-3 rounded-[10px] border border-slate-200 p-3"
                 >
-                  <InlineFormSelect
-                    prefixIcon={Server}
-                    error={errors.connections?.[index]?.serverId?.message as string | undefined}
-                    {...register(`connections.${index}.serverId`)}
-                  >
-                    <option value="">Servidor</option>
-                    {servers?.data?.map((server: { id: string; name: string }) => (
-                      <option key={server.id} value={server.id}>
-                        {server.name}
-                      </option>
-                    ))}
-                  </InlineFormSelect>
-                  <div className="relative w-full">
-                    <div className="flex flex-col gap-2">
-                      <div className="relative">
-                        <Tag className="pointer-events-none absolute left-3 top-1/2 z-10 h-[16px] w-[16px] -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
-                        <input
-                          {...register(`connections.${index}.label`)}
-                          placeholder="Rótulo (ex: Backup)"
-                          className={`${formInputClass} pl-10 text-sm`}
-                        />
-                      </div>
-                      <div className="relative">
-                        <Link2 className="pointer-events-none absolute left-3 top-1/2 z-10 h-[16px] w-[16px] -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
-                        <input
-                          type="url"
-                          {...register(`connections.${index}.m3u8Link`)}
-                          placeholder="M3U8 Link"
-                          className={`${formInputClass} pl-10 text-sm`}
-                        />
-                      </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-full md:w-1/3">
+                      <InlineFormSelect
+                        prefixIcon={Server}
+                        error={errors.connections?.[index]?.serverId?.message as string | undefined}
+                        {...register(`connections.${index}.serverId`)}
+                      >
+                        <option value="">Servidor</option>
+                        {servers?.data?.map((server: { id: string; name: string }) => (
+                          <option key={server.id} value={server.id}>
+                            {server.name}
+                          </option>
+                        ))}
+                      </InlineFormSelect>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => remove(index)}
+                      className="ml-auto shrink-0 p-2 text-red-500 hover:text-red-700"
+                      aria-label="Remover conexão"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div className="relative w-full">
+                      <Tag className="pointer-events-none absolute left-3 top-1/2 z-10 h-[16px] w-[16px] -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
+                      <input
+                        {...register(`connections.${index}.label`)}
+                        placeholder="Rótulo (ex: Sala)"
+                        className={`${formInputClass} pl-10 text-sm`}
+                      />
+                    </div>
+                    <Controller
+                      name={`connections.${index}.macAddress`}
+                      control={control}
+                      render={({ field: macField }) => (
+                        <div className="relative w-full">
+                          <Network className="pointer-events-none absolute left-3 top-1/2 z-10 h-[16px] w-[16px] -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
+                          <MacAddressInput
+                            ref={macField.ref}
+                            name={macField.name}
+                            value={macField.value ?? ''}
+                            onBlur={macField.onBlur}
+                            onChange={macField.onChange}
+                            placeholder="00:00:00:00:00:00"
+                            className={`${formInputClass} pl-10 font-mono text-sm uppercase tracking-wide`}
+                          />
+                          {errors.connections?.[index]?.macAddress && (
+                            <span className="text-red-500 text-[10px]">
+                              {errors.connections[index]?.macAddress?.message as string}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    />
+                    <div className="relative w-full">
+                      <AppWindow className="pointer-events-none absolute left-3 top-1/2 z-10 h-[16px] w-[16px] -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
+                      <input
+                        {...register(`connections.${index}.applicationName`)}
+                        placeholder="SmartOne"
+                        className={`${formInputClass} pl-10 text-sm`}
+                      />
+                      {errors.connections?.[index]?.applicationName && (
+                        <span className="text-red-500 text-[10px]">
+                          {errors.connections[index]?.applicationName?.message as string}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="relative w-full">
+                    <Link2 className="pointer-events-none absolute left-3 top-1/2 z-10 h-[16px] w-[16px] -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
+                    <input
+                      type="url"
+                      {...register(`connections.${index}.m3u8Link`)}
+                      placeholder="M3U8 Link"
+                      className={`${formInputClass} pl-10 text-sm`}
+                    />
                     {errors.connections?.[index]?.m3u8Link && (
                       <span className="text-red-500 text-[10px]">
                         {errors.connections[index]?.m3u8Link?.message as string}
                       </span>
                     )}
                   </div>
-                  <Controller
-                    name={`connections.${index}.macAddress`}
-                    control={control}
-                    render={({ field: macField }) => (
-                      <div className="relative w-full">
-                        <Network className="pointer-events-none absolute left-3 top-1/2 z-10 h-[16px] w-[16px] -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
-                        <MacAddressInput
-                          ref={macField.ref}
-                          name={macField.name}
-                          value={macField.value ?? ''}
-                          onBlur={macField.onBlur}
-                          onChange={macField.onChange}
-                          placeholder="00:00:00:00:00:00"
-                          className={`${formInputClass} pl-10 font-mono text-sm uppercase tracking-wide`}
-                        />
-                        {errors.connections?.[index]?.macAddress && (
-                          <span className="text-red-500 text-[10px]">
-                            {errors.connections[index]?.macAddress?.message as string}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  />
-                  <div className="relative w-full">
-                    <AppWindow className="pointer-events-none absolute left-3 top-1/2 z-10 h-[16px] w-[16px] -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
-                    <input
-                      {...register(`connections.${index}.applicationName`)}
-                      placeholder="Aplicativo"
-                      className={`${formInputClass} pl-10 text-sm`}
-                    />
-                    {errors.connections?.[index]?.applicationName && (
-                      <span className="text-red-500 text-[10px]">
-                        {errors.connections[index]?.applicationName?.message as string}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => remove(index)}
-                    className="text-red-500 hover:text-red-700 p-2 md:justify-self-center"
-                    aria-label="Remover conexão"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               ))}
             </div>

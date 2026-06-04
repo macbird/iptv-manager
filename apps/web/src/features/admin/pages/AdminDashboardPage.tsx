@@ -106,7 +106,7 @@ export const AdminDashboardPage: React.FC = () => {
     {
       title: 'Faturas vencidas',
       value: billing?.overdueInvoices ?? 0,
-      subtitle: 'Assinaturas em atraso',
+      subtitle: formatCents(billing?.overdueAmountCents ?? 0),
       icon: FileWarning,
       iconColor: 'text-red-600',
       iconBg: 'bg-red-100',

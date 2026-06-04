@@ -57,7 +57,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
   }, [customersPage, customerId]);
 
   const createMutation = useMutation({
-    mutationFn: (payload: CreateManualInvoiceInput) => tenantBillingApi.createManualInvoice(payload),
+    mutationFn: (payload: CreateManualInvoiceInput) => tenantBillingApi.createInvoice(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });

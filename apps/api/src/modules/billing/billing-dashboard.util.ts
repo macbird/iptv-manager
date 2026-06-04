@@ -1,5 +1,6 @@
 import { prisma } from '../../core/database';
 import type { BillingScope } from '@prisma/client';
+import { syncOverdueInvoices } from './sync-overdue-invoices';
 
 export interface MonthlyBillingPoint {
   month: string;
@@ -80,6 +81,8 @@ export async function getMonthlyBillingTrend(
 }
 
 export async function getBillingSnapshot(scope: BillingScope, accountId?: string) {
+  await syncOverdueInvoices(scope, accountId);
+
   const now = new Date();
   const currentCycle = cycleKey(now.getFullYear(), now.getMonth());
 
@@ -88,14 +91,19 @@ export async function getBillingSnapshot(scope: BillingScope, accountId?: string
     ...(accountId ? { accountId } : {}),
   };
 
-  const [open, overdue, paidCycle, openAmountAgg, receivedMonthAgg] = await Promise.all([
+  const [open, overdue, paidCycle, openAmountAgg, overdueAmountAgg, receivedMonthAgg] =
+    await Promise.all([
     prisma.invoice.count({ where: { ...where, status: 'open' } }),
     prisma.invoice.count({ where: { ...where, status: 'overdue' } }),
     prisma.invoice.count({
       where: { ...where, billingCycleKey: currentCycle, status: 'paid' },
     }),
     prisma.invoice.aggregate({
-      where: { ...where, status: { in: ['open', 'overdue'] } },
+      where: { ...where, status: 'open' },
+      _sum: { amountCents: true },
+    }),
+    prisma.invoice.aggregate({
+      where: { ...where, status: 'overdue' },
       _sum: { amountCents: true },
     }),
     prisma.payment.aggregate({
@@ -122,6 +130,7 @@ export async function getBillingSnapshot(scope: BillingScope, accountId?: string
     overdueInvoices: overdue,
     paidInCurrentCycle: paidCycle,
     openAmountCents: openAmountAgg._sum.amountCents ?? 0,
+    overdueAmountCents: overdueAmountAgg._sum.amountCents ?? 0,
     receivedCurrentMonthCents: receivedMonthAgg._sum.amountCents ?? 0,
     issuedCurrentMonthCents: issuedCents,
     collectionRate,

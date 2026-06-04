@@ -3,6 +3,7 @@ import type { BillingScope, BillingInvoiceStatus, PaymentProviderType } from '@p
 import { InvoiceActionError } from './invoice-errors';
 import { PaymentRouterService } from '../../integrations/payment/payment-router.service';
 import { PaymentConfirmationService } from './payment-confirmation.service';
+import { isInvoicePastDue, syncOverdueInvoices } from './sync-overdue-invoices';
 
 const CANCELABLE_STATUSES: BillingInvoiceStatus[] = ['draft', 'open', 'overdue'];
 const paymentRouter = new PaymentRouterService();
@@ -88,6 +89,8 @@ export class InvoicesService {
     filter: string,
     listFilters: Record<string, string> = {},
   ) {
+    await syncOverdueInvoices(scope, accountId ?? undefined);
+
     const skip = (page - 1) * pageSize;
     const trimmed = filter.trim();
 
@@ -152,6 +155,8 @@ export class InvoicesService {
   }
 
   async getById(scope: BillingScope, invoiceId: string, accountId: string | null) {
+    await syncOverdueInvoices(scope, accountId ?? undefined);
+
     const row = await prisma.invoice.findFirst({
       where: this.invoiceWhere(scope, accountId, invoiceId),
       include: {
@@ -412,7 +417,7 @@ export class InvoicesService {
           billingCycleKey,
           amountCents: data.amountCents,
           dueDate,
-          status: 'open',
+          status: isInvoicePastDue(dueDate) ? 'overdue' : 'open',
         },
       });
 

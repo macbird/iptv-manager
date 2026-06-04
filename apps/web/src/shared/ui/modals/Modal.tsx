@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
-export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
 const MODAL_SIZE_CLASS: Record<ModalSize, string> = {
   sm: 'max-w-sm',
@@ -10,6 +10,7 @@ const MODAL_SIZE_CLASS: Record<ModalSize, string> = {
   lg: 'max-w-lg',
   xl: 'max-w-2xl',
   '2xl': 'max-w-3xl',
+  '3xl': 'max-w-4xl',
 };
 
 interface ModalProps {
@@ -153,56 +154,35 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </>
       ) : (
-        <>
-          {/* Mobile: content bottom sheet */}
-          <div className={`relative z-10 flex max-h-[min(92dvh,720px)] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl md:hidden animate-modal-sheet ${sizeClass}`}>
-            <div className="flex shrink-0 justify-center pt-2">
-              <span className="h-1 w-10 rounded-full bg-slate-200" aria-hidden />
-            </div>
-            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-4 pb-3 pt-2">
-              <h3 id="modal-title" className="text-lg font-semibold text-slate-900">
-                {title}
-              </h3>
-              <button
-                type="button"
-                className="-mr-1 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                onClick={onClose}
-                aria-label="Fechar"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-5">
-              {description && <p className="mb-4 text-sm text-slate-600">{description}</p>}
-              {children}
-            </div>
-            {footer ? <div className="shrink-0 border-t border-slate-100 bg-slate-50/50 px-4 py-4">{footer}</div> : null}
+        <div
+          className={`relative z-10 flex max-h-[min(92dvh,720px)] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl animate-modal-sheet md:max-h-[min(90vh,720px)] md:rounded-2xl md:animate-modal-dialog md:ring-1 md:ring-slate-900/5 ${sizeClass}`}
+        >
+          <div className="flex shrink-0 justify-center pt-2 md:hidden">
+            <span className="h-1 w-10 rounded-full bg-slate-200" aria-hidden />
           </div>
-
-          {/* Desktop: content dialog */}
-          <div className={`relative z-10 hidden w-full ${sizeClass} md:block animate-modal-dialog`}>
-            <div className="flex max-h-[min(90vh,720px)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/5">
-              <div className="flex shrink-0 items-start justify-between border-b border-slate-100 px-5 py-4">
-                <h3 id="modal-title" className="text-lg font-semibold text-slate-900">
-                  {title}
-                </h3>
-                <button
-                  type="button"
-                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                  onClick={onClose}
-                  aria-label="Fechar"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto px-6 py-5">
-                {description && <p className="mb-4 text-sm text-slate-600">{description}</p>}
-                {children}
-              </div>
-              {footer ? <div className="shrink-0 border-t border-slate-100 bg-slate-50/50 px-6 py-5">{footer}</div> : null}
-            </div>
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-4 pb-3 pt-2 md:px-5 md:py-4">
+            <h3 id="modal-title" className="text-lg font-semibold text-slate-900">
+              {title}
+            </h3>
+            <button
+              type="button"
+              className="-mr-1 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 md:mr-0"
+              onClick={onClose}
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-        </>
+          <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
+            {description && <p className="mb-4 text-sm text-slate-600">{description}</p>}
+            {children}
+          </div>
+          {footer ? (
+            <div className="shrink-0 border-t border-slate-100 bg-slate-50/50 px-4 py-4 md:px-6 md:py-5">
+              {footer}
+            </div>
+          ) : null}
+        </div>
       )}
     </div>
   );

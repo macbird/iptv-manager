@@ -16,6 +16,7 @@ import {
   Wallet,
   FileWarning,
   TrendingUp,
+  CheckCircle2,
 } from 'lucide-react';
 import { dashboardApi } from '../api/dashboard.api';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
@@ -25,6 +26,7 @@ import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 import { isApiAuthError, isApiNetworkError } from '../../../shared/api/api-error';
 import { BillingMonthlyBars } from '../../../shared/ui/billing/BillingMonthlyBars';
 import { RecentPaymentsList } from '../../../shared/ui/billing/RecentPaymentsList';
+import { PendingActivationsList } from '../../../shared/ui/billing/PendingActivationsList';
 import { formatCents } from '../../../shared/ui/billing/format-billing';
 
 function formatCurrency(value: number) {
@@ -157,6 +159,17 @@ export const DashboardPage: React.FC = () => {
   ];
 
   const billing = stats?.billing;
+
+  const pendingActivationCard = {
+    title: 'Ativações pendentes',
+    value: stats?.pendingActivationsCount ?? 0,
+    subtitle: 'Renovar no servidor após pagamento',
+    icon: CheckCircle2,
+    iconColor: 'text-amber-600',
+    iconBg: 'bg-amber-100',
+    href: '/activations',
+  };
+
   const billingCards = [
     {
       title: 'Recebido no mês',
@@ -179,7 +192,7 @@ export const DashboardPage: React.FC = () => {
     {
       title: 'Faturas vencidas',
       value: billing?.overdueInvoices ?? 0,
-      subtitle: 'Requer cobrança',
+      subtitle: formatCents(billing?.overdueAmountCents ?? 0),
       icon: FileWarning,
       iconColor: 'text-red-600',
       iconBg: 'bg-red-100',
@@ -251,6 +264,12 @@ export const DashboardPage: React.FC = () => {
               ))}
             </div>
           </section>
+          <section className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <StatCard {...pendingActivationCard} />
+            </div>
+            <PendingActivationsList activations={stats?.pendingActivations ?? []} />
+          </section>
           <section>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
               Clientes e vencimentos
@@ -274,7 +293,7 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Desktop: 6 colunas ocupando toda a largura (última linha com 2 cards em col-span-3) */}
-        <div className="hidden lg:block space-y-10 mb-10">
+        <div className="hidden lg:block space-y-10">
           <section>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
               Cobrança e pagamentos
@@ -289,6 +308,14 @@ export const DashboardPage: React.FC = () => {
                 </div>
               ))}
             </div>
+          </section>
+          <section className="space-y-4">
+            <div className="grid grid-cols-6 gap-4 w-full">
+              <div className="min-w-0 col-span-2">
+                <StatCard {...pendingActivationCard} />
+              </div>
+            </div>
+            <PendingActivationsList activations={stats?.pendingActivations ?? []} />
           </section>
           <section>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
@@ -323,7 +350,7 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {stats?.monthlyBilling && stats.monthlyBilling.length > 0 && (
-          <div className="mb-6 w-full">
+          <div className="mb-6 mt-8 w-full lg:mt-10">
             <BillingMonthlyBars
               data={stats.monthlyBilling}
               title="Cobrança dos clientes — últimos 6 meses"
@@ -422,6 +449,18 @@ export const DashboardPage: React.FC = () => {
             >
               <Server className="w-4 h-4" />
               Novo servidor
+            </Link>
+            <Link
+              to="/activations"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Ativações pendentes
+              {(stats?.pendingActivationsCount ?? 0) > 0 ? (
+                <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                  {stats?.pendingActivationsCount}
+                </span>
+              ) : null}
             </Link>
             <Link
               to="/invoices"

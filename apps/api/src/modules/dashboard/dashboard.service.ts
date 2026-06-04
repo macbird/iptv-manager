@@ -3,6 +3,9 @@ import {
   getBillingSnapshot,
   getMonthlyBillingTrend,
 } from '../billing/billing-dashboard.util';
+import { ActivationsService } from '../activations/activations.service';
+
+const activationsService = new ActivationsService();
 
 export class DashboardService {
   async getStats(tenantId: string) {
@@ -48,10 +51,13 @@ export class DashboardService {
       0,
     );
 
-    const [billing, monthlyBilling, recentPayments] = await Promise.all([
+    const [billing, monthlyBilling, recentPayments, pendingActivationsCount, pendingActivationsPage] =
+      await Promise.all([
       getBillingSnapshot('tenant', tenantId),
       getMonthlyBillingTrend('tenant', tenantId),
       this.getRecentPayments(tenantId, 5),
+      activationsService.countPending(tenantId),
+      activationsService.list(tenantId, 1, 5, '', 'pending'),
     ]);
 
     return {
@@ -67,6 +73,8 @@ export class DashboardService {
       billing,
       monthlyBilling,
       recentPayments,
+      pendingActivationsCount,
+      pendingActivations: pendingActivationsPage.data,
     };
   }
 

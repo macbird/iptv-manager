@@ -1,12 +1,14 @@
 import { api } from '../../../shared/api/api.client';
 import type { MonthlyBillingPoint } from '../../../shared/ui/billing/BillingMonthlyBars';
 import type { RecentPaymentItem } from '../../../shared/ui/billing/RecentPaymentsList';
+import type { PendingActivationItem } from '../../../shared/ui/billing/PendingActivationsList';
 
 export interface BillingSnapshot {
   openInvoices: number;
   overdueInvoices: number;
   paidInCurrentCycle: number;
   openAmountCents: number;
+  overdueAmountCents: number;
   receivedCurrentMonthCents: number;
   issuedCurrentMonthCents: number;
   collectionRate: number;
@@ -25,6 +27,8 @@ export interface DashboardStats {
   billing: BillingSnapshot;
   monthlyBilling: MonthlyBillingPoint[];
   recentPayments: RecentPaymentItem[];
+  pendingActivationsCount: number;
+  pendingActivations: PendingActivationItem[];
 }
 
 export interface UpcomingExpiration {

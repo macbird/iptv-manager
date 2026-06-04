@@ -14,12 +14,13 @@ export async function assertSelectablePlan(tenantId: string, planId: string | nu
 }
 
 export async function assertSelectableServers(tenantId: string, serverIds: string[]) {
-  if (serverIds.length === 0) return;
+  const uniqueServerIds = [...new Set(serverIds)];
+  if (uniqueServerIds.length === 0) return;
   const servers = await prisma.server.findMany({
-    where: { id: { in: serverIds }, tenantId },
+    where: { id: { in: uniqueServerIds }, tenantId },
     select: { id: true, status: true },
   });
-  if (servers.length !== serverIds.length) {
+  if (servers.length !== uniqueServerIds.length) {
     throw new Error('Servidor não encontrado');
   }
   const inactive = servers.find((server) => server.status !== ENTITY_ACTIVE_STATUS);
