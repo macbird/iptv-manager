@@ -1,6 +1,10 @@
 node_modules
 .env
 deploy/CREDENTIALS.local.md
+deploy/artifacts/
+deploy/backups/
+deploy/*.py
+deploy/__pycache__/
 dist
 .vscode
 .idea

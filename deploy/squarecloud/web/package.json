@@ -1,0 +1,7 @@
+{
+  "name": "iptv-manager-web",
+  "private": true,
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}
