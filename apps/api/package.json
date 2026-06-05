@@ -7,6 +7,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc",
     "start": "node -r dotenv/config dist/main.js",
+    "start:ts": "ts-node --transpile-only -r dotenv/config src/main.ts",
     "test": "vitest run",
     "seed:billing": "ts-node src/scripts/seed-billing.ts",
     "seed:activations": "ts-node src/scripts/seed-activations.ts",
@@ -25,11 +26,11 @@
     "fastify": "^4.26.1",
     "ioredis": "^5.3.2",
     "slugify": "^1.6.9",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "prisma": "^5.10.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.20",
-    "prisma": "^5.10.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.3",
     "vitest": "^3.2.4"

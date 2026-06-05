@@ -145,46 +145,126 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
           />
           <SecretCredentialField
             id={`payment-webhook-${selectedProvider}`}
-            label="Token do webhook"
+            label={selectedProvider === 'mercadopago' ? 'Assinatura secreta (Webhook secret)' : 'Token do webhook'}
             value={selected.webhookToken}
             configured={selected.webhookTokenConfigured}
             onChange={(webhookToken) => updateSelected({ webhookToken })}
-            emptyPlaceholder="Opcional"
-            configuredHint="Token do webhook salvo — não exibido por segurança"
+            emptyPlaceholder={selectedProvider === 'mercadopago' ? 'Cole o secret do painel MP' : 'Opcional'}
+            configuredHint="Secret salvo — não exibido por segurança"
           />
         </div>
 
         {selectedProvider === 'mercadopago' ? (
           <>
             <p className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-              Mercado Pago: copie o <strong>Access Token</strong> (token longo) em Developers →
-              Credenciais de teste. Não use a <strong>Public Key</strong> (UUID curto) nem o
-              usuário <code className="font-mono">TESTUSER...</code>.
+              Mercado Pago: copie o <strong>Access Token</strong> (token longo) em{' '}
+              <a
+                href="https://www.mercadopago.com.br/developers/panel/app"
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                Developers → Suas integrações → Credenciais
+              </a>
+              . Não use a <strong>Public Key</strong> (UUID curto) nem o usuário{' '}
+              <code className="font-mono">TESTUSER...</code>.
             </p>
+
             {mercadoPagoWebhookUrl ? (
-              <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-3">
-                <p className="text-xs font-medium text-emerald-900">URL do webhook (PIX pago)</p>
-                <div className="mt-2 flex items-start gap-2">
-                  <code className="flex-1 break-all font-mono text-[11px] text-emerald-950">
-                    {mercadoPagoWebhookUrl}
-                    {mercadoPagoWebhookRequiresToken ? '?token=SEU_TOKEN' : ''}
-                  </code>
-                  <button
-                    type="button"
-                    onClick={copyWebhookUrl}
-                    className="shrink-0 rounded p-1 text-emerald-700 hover:bg-emerald-100"
-                    title="Copiar URL"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
+              <div className="mt-3 space-y-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-3">
+                <div>
+                  <p className="text-xs font-medium text-emerald-900">URL do webhook (PIX pago)</p>
+                  <p className="mt-1 text-[11px] text-emerald-800">
+                    A URL usa o <strong>ID da sua conta</strong> (não o nome do tenant). Copie e
+                    cadastre exatamente como aparece abaixo.
+                  </p>
+                  <div className="mt-2 flex items-start gap-2">
+                    <code className="flex-1 break-all font-mono text-[11px] text-emerald-950">
+                      {mercadoPagoWebhookUrl}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={copyWebhookUrl}
+                      className="shrink-0 rounded p-1 text-emerald-700 hover:bg-emerald-100"
+                      title="Copiar URL"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <p className="mt-2 text-[11px] text-emerald-800">
-                  Cadastre em Mercado Pago → Webhooks → evento <strong>Payments</strong>. Em
-                  desenvolvimento local use ngrok apontando para a API (
-                  <code className="font-mono">API_PUBLIC_BASE_URL</code>).
+
+                <div className="rounded-md border border-emerald-200 bg-white/70 px-3 py-2.5">
+                  <p className="text-xs font-semibold text-slate-900">
+                    Como configurar no Mercado Pago
+                  </p>
+                  <ol className="mt-2 list-decimal space-y-1.5 pl-4 text-[11px] text-slate-700">
+                    <li>
+                      Acesse{' '}
+                      <a
+                        href="https://www.mercadopago.com.br/developers/panel/app"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-700 underline"
+                      >
+                        Mercado Pago Developers
+                      </a>{' '}
+                      e abra a mesma aplicação do Access Token acima.
+                    </li>
+                    <li>
+                      Vá em <strong>Webhooks</strong> (ou <strong>Notificações</strong> →{' '}
+                      <strong>Webhooks</strong>).
+                    </li>
+                    <li>
+                      Clique em <strong>Configurar notificações</strong> ou{' '}
+                      <strong>Adicionar URL</strong>.
+                    </li>
+                    <li>
+                      Cole a URL copiada acima no campo <strong>URL de produção</strong> (ou URL de
+                      teste, se estiver em sandbox).
+                    </li>
+                    <li>
+                      Marque o evento <strong>Payments</strong> (pagamentos).
+                    </li>
+                    <li>
+                      Salve. O Mercado Pago pode enviar um GET de verificação — a API responde
+                      automaticamente.
+                    </li>
+                    <li>
+                      Gere um PIX de teste e pague. A fatura deve mudar para <strong>paga</strong>{' '}
+                      em alguns segundos.
+                    </li>
+                  </ol>
+                </div>
+
+                <p className="text-[11px] text-slate-700">
+                  No painel do Mercado Pago, copie a <strong>assinatura secreta</strong> gerada ao
+                  salvar o webhook e cole no campo acima. A API valida o header{' '}
+                  <code className="font-mono">x-signature</code> em cada notificação de pagamento.
+                </p>
+
+                {mercadoPagoWebhookRequiresToken ? (
+                  <p className="text-[11px] text-emerald-800">
+                    Assinatura secreta configurada. Notificações sem assinatura válida serão
+                    rejeitadas.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-amber-800">
+                    Sem assinatura secreta, a API aceita notificações sem validar origem (útil para
+                    teste). Em produção, configure o secret.
+                  </p>
+                )}
+
+                <p className="text-[11px] text-slate-600">
+                  Se a URL mudar (ex.: novo túnel da API), atualize no painel do Mercado Pago. A URL
+                  exibida aqui sempre reflete o endereço público atual da API.
                 </p>
               </div>
-            ) : null}
+            ) : (
+              <p className="mt-3 text-xs text-amber-700">
+                URL do webhook indisponível — verifique se a API está com{' '}
+                <code className="font-mono">API_PUBLIC_BASE_URL</code> configurada.
+              </p>
+            )}
           </>
         ) : null}
         {!selected.apiKeyConfigured ? (

@@ -11,7 +11,9 @@
     "web:dev": "npm run dev -w apps/web",
     "web:dev:force": "npm run dev -w apps/web -- --force",
     "build": "npm run build -w packages/shared && npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces"
+    "test": "npm run test --workspaces",
+    "deploy:zip:api": "node deploy/scripts/build-api-zip.mjs",
+    "deploy:zip:web": "node deploy/scripts/build-web-zip.mjs"
   },
   "dependencies": {
     "argon2": "^0.44.0"

@@ -37,6 +37,19 @@ export interface PlatformSettingsDto {
   };
 }
 
+export interface PaymentWebhookLogDto {
+  id: string;
+  tenantSlug: string;
+  provider: string;
+  httpMethod: string;
+  paymentId: string | null;
+  statusCode: number;
+  outcome: string;
+  detail: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+}
+
 export interface TenantSettingsDto {
   accountSlug: string | null;
   mercadoPagoWebhookUrl: string | null;

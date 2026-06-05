@@ -16,6 +16,7 @@ import {
 } from '../components/PaymentRoutingSection';
 import type { PaymentProviderValue } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
+import { WebhookLogsSection } from '../components/WebhookLogsSection';
 
 function formatBrl(cents: number) {
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -148,6 +149,8 @@ export const TenantSettingsPage: React.FC = () => {
             />
           </div>
         </section>
+
+        <WebhookLogsSection />
 
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-semibold text-slate-900">WhatsApp</h2>

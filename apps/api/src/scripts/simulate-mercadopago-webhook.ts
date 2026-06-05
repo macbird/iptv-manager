@@ -31,7 +31,7 @@ async function main() {
     ? safeDecryptCredential(credential.webhookToken) || credential.webhookToken
     : undefined;
 
-  const url = buildMercadoPagoWebhookUrl(invoice.account.slug, { webhookToken });
+  const url = buildMercadoPagoWebhookUrl(invoice.account.id, { webhookToken });
 
   const response = await fetch(url, {
     method: 'POST',

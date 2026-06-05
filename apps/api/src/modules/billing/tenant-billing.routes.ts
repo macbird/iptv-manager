@@ -8,6 +8,7 @@ import { InvoiceChargeService } from './invoice-charge.service';
 import { PaymentsService } from './payments.service';
 import { handleInvoiceActionError } from './invoice-route.util';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
+import { PaymentWebhookLogService } from './payment-webhook-log.service';
 
 const INVOICE_LIST_FILTER_KEYS = ['status', 'billingCycleKey', 'dueFrom', 'dueTo'] as const;
 const PAYMENT_LIST_FILTER_KEYS = ['method', 'billingCycleKey', 'paidFrom', 'paidTo'] as const;
@@ -17,6 +18,7 @@ const tenantPaymentSettings = new TenantPaymentSettingsService();
 const invoicesService = new InvoicesService();
 const invoiceChargeService = new InvoiceChargeService();
 const paymentsService = new PaymentsService();
+const paymentWebhookLogService = new PaymentWebhookLogService();
 
 export async function tenantBillingRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -39,6 +41,12 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
       whatsappInstanceUrl: body.whatsappInstanceUrl as string | undefined,
       whatsappApiKey: body.whatsappApiKey as string | undefined,
     });
+  });
+
+  app.get('/settings/webhook-logs', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+    return paymentWebhookLogService.listForTenant(tenantId, 50);
   });
 
   app.get('/settings/subscription', async (request, reply) => {

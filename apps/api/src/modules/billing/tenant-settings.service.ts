@@ -1,5 +1,6 @@
 import { prisma } from '../../core/database';
 import type { PaymentProviderType, WhatsAppProviderType } from '@prisma/client';
+import { safeDecryptCredential } from '../../core/crypto/credential-crypto';
 import { TenantPaymentSettingsService } from './tenant-payment-settings.service';
 import { buildMercadoPagoWebhookUrl } from './payment-webhook.util';
 
@@ -42,10 +43,14 @@ export class TenantSettingsService {
     ]);
 
     const mercadoPagoCredential = paymentCredentials.find((item) => item.provider === 'mercadopago');
+    const mercadoPagoWebhookToken = await this.resolveMercadoPagoWebhookToken(
+      tenantId,
+      mercadoPagoCredential?.webhookTokenConfigured,
+    );
 
     return {
       accountSlug: account?.slug ?? null,
-      mercadoPagoWebhookUrl: account?.slug ? buildMercadoPagoWebhookUrl(account.slug) : null,
+      mercadoPagoWebhookUrl: buildMercadoPagoWebhookUrl(tenantId),
       mercadoPagoWebhookRequiresToken: Boolean(mercadoPagoCredential?.webhookTokenConfigured),
       payment: {
         provider: payment?.provider ?? 'asaas',
@@ -113,5 +118,19 @@ export class TenantSettingsService {
     }
 
     return this.get(tenantId);
+  }
+
+  private async resolveMercadoPagoWebhookToken(
+    tenantId: string,
+    configured?: boolean,
+  ): Promise<string | null> {
+    if (!configured) return null;
+    const row = await prisma.tenantPaymentCredential.findUnique({
+      where: {
+        accountId_provider: { accountId: tenantId, provider: 'mercadopago' },
+      },
+    });
+    if (!row?.webhookToken) return null;
+    return safeDecryptCredential(row.webhookToken) || row.webhookToken;
   }
 }

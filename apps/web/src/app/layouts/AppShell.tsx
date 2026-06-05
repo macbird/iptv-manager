@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, CreditCard, Server, LogOut, Menu, X, UserCog, Settings, FileText, Wallet, CheckCircle2 } from 'lucide-react';
+import { APP_VERSION } from '@client-manager/shared';
+import { PwaInstallBanner } from '../pwa/PwaInstallBanner';
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -64,6 +66,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               Cliente Manager
             </div>
             <NavContent />
+            <p className="px-4 pb-3 text-[11px] text-gray-500">v{APP_VERSION}</p>
           </div>
         </div>
       </aside>
@@ -105,6 +108,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         <main className="flex-1 relative z-0 overflow-hidden focus:outline-none min-h-0">
           {children}
         </main>
+        <PwaInstallBanner />
       </div>
     </div>
   );

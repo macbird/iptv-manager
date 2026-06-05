@@ -4,27 +4,27 @@ import {
   extractMercadoPagoPaymentId,
 } from './payment-webhook.util';
 
+const SAMPLE_TENANT_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
 describe('buildMercadoPagoWebhookUrl', () => {
-  it('testBuildMercadoPagoWebhookUrl_whenTenantSlugProvided_shouldReturnPublicPath', () => {
-    const url = buildMercadoPagoWebhookUrl('joao-paulo', { baseUrl: 'https://api.example.com' });
+  it('testBuildMercadoPagoWebhookUrl_whenTenantIdProvided_shouldReturnPublicPath', () => {
+    const url = buildMercadoPagoWebhookUrl(SAMPLE_TENANT_ID, {
+      baseUrl: 'https://api.example.com',
+    });
 
-    expect(url).toBe('https://api.example.com/api/webhooks/payment/joao-paulo/mercadopago');
-  });
-
-  it('testBuildMercadoPagoWebhookUrl_whenSlugHasSpaces_shouldEncodePathSegment', () => {
-    const url = buildMercadoPagoWebhookUrl('Toro TV', { baseUrl: 'https://api.example.com' });
-
-    expect(url).toBe('https://api.example.com/api/webhooks/payment/Toro%20TV/mercadopago');
+    expect(url).toBe(
+      `https://api.example.com/api/webhooks/payment/${SAMPLE_TENANT_ID}/mercadopago`,
+    );
   });
 
   it('testBuildMercadoPagoWebhookUrl_whenTokenProvided_shouldAppendQueryParam', () => {
-    const url = buildMercadoPagoWebhookUrl('joao-paulo', {
+    const url = buildMercadoPagoWebhookUrl(SAMPLE_TENANT_ID, {
       baseUrl: 'https://api.example.com',
       webhookToken: 'secret-token',
     });
 
     expect(url).toBe(
-      'https://api.example.com/api/webhooks/payment/joao-paulo/mercadopago?token=secret-token',
+      `https://api.example.com/api/webhooks/payment/${SAMPLE_TENANT_ID}/mercadopago?token=secret-token`,
     );
   });
 });
@@ -46,5 +46,14 @@ describe('extractMercadoPagoPaymentId', () => {
     });
 
     expect(id).toBe('123456789');
+  });
+
+  it('testExtractMercadoPagoPaymentId_whenDataIdQuery_shouldReadTypePayment', () => {
+    const id = extractMercadoPagoPaymentId(null, {
+      type: 'payment',
+      'data.id': '161847961761',
+    });
+
+    expect(id).toBe('161847961761');
   });
 });

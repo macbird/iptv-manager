@@ -11,7 +11,7 @@ async function main() {
 
   const response = await fetch(
     `https://api.mercadopago.com/v1/payments/search?external_reference=${invoiceId}&sort=date_created&criteria=desc`,
-    { headers: { Authorization: `Bearer ${token}` },
+    { headers: { Authorization: `Bearer ${token}` } },
   );
   const payload = await response.json();
 

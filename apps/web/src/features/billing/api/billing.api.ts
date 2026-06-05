@@ -8,6 +8,7 @@ import type {
   PaginatedResponse,
   PaymentDetailDto,
   PaymentListItem,
+  PaymentWebhookLogDto,
   PlatformSettingsDto,
   RegisterPaymentInput,
   TenantSettingsDto,
@@ -68,6 +69,10 @@ export const platformBillingApi = {
 export const tenantBillingApi = {
   getSettings: async (): Promise<TenantSettingsDto & { subscription: unknown }> => {
     const { data } = await api.get('/settings');
+    return data;
+  },
+  getWebhookLogs: async (): Promise<PaymentWebhookLogDto[]> => {
+    const { data } = await api.get('/settings/webhook-logs');
     return data;
   },
   updateSettings: async (payload: Record<string, unknown>) => {

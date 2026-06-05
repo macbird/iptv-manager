@@ -108,6 +108,7 @@ model Account {
   tenantBillingAutomation TenantBillingAutomationConfig?
   invoices               Invoice[]
   connectionRenewalTasks ConnectionRenewalTask[]
+  paymentWebhookLogs   PaymentWebhookLog[]
 
   @@map("accounts")
 }
@@ -420,4 +421,23 @@ model ConnectionRenewalTask {
   @@index([tenantId, status, paidAt])
   @@index([customerId, status])
   @@map("connection_renewal_tasks")
+}
+
+model PaymentWebhookLog {
+  id           String   @id @default(uuid())
+  accountId    String?
+  account      Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  tenantSlug   String
+  provider     String   @default("mercadopago")
+  httpMethod   String
+  paymentId    String?
+  statusCode   Int
+  outcome      String
+  detail       String?
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([accountId, createdAt])
+  @@index([tenantSlug, createdAt])
+  @@map("payment_webhook_logs")
 }

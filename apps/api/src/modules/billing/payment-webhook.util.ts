@@ -9,18 +9,17 @@
  */
 
 /**
- * Builds the public Mercado Pago webhook URL for a tenant or the platform.
+ * Builds the public Mercado Pago webhook URL for a tenant account or the platform.
  */
 export function buildMercadoPagoWebhookUrl(
-  tenantSlug: string,
+  tenantId: string,
   options?: { baseUrl?: string; webhookToken?: string | null },
 ): string {
   const base = (options?.baseUrl ?? process.env.API_PUBLIC_BASE_URL ?? 'http://localhost:3001').replace(
     /\/$/,
     '',
   );
-  const encodedSlug = encodeURIComponent(tenantSlug);
-  const path = `/api/webhooks/payment/${encodedSlug}/mercadopago`;
+  const path = `/api/webhooks/payment/${tenantId}/mercadopago`;
   const url = `${base}${path}`;
 
   if (options?.webhookToken) {
@@ -31,6 +30,25 @@ export function buildMercadoPagoWebhookUrl(
 }
 
 /**
+ * Normalizes tenant reference from webhook path segment (account id or legacy slug).
+ */
+export function decodeWebhookTenantRef(rawRef: string): string {
+  try {
+    return decodeURIComponent(rawRef);
+  } catch {
+    return rawRef;
+  }
+}
+
+function readQueryPaymentId(query: Record<string, unknown>): string | null {
+  const raw = query.id ?? query['data.id'];
+  if (typeof raw === 'string' || typeof raw === 'number') {
+    return String(raw);
+  }
+  return null;
+}
+
+/**
  * Extracts the Mercado Pago payment id from webhook query params or JSON body.
  */
 export function extractMercadoPagoPaymentId(
@@ -38,9 +56,9 @@ export function extractMercadoPagoPaymentId(
   query: Record<string, unknown>,
 ): string | null {
   const topic = typeof query.topic === 'string' ? query.topic : null;
-  const queryId =
-    typeof query.id === 'string' || typeof query.id === 'number' ? String(query.id) : null;
-  if (topic === 'payment' && queryId) {
+  const type = typeof query.type === 'string' ? query.type : null;
+  const queryId = readQueryPaymentId(query);
+  if ((topic === 'payment' || type === 'payment') && queryId) {
     return queryId;
   }
 
@@ -49,9 +67,9 @@ export function extractMercadoPagoPaymentId(
   }
 
   const record = body as Record<string, unknown>;
-  const type = typeof record.type === 'string' ? record.type : null;
+  const bodyType = typeof record.type === 'string' ? record.type : null;
   const data = record.data;
-  if (type === 'payment' && data && typeof data === 'object') {
+  if (bodyType === 'payment' && data && typeof data === 'object') {
     const id = (data as Record<string, unknown>).id;
     if (typeof id === 'string' || typeof id === 'number') {
       return String(id);

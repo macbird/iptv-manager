@@ -1,3 +1,4 @@
+export * from './app-version';
 export * from './payment-routing';
 export * from './payment-message';
 export * from './phone-e164';
