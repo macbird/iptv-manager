@@ -5,4 +5,4 @@ DISPLAY_NAME=iptv-manager-api
 DESCRIPTION=Client Manager API (Fastify + Prisma)
 SUBDOMAIN=iptv-manager-api
 AUTORESTART=true
-START=npx prisma generate --schema apps/api/prisma/schema.prisma && npm run start -w apps/api
+START=npx prisma generate --schema apps/api/prisma/schema.prisma && npx prisma migrate deploy --schema apps/api/prisma/schema.prisma && npm run start -w apps/api

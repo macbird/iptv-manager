@@ -64,6 +64,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           <div className="flex flex-col h-full bg-gray-800">
             <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900 text-white font-bold text-xl">
               Cliente Manager
+              <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-indigo-600 rounded text-white font-normal uppercase tracking-wider">
+                v{APP_VERSION}
+              </span>
             </div>
             <NavContent />
             <p className="px-4 pb-3 text-[11px] text-gray-500">v{APP_VERSION}</p>
@@ -87,6 +90,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
               <div className="flex-shrink-0 flex items-center px-4 text-white font-bold text-xl">
                 Cliente Manager
+                <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-indigo-600 rounded text-white font-normal uppercase tracking-wider">
+                  v{APP_VERSION}
+                </span>
               </div>
               <NavContent />
             </div>

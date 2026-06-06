@@ -1,5 +1,5 @@
 import React from 'react';
-import { Copy } from 'lucide-react';
+import { Copy, HelpCircle } from 'lucide-react';
 import {
   PAYMENT_PROVIDER_FEE_HINTS,
   PAYMENT_PROVIDER_LABELS,
@@ -9,6 +9,7 @@ import {
 } from '@client-manager/shared';
 import { SecretCredentialField } from './SecretCredentialField';
 import { showToast } from '../../../shared/utils/toast';
+import { WebhookHelpModal } from './WebhookHelpModal';
 
 export type PaymentCredentialFormState = TenantPaymentCredentialDto & {
   apiKey: string;
@@ -76,6 +77,7 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
   mercadoPagoWebhookUrl,
   mercadoPagoWebhookRequiresToken = false,
 }) => {
+  const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
   const selected =
     credentials.find((item) => item.provider === selectedProvider) ??
     emptyCredential(selectedProvider);
@@ -173,7 +175,17 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
             {mercadoPagoWebhookUrl ? (
               <div className="mt-3 space-y-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-3">
                 <div>
-                  <p className="text-xs font-medium text-emerald-900">URL do webhook (PIX pago)</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-emerald-900">URL do webhook (PIX pago)</p>
+                    <button
+                      type="button"
+                      onClick={() => setIsHelpModalOpen(true)}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-indigo-700 hover:text-indigo-800"
+                    >
+                      <HelpCircle size={14} />
+                      Como configurar?
+                    </button>
+                  </div>
                   <p className="mt-1 text-[11px] text-emerald-800">
                     A URL usa o <strong>ID da sua conta</strong> (não o nome do tenant). Copie e
                     cadastre exatamente como aparece abaixo.
@@ -273,6 +285,12 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
           </p>
         ) : null}
       </div>
+
+      <WebhookHelpModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+        webhookUrl={mercadoPagoWebhookUrl ?? ''}
+      />
     </div>
   );
 };
