@@ -22,6 +22,8 @@ jobs:
           SQUARE_TOKEN: ${{ secrets.SQUARE_CLOUD_API_TOKEN }}
           APP_ID: ${{ secrets.SQUARE_CLOUD_APP_ID }}
         run: |
+          if [ -z "$SQUARE_TOKEN" ]; then echo "::error::SQUARE_CLOUD_API_TOKEN secret is missing or empty"; exit 1; fi
+          if [ -z "$APP_ID" ]; then echo "::error::SQUARE_CLOUD_APP_ID secret is missing or empty"; exit 1; fi
           npm install -g @squarecloud/cli
           squarecloud auth login --token "$SQUARE_TOKEN"
           squarecloud app commit $APP_ID
