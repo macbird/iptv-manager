@@ -1,0 +1,27 @@
+name: Deploy to Square Cloud
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install
+      - name: Build
+        run: npm run build
+      - name: Deploy to Square Cloud
+        env:
+          SQUARE_TOKEN: ${{ secrets.SQUARE_CLOUD_API_TOKEN }}
+          APP_ID: ${{ secrets.SQUARE_CLOUD_APP_ID }}
+        run: |
+          npm install -g @squarecloud/cli
+          squarecloud auth login $SQUARE_TOKEN
+          squarecloud app commit $APP_ID

@@ -1,21 +1,12 @@
 {
-  "name": "client-manager",
-  "version": "1.0.0",
+  "name": "iptv-manager-root",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
-    "api:dev": "npm run build -w packages/shared && npm run dev -w apps/api",
-    "web:dev": "npm run dev -w apps/web",
-    "web:dev:force": "npm run dev -w apps/web -- --force",
-    "build": "npm run build -w packages/shared && npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces",
-    "deploy:zip:api": "node deploy/scripts/build-api-zip.mjs",
-    "deploy:zip:web": "node deploy/scripts/build-web-zip.mjs"
+    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
+    "deploy": "./deploy/scripts/macbird-deploy-web.sh"
   },
-  "dependencies": {
-    "argon2": "^0.44.0"
-  }
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ]
 }
