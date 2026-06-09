@@ -8,6 +8,7 @@ deploy/backups/
 deploy/*.py
 deploy/__pycache__/
 dist
+apps/web/dev-dist
 .vscode
 .idea
 *.log
