@@ -1,12 +1,18 @@
 import React from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Calendar, CalendarRange, CreditCard, DollarSign, User } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Calendar, CalendarRange, CreditCard, User } from 'lucide-react';
 import { customersApi } from '../../customers/api/customers.api';
 import { tenantBillingApi } from '../api/billing.api';
+import {
+  formatPlanPriceSuggestion,
+  mapCustomersToSearchOptions,
+} from '../utils/customer-search-options';
 import { FormModal } from '../../../shared/ui/modals/FormModal';
 import { FormField } from '../../../shared/ui/forms/FormField';
+import { FormCurrencyInput } from '../../../shared/ui/forms/FormCurrencyInput';
 import { FormInput } from '../../../shared/ui/forms/FormInput';
 import { FormSelect } from '../../../shared/ui/forms/FormSelect';
+import { AsyncSearchSelect } from '../../../shared/ui/forms/AsyncSearchSelect';
 import { formTextareaClass } from '../../../shared/ui/forms/form-styles';
 import {
   MANUAL_PAYMENT_METHOD_LABELS,
@@ -26,35 +32,35 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const [customerId, setCustomerId] = React.useState('');
-  const [amountReais, setAmountReais] = React.useState('');
+  const [customerLabel, setCustomerLabel] = React.useState('');
+  const [amountReais, setAmountReais] = React.useState<number | null>(null);
   const [dueDate, setDueDate] = React.useState('');
   const [billingCycleKey, setBillingCycleKey] = React.useState('');
   const [registerPayment, setRegisterPayment] = React.useState(false);
   const [paymentMethod, setPaymentMethod] = React.useState<ManualPaymentMethodValue>('pix');
   const [paymentNotes, setPaymentNotes] = React.useState('');
 
-  const { data: customersPage, isLoading: loadingCustomers } = useQuery({
-    queryKey: ['customers', 'invoice-form'],
-    queryFn: () =>
-      customersApi.list({ page: 1, pageSize: 100, filter: '', selectableOnly: true }),
-    enabled: isOpen,
-  });
+  const searchCustomers = React.useCallback(async (query: string) => {
+    const page = await customersApi.list({
+      page: 1,
+      pageSize: 20,
+      filter: query,
+      selectableOnly: true,
+    });
+    return mapCustomersToSearchOptions(page.data);
+  }, []);
 
   React.useEffect(() => {
     if (!isOpen) return;
     setCustomerId('');
-    setAmountReais('');
+    setCustomerLabel('');
+    setAmountReais(null);
     setDueDate('');
     setBillingCycleKey('');
     setRegisterPayment(false);
     setPaymentMethod('pix');
     setPaymentNotes('');
   }, [isOpen]);
-
-  React.useEffect(() => {
-    if (!customersPage?.data.length || customerId) return;
-    setCustomerId(customersPage.data[0].id);
-  }, [customersPage, customerId]);
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateManualInvoiceInput) => tenantBillingApi.createInvoice(payload),
@@ -74,12 +80,11 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
       showToast.error('Selecione um cliente');
       return;
     }
-    const parsed = Number(amountReais.replace(',', '.'));
-    if (!amountReais.trim()) {
+    if (amountReais == null) {
       showToast.error('Informe o valor');
       return;
     }
-    if (!Number.isFinite(parsed) || parsed <= 0) {
+    if (!Number.isFinite(amountReais) || amountReais <= 0) {
       showToast.error('Informe um valor válido');
       return;
     }
@@ -90,7 +95,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
 
     createMutation.mutate({
       customerId,
-      amountCents: Math.round(parsed * 100),
+      amountCents: Math.round(amountReais * 100),
       dueDate: new Date(`${dueDate}T12:00:00`).toISOString(),
       billingCycleKey: billingCycleKey.trim() || undefined,
       registerPayment,
@@ -110,28 +115,28 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
       onSave={() => formRef.current?.requestSubmit()}
     >
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-        <FormSelect
+        <AsyncSearchSelect
           label="Cliente"
           prefixIcon={User}
           value={customerId}
-          onChange={(e) => setCustomerId(e.target.value)}
-          disabled={loadingCustomers}
-        >
-          {customersPage?.data.map((customer) => (
-            <option key={customer.id} value={customer.id}>
-              {customer.name}
-            </option>
-          ))}
-        </FormSelect>
+          selectedLabel={customerLabel}
+          onChange={(id, option) => {
+            setCustomerId(id);
+            setCustomerLabel(option?.label ?? '');
+            const suggested = formatPlanPriceSuggestion(option?.meta?.planPrice);
+            if (suggested) {
+              setAmountReais(suggested);
+            }
+          }}
+          onSearch={searchCustomers}
+          placeholder="Buscar cliente por nome ou telefone..."
+          emptyMessage="Nenhum cliente encontrado"
+        />
 
-        <FormInput
-          label="Valor (R$)"
-          prefixIcon={DollarSign}
-          type="text"
-          inputMode="decimal"
+        <FormCurrencyInput
+          label="Valor"
           value={amountReais}
-          onChange={(e) => setAmountReais(e.target.value)}
-          placeholder="0,00"
+          onChange={setAmountReais}
         />
 
         <FormInput

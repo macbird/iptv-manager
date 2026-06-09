@@ -6,6 +6,7 @@ import { platformBillingApi, tenantBillingApi } from '../api/billing.api';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 import { FormModal } from '../../../shared/ui/modals/FormModal';
+import { FormCurrencyInput } from '../../../shared/ui/forms/FormCurrencyInput';
 import { formInputClass, formLabelClass, formTextareaClass } from '../../../shared/ui/forms/form-styles';
 import { DetailGrid, DetailItem, DetailSection } from '../components/BillingDetailFields';
 import { formatCents, formatPaymentMethod } from '../../../shared/ui/billing/format-billing';
@@ -15,6 +16,7 @@ import {
   buildBillingChargeMessage,
   buildWaMeUrl,
   getBillingInvoiceStatusBadgeClass,
+  isPayableInvoiceStatus,
   type BillingInvoiceStatusValue,
   type PaymentProviderValue,
 } from '@client-manager/shared';
@@ -46,7 +48,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
   const [cancelOpen, setCancelOpen] = React.useState(false);
   const [recreateOpen, setRecreateOpen] = React.useState(false);
   const [cancelReason, setCancelReason] = React.useState('');
-  const [amountReais, setAmountReais] = React.useState('');
+  const [amountReais, setAmountReais] = React.useState<number | null>(null);
   const [dueDate, setDueDate] = React.useState('');
 
   const { data: invoice, isLoading, isError } = useQuery({
@@ -57,7 +59,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
 
   React.useEffect(() => {
     if (!invoice || !recreateOpen) return;
-    setAmountReais((invoice.amountCents / 100).toFixed(2));
+    setAmountReais(invoice.amountCents / 100);
     setDueDate(toDateInputValue(invoice.dueDate));
   }, [invoice, recreateOpen]);
 
@@ -87,12 +89,11 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
 
   const recreateMutation = useMutation({
     mutationFn: () => {
-      const parsed = Number.parseFloat(amountReais.replace(',', '.'));
-      if (!Number.isFinite(parsed) || parsed <= 0) {
+      if (amountReais == null || !Number.isFinite(amountReais) || amountReais <= 0) {
         throw new Error('INVALID_AMOUNT');
       }
       return api.recreateInvoice(id!, {
-        amountCents: Math.round(parsed * 100),
+        amountCents: Math.round(amountReais * 100),
         dueDate: new Date(`${dueDate}T12:00:00`).toISOString(),
       });
     },
@@ -194,7 +195,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
   const statusLabel =
     BILLING_INVOICE_STATUS_LABELS[invoice.status as BillingInvoiceStatusValue] ?? invoice.status;
   const isCanceled = invoice.status === 'canceled';
-  const isPayable = !isCanceled && invoice.status !== 'paid';
+  const isPayable = isPayableInvoiceStatus(invoice.status as BillingInvoiceStatusValue);
 
   return (
     <PageLayout
@@ -485,16 +486,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
           histórico.
         </p>
         <div className="mt-4 space-y-4">
-          <label className="block">
-            <span className={formLabelClass}>Valor (R$)</span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={amountReais}
-              onChange={(e) => setAmountReais(e.target.value)}
-              className={formInputClass}
-            />
-          </label>
+          <FormCurrencyInput label="Valor" value={amountReais} onChange={setAmountReais} />
           <label className="block">
             <span className={formLabelClass}>Vencimento</span>
             <input

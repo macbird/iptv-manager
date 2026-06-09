@@ -110,11 +110,6 @@ const start = async () => {
     await app.listen({ port, host: '0.0.0.0' });
     console.log('Registered routes:', app.printRoutes());
     console.log(`Server listening on port ${port}`);
-
-    const { bootstrapProductionDataIfEmpty } = await import('./bootstrap-production-data.js');
-    void bootstrapProductionDataIfEmpty().catch((error: unknown) => {
-      console.error('[bootstrap] failed after startup', error);
-    });
   } catch (err) {
     app.log.error(err);
     process.exit(1);

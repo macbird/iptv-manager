@@ -1,5 +1,9 @@
 import type { BillingScope } from '@prisma/client';
-import { PAYMENT_PROVIDER_LABELS } from '@client-manager/shared';
+import {
+  isPayableInvoiceStatus,
+  PAYMENT_PROVIDER_LABELS,
+  type BillingInvoiceStatusValue,
+} from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import { InvoiceActionError } from '../../modules/billing/invoice-errors';
 import { PaymentProviderError } from './payment-provider.errors';
@@ -44,12 +48,14 @@ export class PaymentGenerationService {
       throw new InvoiceActionError('Fatura não encontrada', 'NOT_FOUND');
     }
 
-    if (invoice.status === 'canceled') {
-      throw new InvoiceActionError('Fatura cancelada', 'NOT_ALLOWED');
-    }
-
-    if (invoice.status === 'paid') {
-      throw new InvoiceActionError('Fatura já está paga', 'NOT_ALLOWED');
+    if (!isPayableInvoiceStatus(invoice.status as BillingInvoiceStatusValue)) {
+      if (invoice.status === 'canceled') {
+        throw new InvoiceActionError('Fatura cancelada', 'NOT_ALLOWED');
+      }
+      if (invoice.status === 'paid') {
+        throw new InvoiceActionError('Fatura já está paga', 'NOT_ALLOWED');
+      }
+      throw new InvoiceActionError('Fatura não está elegível para pagamento', 'NOT_ALLOWED');
     }
 
     if (

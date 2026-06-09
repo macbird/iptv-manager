@@ -10,7 +10,14 @@ import { handleInvoiceActionError } from './invoice-route.util';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
 import { PaymentWebhookLogService } from './payment-webhook-log.service';
 
-const INVOICE_LIST_FILTER_KEYS = ['status', 'billingCycleKey', 'dueFrom', 'dueTo'] as const;
+const INVOICE_LIST_FILTER_KEYS = [
+  'status',
+  'billingCycleKey',
+  'dueFrom',
+  'dueTo',
+  'customerId',
+  'payableOnly',
+] as const;
 const PAYMENT_LIST_FILTER_KEYS = ['method', 'billingCycleKey', 'paidFrom', 'paidTo'] as const;
 
 const tenantSettings = new TenantSettingsService();

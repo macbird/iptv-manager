@@ -1,38 +1,55 @@
 import React from 'react';
-import { NumericFormat, type NumericFormatProps } from 'react-number-format';
+
+function formatReaisDisplay(reais: number): string {
+  return reais.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function digitsToReais(digits: string): number | null {
+  if (!digits) return null;
+  return parseInt(digits, 10) / 100;
+}
+
+function moveCaretToEnd(input: HTMLInputElement) {
+  const end = input.value.length;
+  input.setSelectionRange(end, end);
+}
 
 export interface CurrencyInputProps
-  extends Omit<
-    NumericFormatProps,
-    'value' | 'onValueChange' | 'defaultValue' | 'type' | 'getInputRef'
-  > {
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> {
   value: number | null | undefined;
-  onChange: (value: number) => void;
-  onBlur?: React.FocusEventHandler<HTMLInputElement>;
+  onChange: (value: number | null) => void;
 }
 
 export const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
-  ({ value, onChange, onBlur, className, onFocus, ...rest }, ref) => {
+  ({ value, onChange, onBlur, className, onFocus, placeholder = 'R$ 0,00', ...rest }, ref) => {
+    const displayValue =
+      value == null || !Number.isFinite(value) ? '' : `R$ ${formatReaisDisplay(value)}`;
+
     const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
-      event.target.select();
+      moveCaretToEnd(event.target);
       onFocus?.(event);
     };
 
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const digits = event.target.value.replace(/\D/g, '');
+      onChange(digitsToReais(digits));
+    };
+
     return (
-      <NumericFormat
-        getInputRef={ref}
-        value={value ?? ''}
-        onValueChange={(values) => {
-          onChange(values.floatValue ?? 0);
-        }}
+      <input
+        ref={ref}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        value={displayValue}
+        onChange={handleChange}
         onBlur={onBlur}
         onFocus={handleFocus}
-        thousandSeparator="."
-        decimalSeparator=","
-        prefix="R$ "
-        decimalScale={2}
-        allowNegative={false}
-        inputMode="decimal"
+        onClick={(event) => moveCaretToEnd(event.currentTarget)}
+        placeholder={placeholder}
         className={className}
         {...rest}
       />

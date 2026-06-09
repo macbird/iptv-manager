@@ -7,7 +7,7 @@ export interface CustomerListItem {
   email: string | null;
   status: CustomerStatusValue;
   expiresAt: string | null;
-  plan: { id: string; name: string } | null;
+  plan: { id: string; name: string; price: number } | null;
   tags: { id: string; name: string; color: string | null }[];
   connectionCount: number;
 }

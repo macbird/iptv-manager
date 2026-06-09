@@ -5,7 +5,13 @@ import { requireTenantId } from '../../core/middleware/require-tenant';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
 import { isSelectableOnlyQuery } from '../../core/utils/parse-selectable-only';
 
-const PLAN_LIST_FILTER_KEYS = ['status', 'billingCycle', 'minPrice', 'maxPrice'] as const;
+const PLAN_LIST_FILTER_KEYS = [
+  'status',
+  'billingCycle',
+  'minPrice',
+  'maxPrice',
+  'sortBy',
+] as const;
 
 const plansService = new PlansService();
 

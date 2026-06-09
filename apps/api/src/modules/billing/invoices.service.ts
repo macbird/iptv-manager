@@ -1,6 +1,6 @@
 import { prisma } from '../../core/database';
 import type { BillingScope, BillingInvoiceStatus, PaymentProviderType } from '@prisma/client';
-import { normalizePhoneE164 } from '@client-manager/shared';
+import { normalizePhoneE164, PAYABLE_INVOICE_STATUSES } from '@client-manager/shared';
 import { InvoiceActionError } from './invoice-errors';
 import { PaymentGenerationService } from '../../integrations/payment/payment-generation.service';
 import { PaymentConfirmationService } from './payment-confirmation.service';
@@ -99,10 +99,17 @@ export class InvoicesService {
     const skip = (page - 1) * pageSize;
     const trimmed = filter.trim();
 
+    const statusFilter = listFilters.payableOnly === 'true'
+      ? { status: { in: [...PAYABLE_INVOICE_STATUSES] as BillingInvoiceStatus[] } }
+      : listFilters.status
+        ? { status: listFilters.status as BillingInvoiceStatus }
+        : {};
+
     const where = {
       scope,
       ...(accountId ? { accountId } : {}),
-      ...(listFilters.status ? { status: listFilters.status as never } : {}),
+      ...statusFilter,
+      ...(listFilters.customerId ? { customerId: listFilters.customerId } : {}),
       ...(listFilters.billingCycleKey
         ? { billingCycleKey: listFilters.billingCycleKey }
         : {}),

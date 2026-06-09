@@ -16,6 +16,7 @@ import { INVOICE_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fiel
 import {
   getBillingInvoiceStatusBadgeClass,
   BILLING_INVOICE_STATUS_LABELS,
+  isPayableInvoiceStatus,
   type BillingInvoiceStatusValue,
   type InvoiceListItem,
 } from '@client-manager/shared';
@@ -72,7 +73,7 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
   };
 
   const isActionable = (status: string) =>
-    status !== 'paid' && status !== 'canceled';
+    isPayableInvoiceStatus(status as BillingInvoiceStatusValue);
 
   const pixMutation = useMutation({
     mutationFn: (id: string) => api.generatePix(id),

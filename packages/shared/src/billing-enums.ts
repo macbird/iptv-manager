@@ -27,6 +27,15 @@ export const BILLING_INVOICE_STATUS_VALUES = [
 ] as const;
 export type BillingInvoiceStatusValue = (typeof BILLING_INVOICE_STATUS_VALUES)[number];
 
+/** Invoice statuses eligible for PIX generation and payment registration. */
+export const PAYABLE_INVOICE_STATUSES = ['draft', 'open', 'overdue'] as const satisfies ReadonlyArray<
+  BillingInvoiceStatusValue
+>;
+
+export function isPayableInvoiceStatus(status: BillingInvoiceStatusValue): boolean {
+  return (PAYABLE_INVOICE_STATUSES as readonly string[]).includes(status);
+}
+
 export const BILLING_INVOICE_STATUS_LABELS: Record<BillingInvoiceStatusValue, string> = {
   draft: 'Rascunho',
   open: 'Em aberto',

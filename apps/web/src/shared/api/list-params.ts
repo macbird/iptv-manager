@@ -7,5 +7,7 @@ export function toListQueryParams(params: PaginatedListParams) {
     filter: params.filter,
     ...params.filters,
     ...(params.selectableOnly ? { selectableOnly: 'true' } : {}),
+    ...(params.payableOnly ? { payableOnly: 'true' } : {}),
+    ...(params.sortBy ? { sortBy: params.sortBy } : {}),
   };
 }

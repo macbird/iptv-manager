@@ -1,9 +1,12 @@
 import {
   BILLING_INVOICE_STATUS_LABELS,
   BILLING_INVOICE_STATUS_VALUES,
+  CUSTOMER_SORT_OPTIONS,
   CUSTOMER_STATUS_LABELS,
   CUSTOMER_STATUS_VALUES,
   ENTITY_LIFECYCLE_LABELS,
+  PLAN_SORT_OPTIONS,
+  SERVER_SORT_OPTIONS,
 } from '@client-manager/shared';
 import type { ListFilterFieldDef } from './ListFiltersModal';
 
@@ -31,6 +34,12 @@ const PAYMENT_METHOD_OPTIONS = [
 ];
 
 export const CUSTOMER_FILTER_FIELDS: ListFilterFieldDef[] = [
+  {
+    key: 'sortBy',
+    label: 'Ordenação',
+    type: 'select',
+    options: CUSTOMER_SORT_OPTIONS,
+  },
   {
     key: 'status',
     label: 'Status',
@@ -60,6 +69,12 @@ export const CUSTOMER_FILTER_FIELDS: ListFilterFieldDef[] = [
 
 export const PLAN_FILTER_FIELDS: ListFilterFieldDef[] = [
   {
+    key: 'sortBy',
+    label: 'Ordenação',
+    type: 'select',
+    options: PLAN_SORT_OPTIONS,
+  },
+  {
     key: 'status',
     label: 'Status',
     type: 'select',
@@ -86,6 +101,12 @@ export const PLAN_FILTER_FIELDS: ListFilterFieldDef[] = [
 ];
 
 export const SERVER_FILTER_FIELDS: ListFilterFieldDef[] = [
+  {
+    key: 'sortBy',
+    label: 'Ordenação',
+    type: 'select',
+    options: SERVER_SORT_OPTIONS,
+  },
   {
     key: 'status',
     label: 'Status',

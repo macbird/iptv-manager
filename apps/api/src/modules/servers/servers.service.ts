@@ -1,6 +1,7 @@
 import { prisma } from '../../core/database';
 import { ENTITY_ACTIVE_STATUS, ENTITY_INACTIVE_STATUS, ServerInput } from '@client-manager/shared';
 import { encryptCredential, safeDecryptCredential } from '../../core/crypto/credential-crypto';
+import { serverOrderBy } from '../../core/utils/list-order-by';
 
 type ServerWriteInput = ServerInput & { tagIds?: string[] };
 
@@ -94,7 +95,7 @@ export class ServersService {
     const [rows, total] = await Promise.all([
       prisma.server.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: serverOrderBy(listFilters.sortBy),
         skip,
         take: pageSize,
         include: { tags: true },

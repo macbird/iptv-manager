@@ -5,6 +5,7 @@ import {
   assertSelectablePlan,
   assertSelectableServers,
 } from '../../core/validators/selectable-entities';
+import { customerOrderBy } from '../../core/utils/list-order-by';
 type PrismaLike = {
   customer: {
     findMany: typeof prisma.customer.findMany;
@@ -60,7 +61,7 @@ export class CustomersService {
     const [rows, total] = await Promise.all([
       this.db.customer.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: customerOrderBy(listFilters.sortBy),
         skip,
         take: pageSize,
         select: {
@@ -70,7 +71,7 @@ export class CustomersService {
           email: true,
           status: true,
           expiresAt: true,
-          plan: { select: { id: true, name: true } },
+          plan: { select: { id: true, name: true, price: true } },
           tags: { select: { id: true, name: true, color: true } },
           _count: { select: { connections: true } },
         },
@@ -78,9 +79,16 @@ export class CustomersService {
       this.db.customer.count({ where }),
     ]);
 
-    const data = rows.map(({ _count, expiresAt, ...row }) => ({
+    const data = rows.map(({ _count, expiresAt, plan, ...row }) => ({
       ...row,
       expiresAt: expiresAt?.toISOString() ?? null,
+      plan: plan
+        ? {
+            id: plan.id,
+            name: plan.name,
+            price: Number(plan.price),
+          }
+        : null,
       connectionCount: _count.connections,
     }));
 

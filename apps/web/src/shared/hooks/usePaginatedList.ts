@@ -14,6 +14,10 @@ export interface PaginatedListParams {
   filters?: ListFilterValues;
   /** When true, API returns only records eligible for form comboboxes. */
   selectableOnly?: boolean;
+  /** When true, invoice list returns only draft/open/overdue statuses. */
+  payableOnly?: boolean;
+  /** List sort key; entity-specific defaults apply when omitted. */
+  sortBy?: string;
 }
 
 interface UsePaginatedListOptions<T> {

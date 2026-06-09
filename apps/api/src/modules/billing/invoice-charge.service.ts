@@ -1,5 +1,10 @@
 import { prisma } from '../../core/database';
-import { buildBillingChargeMessage, normalizePhoneE164 } from '@client-manager/shared';
+import {
+  buildBillingChargeMessage,
+  isPayableInvoiceStatus,
+  normalizePhoneE164,
+  type BillingInvoiceStatusValue,
+} from '@client-manager/shared';
 import { PaymentGenerationService } from '../../integrations/payment/payment-generation.service';
 import { WhatsAppProviderFactory } from '../../integrations/whatsapp/whatsapp-provider.factory';
 import { InvoiceActionError } from './invoice-errors';
@@ -42,12 +47,14 @@ export class InvoiceChargeService {
       throw new InvoiceActionError('Fatura não encontrada', 'NOT_FOUND');
     }
 
-    if (invoice.status === 'canceled') {
-      throw new InvoiceActionError('Fatura cancelada', 'NOT_ALLOWED');
-    }
-
-    if (invoice.status === 'paid') {
-      throw new InvoiceActionError('Fatura já está paga', 'NOT_ALLOWED');
+    if (!isPayableInvoiceStatus(invoice.status as BillingInvoiceStatusValue)) {
+      if (invoice.status === 'canceled') {
+        throw new InvoiceActionError('Fatura cancelada', 'NOT_ALLOWED');
+      }
+      if (invoice.status === 'paid') {
+        throw new InvoiceActionError('Fatura já está paga', 'NOT_ALLOWED');
+      }
+      throw new InvoiceActionError('Fatura não está elegível para cobrança', 'NOT_ALLOWED');
     }
 
     if (!invoice.pixCopyPaste) {

@@ -5,7 +5,13 @@ import { requireTenantId } from '../../core/middleware/require-tenant';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
 import { isSelectableOnlyQuery } from '../../core/utils/parse-selectable-only';
 
-const CUSTOMER_LIST_FILTER_KEYS = ['status', 'planId', 'expiresFrom', 'expiresTo'] as const;
+const CUSTOMER_LIST_FILTER_KEYS = [
+  'status',
+  'planId',
+  'expiresFrom',
+  'expiresTo',
+  'sortBy',
+] as const;
 
 const customersService = new CustomersService();
 

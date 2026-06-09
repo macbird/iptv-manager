@@ -3,19 +3,13 @@ import { useForm, Controller, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { planSchema, type PlanInput } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
-import { CurrencyInput } from '../../../shared/ui/forms/CurrencyInput';
-import { Banknote, CalendarClock, Package, ToggleLeft } from 'lucide-react';
+import { CalendarClock, Package, ToggleLeft } from 'lucide-react';
+import { FormCurrencyInput } from '../../../shared/ui/forms/FormCurrencyInput';
 import { FormField } from '../../../shared/ui/forms/FormField';
 import { FormInput } from '../../../shared/ui/forms/FormInput';
 import { FormNumberStepper } from '../../../shared/ui/forms/FormNumberStepper';
 import { FormSelect } from '../../../shared/ui/forms/FormSelect';
-import {
-  formInputClass,
-  formInputPaddingWithPrefix,
-  formRootClass,
-  formSectionClass,
-  formTextareaClass,
-} from '../../../shared/ui/forms/form-styles';
+import { formRootClass, formSectionClass, formTextareaClass } from '../../../shared/ui/forms/form-styles';
 
 interface PlanFormProps {
   formId: string;
@@ -101,22 +95,20 @@ export const PlanForm = React.forwardRef<HTMLFormElement, PlanFormProps>(
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="Preço" prefixIcon={Banknote} error={errors.price?.message}>
-            <Controller
-              name="price"
-              control={control}
-              render={({ field }) => (
-                <CurrencyInput
-                  ref={field.ref}
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  className={`${formInputClass} ${formInputPaddingWithPrefix}`}
-                  placeholder="R$ 0,00"
-                />
-              )}
-            />
-          </FormField>
+          <Controller
+            name="price"
+            control={control}
+            render={({ field }) => (
+              <FormCurrencyInput
+                label="Preço"
+                error={errors.price?.message}
+                value={field.value}
+                onChange={(value) => field.onChange(value ?? 0)}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
+            )}
+          />
 
           <FormSelect
             label="Ciclo"

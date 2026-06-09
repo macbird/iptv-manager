@@ -1,5 +1,6 @@
 import { prisma } from '../../core/database';
 import { ENTITY_ACTIVE_STATUS, ENTITY_INACTIVE_STATUS, PlanInput } from '@client-manager/shared';
+import { planOrderBy } from '../../core/utils/list-order-by';
 
 export class PlansService {
   async list(
@@ -33,7 +34,7 @@ export class PlansService {
     const [data, total] = await Promise.all([
       prisma.plan.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: planOrderBy(listFilters.sortBy),
         skip,
         take: pageSize,
       }),
