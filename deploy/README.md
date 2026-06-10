@@ -19,10 +19,11 @@ cd ~/client-manager
 Push em `main` dispara `.github/workflows/deploy.yml`:
 
 1. **Build** no runner
-2. **`prisma migrate deploy`** no CI (antes do restart — app antigo continua no ar)
+2. **`prisma migrate deploy`** no CI (antes do restart)
 3. **`squarecloud app commit --restart`**
-4. **Health gate** com retries (~5 min)
-5. **Rollback automático** para o commit anterior se o health falhar
+4. **Health gate** com retries (~7 min)
+5. **Confirmação de versão** — `/health` retorna `gitSha`; o workflow **falha** se não bater com o commit deployado
+6. **Sem rollback automático** — falha fica visível no Actions; rollback é manual se necessário
 
 O `start-prod.sh` roda `npm ci --omit=dev` no boot (corrige deps como `node-cron`).
 

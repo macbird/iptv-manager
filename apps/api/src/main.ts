@@ -61,7 +61,13 @@ const start = async () => {
 
     // Health check
     app.get('/health', async () => {
-      return { status: 'ok' };
+      const { APP_VERSION } = await import('@client-manager/shared');
+      return {
+        status: 'ok',
+        version: APP_VERSION,
+        gitSha: process.env.DEPLOY_GIT_SHA ?? null,
+        deployedAt: process.env.DEPLOYED_AT ?? null,
+      };
     });
 
     app.get('/health/db', async () => {

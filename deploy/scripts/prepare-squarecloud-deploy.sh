@@ -61,7 +61,11 @@ print(urlunparse(parsed._replace(query=urlencode(query))))
 PY
 )"
 
-echo "==> Writing start-prod.sh"
+DEPLOY_GIT_SHA="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+DEPLOY_GIT_SHA_SHORT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+echo "==> Writing start-prod.sh (deploy ${DEPLOY_GIT_SHA_SHORT})"
 cat > start-prod.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -73,6 +77,8 @@ export DATABASE_URL="\${DATABASE_URL:-${PRODUCTION_DATABASE_URL}}"
 export JWT_SECRET="\${JWT_SECRET:-${JWT_SECRET}}"
 export CREDENTIALS_ENCRYPTION_KEY="\${CREDENTIALS_ENCRYPTION_KEY:-${CRED_KEY}}"
 export API_PUBLIC_BASE_URL="\${API_PUBLIC_BASE_URL:-${API_PUBLIC_BASE_URL}}"
+export DEPLOY_GIT_SHA="${DEPLOY_GIT_SHA}"
+export DEPLOYED_AT="${DEPLOYED_AT}"
 EOF
 cat >> start-prod.sh <<'EOF'
 
