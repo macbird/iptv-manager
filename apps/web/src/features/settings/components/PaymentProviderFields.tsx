@@ -4,8 +4,12 @@ import {
   PAYMENT_PROVIDER_VALUES,
   WHATSAPP_PROVIDER_LABELS,
   WHATSAPP_PROVIDER_VALUES,
+  type WhatsAppMetaConnectionDto,
+  type WhatsAppEvolutionConnectionDto,
 } from '@client-manager/shared';
 import { SecretCredentialField } from './SecretCredentialField';
+import { MetaWhatsAppConnect } from './MetaWhatsAppConnect';
+import { EvolutionWhatsAppConnect } from './EvolutionWhatsAppConnect';
 
 interface PaymentProviderFieldsProps {
   paymentProvider: string;
@@ -70,6 +74,8 @@ interface WhatsAppProviderFieldsProps {
   onInstanceUrlChange: (v: string) => void;
   onApiKeyChange: (v: string) => void;
   apiKeyConfigured?: boolean;
+  metaConnection?: WhatsAppMetaConnectionDto | null;
+  evolutionConnection?: WhatsAppEvolutionConnectionDto | null;
 }
 
 export const WhatsAppProviderFields: React.FC<WhatsAppProviderFieldsProps> = ({
@@ -80,6 +86,8 @@ export const WhatsAppProviderFields: React.FC<WhatsAppProviderFieldsProps> = ({
   onInstanceUrlChange,
   onApiKeyChange,
   apiKeyConfigured,
+  metaConnection,
+  evolutionConnection,
 }) => (
   <div className="space-y-4">
     <div>
@@ -96,29 +104,16 @@ export const WhatsAppProviderFields: React.FC<WhatsAppProviderFieldsProps> = ({
         ))}
       </select>
     </div>
-    <div>
-      <label className="block text-sm font-medium text-slate-700">URL da instância</label>
-      <input
-        type="url"
-        value={whatsappInstanceUrl}
-        onChange={(e) => onInstanceUrlChange(e.target.value)}
-        placeholder="https://evolution.seudominio.com"
-        className="mt-1 block w-full max-w-lg rounded-md border border-slate-300 p-2 shadow-sm"
-      />
-    </div>
-    <SecretCredentialField
-      id="whatsapp-api-key"
-      label="API Key / Token"
-      value={whatsappApiKey}
-      configured={Boolean(apiKeyConfigured)}
-      onChange={onApiKeyChange}
-      emptyPlaceholder="Token da instância"
-    />
+
+    {whatsappProvider === 'meta' ? (
+      <MetaWhatsAppConnect connection={metaConnection ?? null} />
+    ) : (
+      <EvolutionWhatsAppConnect connection={evolutionConnection ?? null} />
+    )}
+
     <p className="text-xs text-slate-500">
-      Quando um pagamento for confirmado (webhook ou baixa), o sistema envia um aviso por WhatsApp
-      para o telefone da conta do revendedor. Em desenvolvimento, use{' '}
-      <code className="font-mono">PAYMENT_NOTIFY_PHONE</code> no <code className="font-mono">.env</code>{' '}
-      da API se o telefone da conta ainda não estiver cadastrado.
+      Cobranças de fatura podem ser enviadas por WhatsApp. Com Evolution, conecte o número do seu
+      negócio abaixo. Com Meta, cada revendedor conecta a própria conta via Embedded Signup.
     </p>
   </div>
 );

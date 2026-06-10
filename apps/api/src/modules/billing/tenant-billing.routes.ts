@@ -1,8 +1,10 @@
 import { FastifyInstance } from 'fastify';
-import { createManualInvoiceSchema, registerPaymentSchema } from '@client-manager/shared';
+import { createManualInvoiceSchema, registerPaymentSchema, tenantChargeMessagesSettingsSchema, billingAutomationSettingsSchema, updateInvoiceChargeMessagesSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
 import { TenantSettingsService } from './tenant-settings.service';
 import { TenantPaymentSettingsService } from './tenant-payment-settings.service';
+import { TenantChargeMessageService } from './tenant-charge-message.service';
+import { TenantBillingAutomationService } from './tenant-billing-automation.service';
 import { InvoicesService } from './invoices.service';
 import { InvoiceChargeService } from './invoice-charge.service';
 import { PaymentsService } from './payments.service';
@@ -22,6 +24,8 @@ const PAYMENT_LIST_FILTER_KEYS = ['method', 'billingCycleKey', 'paidFrom', 'paid
 
 const tenantSettings = new TenantSettingsService();
 const tenantPaymentSettings = new TenantPaymentSettingsService();
+const tenantChargeMessageService = new TenantChargeMessageService();
+const tenantBillingAutomationService = new TenantBillingAutomationService();
 const invoicesService = new InvoicesService();
 const invoiceChargeService = new InvoiceChargeService();
 const paymentsService = new PaymentsService();
@@ -54,6 +58,46 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     const tenantId = requireTenantId(request, reply);
     if (!tenantId) return;
     return paymentWebhookLogService.listForTenant(tenantId, 50);
+  });
+
+  app.get('/settings/charge-messages', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+    return tenantChargeMessageService.get(tenantId);
+  });
+
+  app.patch('/settings/charge-messages', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+
+    const parsed = tenantChargeMessagesSettingsSchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        message: parsed.error.errors[0]?.message ?? 'Configuração de mensagens inválida',
+      });
+    }
+
+    return tenantChargeMessageService.update(tenantId, parsed.data);
+  });
+
+  app.get('/settings/billing-automation', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+    return tenantBillingAutomationService.get(tenantId);
+  });
+
+  app.patch('/settings/billing-automation', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+
+    const parsed = billingAutomationSettingsSchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        message: parsed.error.errors[0]?.message ?? 'Configuração de automação inválida',
+      });
+    }
+
+    return tenantBillingAutomationService.update(tenantId, parsed.data);
   });
 
   app.get('/settings/subscription', async (request, reply) => {
@@ -207,6 +251,23 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     try {
       return await invoicesService.generatePayment(id, tenantId);
+    } catch (error) {
+      return handleInvoiceActionError(reply, error);
+    }
+  });
+
+  app.patch('/invoices/:id/charge-messages', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+    const { id } = request.params as { id: string };
+    const parsed = updateInvoiceChargeMessagesSchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({
+        message: parsed.error.errors[0]?.message ?? 'Mensagens inválidas',
+      });
+    }
+    try {
+      return await invoicesService.updateChargeMessages('tenant', id, tenantId, parsed.data);
     } catch (error) {
       return handleInvoiceActionError(reply, error);
     }

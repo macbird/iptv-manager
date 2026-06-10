@@ -2,9 +2,13 @@ import { prisma } from '../../core/database';
 import type { PaymentProviderType, WhatsAppProviderType } from '@prisma/client';
 import { safeDecryptCredential } from '../../core/crypto/credential-crypto';
 import { TenantPaymentSettingsService } from './tenant-payment-settings.service';
+import { TenantChargeMessageService } from './tenant-charge-message.service';
+import { TenantBillingAutomationService } from './tenant-billing-automation.service';
 import { buildMercadoPagoWebhookUrl } from './payment-webhook.util';
 
 const tenantPaymentSettings = new TenantPaymentSettingsService();
+const tenantChargeMessageService = new TenantChargeMessageService();
+const tenantBillingAutomationService = new TenantBillingAutomationService();
 
 export class TenantSettingsService {
   async getSubscription(tenantId: string) {
@@ -63,8 +67,15 @@ export class TenantSettingsService {
         provider: whatsapp?.provider ?? 'evolution',
         instanceUrl: whatsapp?.instanceUrl ?? null,
         apiKeyConfigured: Boolean(whatsapp?.apiKey),
+        connectionStatus: whatsapp?.connectionStatus ?? 'disconnected',
+        wabaId: whatsapp?.wabaId ?? null,
+        phoneNumberId: whatsapp?.phoneNumberId ?? null,
+        displayPhoneNumber: whatsapp?.displayPhoneNumber ?? null,
+        tokenExpiresAt: whatsapp?.tokenExpiresAt?.toISOString() ?? null,
       },
       subscription: await this.getSubscription(tenantId),
+      chargeMessages: await tenantChargeMessageService.get(tenantId),
+      billingAutomation: await tenantBillingAutomationService.get(tenantId),
     };
   }
 

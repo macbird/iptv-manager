@@ -1,4 +1,7 @@
 import type { CustomerStatusValue } from './customer-status';
+import type { ChargeMessageSettingsDto } from './charge-message';
+import type { BillingAutomationSettingsDto, InvoiceChargeDeliveryDto, TenantChargeMessagesSettingsDto } from './billing-automation';
+import type { InvoiceKindValue } from './billing-enums';
 
 export interface CustomerListItem {
   id: string;
@@ -34,6 +37,11 @@ export interface PlatformSettingsDto {
     provider: string;
     instanceUrl: string | null;
     apiKeyConfigured: boolean;
+    connectionStatus: string;
+    wabaId: string | null;
+    phoneNumberId: string | null;
+    displayPhoneNumber: string | null;
+    tokenExpiresAt: string | null;
   };
 }
 
@@ -65,8 +73,15 @@ export interface TenantSettingsDto {
     provider: string;
     instanceUrl: string | null;
     apiKeyConfigured: boolean;
+    connectionStatus: string;
+    wabaId: string | null;
+    phoneNumberId: string | null;
+    displayPhoneNumber: string | null;
+    tokenExpiresAt: string | null;
   };
   subscription: TenantSubscriptionDto | null;
+  chargeMessages: TenantChargeMessagesSettingsDto;
+  billingAutomation: BillingAutomationSettingsDto;
 }
 
 export interface TenantPaymentCredentialDto {
@@ -101,6 +116,8 @@ export interface TenantSubscriptionDto {
 export interface InvoiceListItem {
   id: string;
   scope: 'platform' | 'tenant';
+  kind: InvoiceKindValue;
+  description: string | null;
   billingCycleKey: string;
   amountCents: number;
   dueDate: string;
@@ -142,6 +159,8 @@ export interface InvoiceReplacementRef {
 export interface InvoiceDetailDto {
   id: string;
   scope: 'platform' | 'tenant';
+  kind: InvoiceKindValue;
+  description: string | null;
   billingCycleKey: string;
   amountCents: number;
   dueDate: string;
@@ -165,6 +184,8 @@ export interface InvoiceDetailDto {
   canRecreate: boolean;
   /** E.164 digits (55…) for wa.me; detail endpoint only */
   payerPhone?: string | null;
+  chargeMessages?: ChargeMessageSettingsDto | null;
+  lastChargeDelivery?: InvoiceChargeDeliveryDto | null;
 }
 
 export interface PaymentDetailDto {

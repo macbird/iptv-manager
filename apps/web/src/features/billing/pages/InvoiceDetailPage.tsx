@@ -12,15 +12,19 @@ import { DetailGrid, DetailItem, DetailSection } from '../components/BillingDeta
 import { formatCents, formatPaymentMethod } from '../../../shared/ui/billing/format-billing';
 import {
   BILLING_INVOICE_STATUS_LABELS,
+  INVOICE_KIND_LABELS,
   PAYMENT_PROVIDER_LABELS,
   buildBillingChargeMessage,
   buildWaMeUrl,
   getBillingInvoiceStatusBadgeClass,
   isPayableInvoiceStatus,
   type BillingInvoiceStatusValue,
+  type InvoiceKindValue,
   type PaymentProviderValue,
+  type ChargeMessageSettingsDto,
 } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
+import { ChargeMessageTemplatesSection } from '../../settings/components/ChargeMessageTemplatesSection';
 
 interface InvoiceDetailPageProps {
   variant: 'admin' | 'tenant';
@@ -50,6 +54,14 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
   const [cancelReason, setCancelReason] = React.useState('');
   const [amountReais, setAmountReais] = React.useState<number | null>(null);
   const [dueDate, setDueDate] = React.useState('');
+  const [invoiceChargeMessages, setInvoiceChargeMessages] =
+    React.useState<ChargeMessageSettingsDto | null>(null);
+
+  React.useEffect(() => {
+    if (invoice?.chargeMessages) {
+      setInvoiceChargeMessages(invoice.chargeMessages);
+    }
+  }, [invoice?.chargeMessages]);
 
   const { data: invoice, isLoading, isError } = useQuery({
     queryKey: invoiceQueryKey,
@@ -126,16 +138,28 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
 
   const sendChargeMutation = useMutation({
     mutationFn: () => api.sendCharge(id!),
-    onSuccess: (data: { phoneMasked?: string }) => {
+    onSuccess: (data: { phoneMasked?: string; messagesCount?: number }) => {
       invalidate();
+      const count = data.messagesCount ?? 1;
       showToast.success(
         data.phoneMasked
-          ? `Cobrança enviada para ${data.phoneMasked}`
-          : 'Cobrança enviada via WhatsApp',
+          ? `${count} mensagem(ns) enviada(s) para ${data.phoneMasked}`
+          : `${count} mensagem(ns) enviada(s) via WhatsApp`,
       );
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
       showToast.error(err.response?.data?.message ?? 'Erro ao enviar cobrança');
+    },
+  });
+
+  const saveChargeMessagesMutation = useMutation({
+    mutationFn: () => tenantBillingApi.updateInvoiceChargeMessages(id!, invoiceChargeMessages!),
+    onSuccess: () => {
+      invalidate();
+      showToast.success('Mensagens da fatura salvas');
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      showToast.error(err.response?.data?.message ?? 'Erro ao salvar mensagens');
     },
   });
 
@@ -157,6 +181,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
       invoice.customer?.name ?? invoice.account?.name ?? 'cliente';
     const text = buildBillingChargeMessage({
       payerName,
+      tenantName: invoice.account?.name,
       invoice: {
         pixCopyPaste: invoice.pixCopyPaste,
         amountCents: invoice.amountCents,
@@ -303,8 +328,25 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
           >
             {statusLabel}
           </span>
-          <span className="text-sm text-slate-500">Ciclo {invoice.billingCycleKey}</span>
+          <span className="text-sm text-slate-500">
+            {INVOICE_KIND_LABELS[invoice.kind as InvoiceKindValue]}
+            {invoice.kind === 'subscription' ? ` · Ciclo ${invoice.billingCycleKey}` : null}
+          </span>
         </div>
+
+        {invoice.description ? (
+          <p className="text-sm text-slate-700">{invoice.description}</p>
+        ) : null}
+
+        {invoice.lastChargeDelivery ? (
+          <p className="text-xs text-slate-500">
+            Último envio WhatsApp:{' '}
+            {new Date(invoice.lastChargeDelivery.sentAt).toLocaleString('pt-BR')} ·{' '}
+            {invoice.lastChargeDelivery.messagesCount} msg(s) ·{' '}
+            {invoice.lastChargeDelivery.source}
+            {!invoice.lastChargeDelivery.success ? ' (falhou)' : ''}
+          </p>
+        ) : null}
 
         {invoice.replacesInvoice ? (
           <p className="text-sm text-slate-600">
@@ -337,6 +379,26 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
             Cancelada em {new Date(invoice.canceledAt).toLocaleString('pt-BR')}
             {invoice.cancelReason ? ` — ${invoice.cancelReason}` : ''}
           </p>
+        ) : null}
+
+        {variant === 'tenant' && invoice.kind === 'one_off' && invoiceChargeMessages ? (
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <ChargeMessageTemplatesSection
+              title="Mensagens WhatsApp desta fatura"
+              value={invoiceChargeMessages}
+              onChange={setInvoiceChargeMessages}
+            />
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                disabled={saveChargeMessagesMutation.isPending}
+                onClick={() => saveChargeMessagesMutation.mutate()}
+                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {saveChargeMessagesMutation.isPending ? 'Salvando...' : 'Salvar mensagens'}
+              </button>
+            </div>
+          </section>
         ) : null}
 
         <DetailSection title="Resumo">

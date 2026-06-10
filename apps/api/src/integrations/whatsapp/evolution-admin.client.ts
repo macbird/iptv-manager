@@ -20,6 +20,13 @@ export interface EvolutionConnectInfo {
   pairingCode?: string;
 }
 
+export interface EvolutionInstanceSummary {
+  instanceName: string;
+  connectionStatus: string | null;
+  number: string | null;
+  ownerJid: string | null;
+}
+
 export class EvolutionAdminClient {
   constructor(
     private readonly baseUrl: string,
@@ -57,8 +64,9 @@ export class EvolutionAdminClient {
   /**
    * Returns QR / pairing data to link WhatsApp on the instance.
    */
-  async getConnectInfo(instanceName: string): Promise<EvolutionConnectInfo> {
-    const url = `${this.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}`;
+  async getConnectInfo(instanceName: string, phone?: string): Promise<EvolutionConnectInfo> {
+    const query = phone ? `?number=${encodeURIComponent(phone)}` : '';
+    const url = `${this.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}${query}`;
     const response = await fetch(url, { method: 'GET', headers: this.headers() });
     const text = await response.text();
     const payload = safeJson(text) as Record<string, unknown>;
@@ -69,16 +77,78 @@ export class EvolutionAdminClient {
       );
     }
 
+    const instanceBlock = payload.instance as Record<string, unknown> | undefined;
+    const qrcodeBlock = payload.qrcode as Record<string, unknown> | undefined;
+    const qrBlock = payload.qr as Record<string, unknown> | undefined;
+
     const base64 =
       (payload.base64 as string) ||
-      (payload.qrcode as { base64?: string })?.base64 ||
-      (payload.qr as { base64?: string })?.base64;
+      (qrcodeBlock?.base64 as string) ||
+      (qrBlock?.base64 as string);
+
+    const pairingCode = (payload.pairingCode as string) ?? undefined;
 
     return {
       instanceName,
-      state: String(payload.state ?? payload.status ?? 'unknown'),
+      state: String(instanceBlock?.state ?? payload.state ?? payload.status ?? 'unknown'),
       qrCodeBase64: base64,
-      pairingCode: payload.pairingCode as string | undefined,
+      pairingCode,
+    };
+  }
+
+  /**
+   * Logs out the WhatsApp session for an instance.
+   */
+  async logoutInstance(instanceName: string): Promise<void> {
+    const url = `${this.baseUrl}/instance/logout/${encodeURIComponent(instanceName)}`;
+    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    if (response.ok || response.status === 404) {
+      return;
+    }
+
+    const text = await response.text();
+    const payload = safeJson(text);
+    throw new Error(
+      (payload.message as string) || `Evolution logout failed (${response.status})`,
+    );
+  }
+
+  /**
+   * Returns summary data for a single instance from the Evolution server.
+   */
+  async fetchInstanceSummary(instanceName: string): Promise<EvolutionInstanceSummary | null> {
+    const url = `${this.baseUrl}/instance/fetchInstances`;
+    const response = await fetch(url, { method: 'GET', headers: this.headers() });
+    const text = await response.text();
+    const payload = safeJson(text);
+
+    if (!response.ok) {
+      throw new Error(
+        (payload.message as string) || `Evolution fetchInstances failed (${response.status})`,
+      );
+    }
+
+    const items = Array.isArray(payload)
+      ? payload
+      : ((payload.response as unknown[]) ?? []);
+
+    const row = items.find(
+      (item) =>
+        item &&
+        typeof item === 'object' &&
+        ((item as Record<string, unknown>).name === instanceName ||
+          (item as Record<string, unknown>).instanceName === instanceName),
+    ) as Record<string, unknown> | undefined;
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      instanceName,
+      connectionStatus: String(row.connectionStatus ?? row.state ?? '') || null,
+      number: (row.number as string) ?? null,
+      ownerJid: (row.ownerJid as string) ?? null,
     };
   }
 

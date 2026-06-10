@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { INVOICE_KIND_VALUES } from './billing-enums';
+import { chargeMessageSettingsSchema } from './charge-message';
 
 export const MANUAL_PAYMENT_METHOD_VALUES = ['pix', 'cash', 'transfer', 'other'] as const;
 export type ManualPaymentMethodValue = (typeof MANUAL_PAYMENT_METHOD_VALUES)[number];
@@ -10,18 +12,31 @@ export const MANUAL_PAYMENT_METHOD_LABELS: Record<ManualPaymentMethodValue, stri
   other: 'Outro',
 };
 
-export const createManualInvoiceSchema = z.object({
-  customerId: z.string().uuid(),
-  amountCents: z.number().int().positive(),
-  dueDate: z.string().min(1),
-  billingCycleKey: z
-    .string()
-    .regex(/^\d{4}-\d{2}$/, 'Use o formato YYYY-MM')
-    .optional(),
-  registerPayment: z.boolean().optional(),
-  paymentMethod: z.enum(MANUAL_PAYMENT_METHOD_VALUES).optional(),
-  paymentNotes: z.string().max(500).optional(),
-});
+export const createManualInvoiceSchema = z
+  .object({
+    customerId: z.string().uuid(),
+    amountCents: z.number().int().positive(),
+    dueDate: z.string().min(1),
+    kind: z.enum(INVOICE_KIND_VALUES).optional().default('subscription'),
+    description: z.string().max(500).optional(),
+    billingCycleKey: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/, 'Use o formato YYYY-MM')
+      .optional(),
+    chargeMessages: chargeMessageSettingsSchema.optional(),
+    registerPayment: z.boolean().optional(),
+    paymentMethod: z.enum(MANUAL_PAYMENT_METHOD_VALUES).optional(),
+    paymentNotes: z.string().max(500).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.kind === 'one_off' && !data.description?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Informe a descrição da cobrança avulsa',
+        path: ['description'],
+      });
+    }
+  });
 
 export type CreateManualInvoiceInput = z.infer<typeof createManualInvoiceSchema>;
 

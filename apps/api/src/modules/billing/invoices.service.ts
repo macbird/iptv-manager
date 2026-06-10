@@ -1,6 +1,7 @@
+import { randomUUID } from 'crypto';
 import { prisma } from '../../core/database';
-import type { BillingScope, BillingInvoiceStatus, PaymentProviderType } from '@prisma/client';
-import { normalizePhoneE164, PAYABLE_INVOICE_STATUSES } from '@client-manager/shared';
+import type { BillingScope, BillingInvoiceStatus, PaymentProviderType, InvoiceKind } from '@prisma/client';
+import { normalizePhoneE164, PAYABLE_INVOICE_STATUSES, resolveChargeMessageConfig } from '@client-manager/shared';
 import { InvoiceActionError } from './invoice-errors';
 import { PaymentGenerationService } from '../../integrations/payment/payment-generation.service';
 import { PaymentConfirmationService } from './payment-confirmation.service';
@@ -23,6 +24,8 @@ export class InvoicesService {
   private mapDetail(row: {
     id: string;
     scope: BillingScope;
+    kind: InvoiceKind;
+    description: string | null;
     billingCycleKey: string;
     amountCents: number;
     dueDate: Date;
@@ -32,6 +35,8 @@ export class InvoicesService {
     paidAt: Date | null;
     paymentProvider: PaymentProviderType | null;
     providerChargeId: string | null;
+    chargeMessageTemplates: unknown;
+    chargeMessageDelayMs: number | null;
     createdAt: Date;
     updatedAt: Date;
     canceledAt: Date | null;
@@ -48,14 +53,42 @@ export class InvoicesService {
     }>;
     replacesInvoice: { id: string; status: BillingInvoiceStatus } | null;
     replacement: { id: string; status: BillingInvoiceStatus; amountCents: number } | null;
+    chargeDeliveries?: Array<{
+      id: string;
+      channel: string;
+      source: string;
+      sentAt: Date;
+      messagesCount: number;
+      success: boolean;
+      errorMessage: string | null;
+    }>;
+  }, tenantMessageConfig?: {
+    chargeMessageTemplates: unknown;
+    oneOffMessageTemplates: unknown;
+    chargeMessageDelayMs: number;
   }) {
     const canCancel =
       CANCELABLE_STATUSES.includes(row.status) && row.payments.length === 0;
     const canRecreate = row.status === 'canceled' && row.replacement === null;
 
+    const payerName = row.customer?.name ?? row.account.name;
+    const chargeMessages = tenantMessageConfig
+      ? resolveChargeMessageConfig({
+          kind: row.kind,
+          invoiceTemplates: row.chargeMessageTemplates,
+          invoiceDelayMs: row.chargeMessageDelayMs,
+          tenantSubscriptionTemplates: tenantMessageConfig.chargeMessageTemplates,
+          tenantOneOffTemplates: tenantMessageConfig.oneOffMessageTemplates,
+          tenantDelayMs: tenantMessageConfig.chargeMessageDelayMs,
+        })
+      : null;
+    const lastDelivery = row.chargeDeliveries?.[0];
+
     return {
       id: row.id,
       scope: row.scope,
+      kind: row.kind,
+      description: row.description,
       billingCycleKey: row.billingCycleKey,
       amountCents: row.amountCents,
       dueDate: row.dueDate.toISOString(),
@@ -84,6 +117,18 @@ export class InvoicesService {
       canCancel,
       canRecreate,
       payerPhone: resolvePayerPhone(row),
+      chargeMessages,
+      lastChargeDelivery: lastDelivery
+        ? {
+            id: lastDelivery.id,
+            channel: lastDelivery.channel,
+            source: lastDelivery.source,
+            sentAt: lastDelivery.sentAt.toISOString(),
+            messagesCount: lastDelivery.messagesCount,
+            success: lastDelivery.success,
+            errorMessage: lastDelivery.errorMessage,
+          }
+        : null,
     };
   }
   async list(
@@ -169,6 +214,8 @@ export class InvoicesService {
     const data = orderedRows.map((row) => ({
       id: row.id,
       scope: row.scope,
+      kind: row.kind,
+      description: row.description,
       billingCycleKey: row.billingCycleKey,
       amountCents: row.amountCents,
       dueDate: row.dueDate.toISOString(),
@@ -202,6 +249,19 @@ export class InvoicesService {
         },
         replacesInvoice: { select: { id: true, status: true } },
         replacement: { select: { id: true, status: true, amountCents: true } },
+        chargeDeliveries: {
+          orderBy: { sentAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            channel: true,
+            source: true,
+            sentAt: true,
+            messagesCount: true,
+            success: true,
+            errorMessage: true,
+          },
+        },
       },
     });
 
@@ -209,7 +269,14 @@ export class InvoicesService {
       return null;
     }
 
-    return this.mapDetail(row);
+    const tenantMessageConfig =
+      row.scope === 'tenant'
+        ? await prisma.tenantBillingAutomationConfig.findUnique({
+            where: { accountId: row.accountId },
+          })
+        : null;
+
+    return this.mapDetail(row, tenantMessageConfig ?? undefined);
   }
 
   async cancel(
@@ -300,6 +367,7 @@ export class InvoicesService {
         scope: source.scope,
         accountId: source.accountId,
         customerId: source.customerId,
+        kind: 'subscription',
         billingCycleKey: source.billingCycleKey,
         status: { not: 'canceled' },
       },
@@ -313,6 +381,7 @@ export class InvoicesService {
       const created = await prisma.invoice.create({
         data: {
           scope: source.scope,
+          kind: source.kind,
           accountId: source.accountId,
           customerId: source.customerId,
           billingCycleKey: source.billingCycleKey,
@@ -394,7 +463,10 @@ export class InvoicesService {
       customerId: string;
       amountCents: number;
       dueDate: string;
+      kind?: InvoiceKind;
+      description?: string;
       billingCycleKey?: string;
+      chargeMessages?: { templates: string[]; delayMs: number };
       registerPayment?: boolean;
       paymentMethod?: string;
       paymentNotes?: string;
@@ -409,9 +481,12 @@ export class InvoicesService {
       throw new InvoiceActionError('Data de vencimento inválida', 'NOT_ALLOWED');
     }
 
+    const kind: InvoiceKind = data.kind ?? 'subscription';
     const billingCycleKey =
-      data.billingCycleKey ??
-      `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}`;
+      kind === 'one_off'
+        ? `one-off-${randomUUID().slice(0, 8)}`
+        : data.billingCycleKey ??
+          `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}`;
 
     const customer = await prisma.customer.findFirst({
       where: { id: data.customerId, tenantId },
@@ -423,29 +498,36 @@ export class InvoicesService {
       throw new InvoiceActionError('Cliente desativado', 'NOT_ALLOWED');
     }
 
-    const conflict = await prisma.invoice.findFirst({
-      where: {
-        scope: 'tenant',
-        accountId: tenantId,
-        customerId: data.customerId,
-        billingCycleKey,
-        status: { not: 'canceled' },
-      },
-    });
-    if (conflict) {
-      throw new InvoiceActionError('Já existe uma fatura ativa para este ciclo', 'CONFLICT');
+    if (kind === 'subscription') {
+      const conflict = await prisma.invoice.findFirst({
+        where: {
+          scope: 'tenant',
+          accountId: tenantId,
+          customerId: data.customerId,
+          kind: 'subscription',
+          billingCycleKey,
+          status: { not: 'canceled' },
+        },
+      });
+      if (conflict) {
+        throw new InvoiceActionError('Já existe uma fatura de assinatura ativa para este ciclo', 'CONFLICT');
+      }
     }
 
     try {
       const created = await prisma.invoice.create({
         data: {
           scope: 'tenant',
+          kind,
           accountId: tenantId,
           customerId: data.customerId,
           billingCycleKey,
+          description: kind === 'one_off' ? data.description?.trim() ?? null : null,
           amountCents: data.amountCents,
           dueDate,
           status: isInvoicePastDue(dueDate) ? 'overdue' : 'open',
+          chargeMessageTemplates: data.chargeMessages?.templates,
+          chargeMessageDelayMs: data.chargeMessages?.delayMs,
         },
       });
 
@@ -472,6 +554,45 @@ export class InvoicesService {
       }
       throw new InvoiceActionError('Não foi possível criar a fatura', 'CONFLICT');
     }
+  }
+
+  /**
+   * Updates charge message templates for a one-off invoice.
+   */
+  async updateChargeMessages(
+    scope: BillingScope,
+    invoiceId: string,
+    accountId: string | null,
+    data: { templates: string[]; delayMs: number },
+  ) {
+    const invoice = await prisma.invoice.findFirst({
+      where: this.invoiceWhere(scope, accountId, invoiceId),
+    });
+
+    if (!invoice) {
+      throw new InvoiceActionError('Fatura não encontrada', 'NOT_FOUND');
+    }
+
+    if (invoice.kind !== 'one_off') {
+      throw new InvoiceActionError(
+        'Somente faturas avulsas possuem mensagem personalizada por fatura',
+        'NOT_ALLOWED',
+      );
+    }
+
+    await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        chargeMessageTemplates: data.templates,
+        chargeMessageDelayMs: data.delayMs,
+      },
+    });
+
+    const detail = await this.getById(scope, invoiceId, accountId);
+    if (!detail) {
+      throw new InvoiceActionError('Fatura não encontrada após atualização', 'CONFLICT');
+    }
+    return detail;
   }
 
   /**

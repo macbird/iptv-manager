@@ -16,6 +16,7 @@ Documentação para implementar o sistema com **Cursor**, em **fases**, com **fr
 | [07-mobile-cards-ux.md](./07-mobile-cards-ux.md) | **Listas em cards (não tabelas)** |
 | [08-mobile-desktop-experience.md](./08-mobile-desktop-experience.md) | **UX celular + navegador desktop** |
 | [11-payment-and-activations.md](./11-payment-and-activations.md) | **Automação D-N, ativações pendentes, pagamento manual** |
+| [12-billing-automation-scheduler.md](./12-billing-automation-scheduler.md) | **Scheduler node-cron, env vars, macbird dev, auto-close** |
 | [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) | **Progresso real da implementação** |
 | [RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md) | **Checklist de release (staging/prod)** |
 | [../CLIENTE-MANAGER-SPEC-TEMP.md](../../CLIENTE-MANAGER-SPEC-TEMP.md) | Especificação funcional completa |

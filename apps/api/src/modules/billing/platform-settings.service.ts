@@ -51,6 +51,11 @@ export class PlatformSettingsService {
         provider: whatsappConfig.provider,
         instanceUrl: whatsappConfig.instanceUrl,
         apiKeyConfigured: Boolean(whatsappConfig.apiKey),
+        connectionStatus: whatsappConfig.connectionStatus,
+        wabaId: whatsappConfig.wabaId,
+        phoneNumberId: whatsappConfig.phoneNumberId,
+        displayPhoneNumber: whatsappConfig.displayPhoneNumber,
+        tokenExpiresAt: whatsappConfig.tokenExpiresAt?.toISOString() ?? null,
       },
     };
   }

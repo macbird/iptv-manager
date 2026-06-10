@@ -1,6 +1,6 @@
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, CalendarRange, CreditCard, User } from 'lucide-react';
+import { Calendar, CalendarRange, CreditCard, FileText, User } from 'lucide-react';
 import { customersApi } from '../../customers/api/customers.api';
 import { tenantBillingApi } from '../api/billing.api';
 import {
@@ -15,12 +15,20 @@ import { FormSelect } from '../../../shared/ui/forms/FormSelect';
 import { AsyncSearchSelect } from '../../../shared/ui/forms/AsyncSearchSelect';
 import { formTextareaClass } from '../../../shared/ui/forms/form-styles';
 import {
+  INVOICE_KIND_LABELS,
+  INVOICE_KIND_VALUES,
   MANUAL_PAYMENT_METHOD_LABELS,
   MANUAL_PAYMENT_METHOD_VALUES,
   type CreateManualInvoiceInput,
+  type InvoiceKindValue,
   type ManualPaymentMethodValue,
 } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
+import { ChargeMessageTemplatesSection } from '../../settings/components/ChargeMessageTemplatesSection';
+import {
+  DEFAULT_ONE_OFF_CHARGE_MESSAGE_TEMPLATES,
+  DEFAULT_CHARGE_MESSAGE_DELAY_MS,
+} from '@client-manager/shared';
 
 interface CreateInvoiceModalProps {
   isOpen: boolean;
@@ -33,12 +41,18 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
 
   const [customerId, setCustomerId] = React.useState('');
   const [customerLabel, setCustomerLabel] = React.useState('');
+  const [kind, setKind] = React.useState<InvoiceKindValue>('subscription');
+  const [description, setDescription] = React.useState('');
   const [amountReais, setAmountReais] = React.useState<number | null>(null);
   const [dueDate, setDueDate] = React.useState('');
   const [billingCycleKey, setBillingCycleKey] = React.useState('');
   const [registerPayment, setRegisterPayment] = React.useState(false);
   const [paymentMethod, setPaymentMethod] = React.useState<ManualPaymentMethodValue>('pix');
   const [paymentNotes, setPaymentNotes] = React.useState('');
+  const [chargeMessages, setChargeMessages] = React.useState({
+    templates: [...DEFAULT_ONE_OFF_CHARGE_MESSAGE_TEMPLATES],
+    delayMs: DEFAULT_CHARGE_MESSAGE_DELAY_MS,
+  });
 
   const searchCustomers = React.useCallback(async (query: string) => {
     const page = await customersApi.list({
@@ -54,12 +68,18 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
     if (!isOpen) return;
     setCustomerId('');
     setCustomerLabel('');
+    setKind('subscription');
+    setDescription('');
     setAmountReais(null);
     setDueDate('');
     setBillingCycleKey('');
     setRegisterPayment(false);
     setPaymentMethod('pix');
     setPaymentNotes('');
+    setChargeMessages({
+      templates: [...DEFAULT_ONE_OFF_CHARGE_MESSAGE_TEMPLATES],
+      delayMs: DEFAULT_CHARGE_MESSAGE_DELAY_MS,
+    });
   }, [isOpen]);
 
   const createMutation = useMutation({
@@ -80,6 +100,10 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
       showToast.error('Selecione um cliente');
       return;
     }
+    if (kind === 'one_off' && !description.trim()) {
+      showToast.error('Informe a descrição da cobrança avulsa');
+      return;
+    }
     if (amountReais == null) {
       showToast.error('Informe o valor');
       return;
@@ -95,9 +119,12 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
 
     createMutation.mutate({
       customerId,
+      kind,
+      description: kind === 'one_off' ? description.trim() : undefined,
       amountCents: Math.round(amountReais * 100),
       dueDate: new Date(`${dueDate}T12:00:00`).toISOString(),
-      billingCycleKey: billingCycleKey.trim() || undefined,
+      billingCycleKey: kind === 'subscription' ? billingCycleKey.trim() || undefined : undefined,
+      chargeMessages: kind === 'one_off' ? chargeMessages : undefined,
       registerPayment,
       paymentMethod: registerPayment ? paymentMethod : undefined,
       paymentNotes: registerPayment ? paymentNotes.trim() || undefined : undefined,
@@ -115,6 +142,19 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
       onSave={() => formRef.current?.requestSubmit()}
     >
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+        <FormSelect
+          label="Tipo de fatura"
+          prefixIcon={FileText}
+          value={kind}
+          onChange={(e) => setKind(e.target.value as InvoiceKindValue)}
+        >
+          {INVOICE_KIND_VALUES.map((value) => (
+            <option key={value} value={value}>
+              {INVOICE_KIND_LABELS[value]}
+            </option>
+          ))}
+        </FormSelect>
+
         <AsyncSearchSelect
           label="Cliente"
           prefixIcon={User}
@@ -133,11 +173,20 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
           emptyMessage="Nenhum cliente encontrado"
         />
 
-        <FormCurrencyInput
-          label="Valor"
-          value={amountReais}
-          onChange={setAmountReais}
-        />
+        {kind === 'one_off' ? (
+          <FormField label="Descrição da cobrança">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              maxLength={500}
+              className={formTextareaClass}
+              placeholder="Ex.: Instalação de decoder, pacote extra..."
+            />
+          </FormField>
+        ) : null}
+
+        <FormCurrencyInput label="Valor" value={amountReais} onChange={setAmountReais} />
 
         <FormInput
           label="Vencimento"
@@ -147,14 +196,22 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
           onChange={(e) => setDueDate(e.target.value)}
         />
 
-        <FormInput
-          label="Ciclo (YYYY-MM, opcional)"
-          prefixIcon={CalendarRange}
-          type="text"
-          value={billingCycleKey}
-          onChange={(e) => setBillingCycleKey(e.target.value)}
-          placeholder="2026-06"
-        />
+        {kind === 'subscription' ? (
+          <FormInput
+            label="Ciclo (YYYY-MM, opcional)"
+            prefixIcon={CalendarRange}
+            type="text"
+            value={billingCycleKey}
+            onChange={(e) => setBillingCycleKey(e.target.value)}
+            placeholder="2026-06"
+          />
+        ) : (
+          <ChargeMessageTemplatesSection
+            title="Mensagens WhatsApp desta cobrança"
+            value={chargeMessages}
+            onChange={setChargeMessages}
+          />
+        )}
 
         <label className="flex items-center gap-2.5 text-sm text-slate-700">
           <input

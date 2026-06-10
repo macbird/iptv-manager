@@ -71,3 +71,21 @@ Logs e URLs ficam em `deploy/artifacts/` (gitignored):
 
 Use `deploy/CREDENTIALS.local.md` apenas localmente (gitignored).  
 Não commitar senhas nem tokens.
+
+## Dev no MACBIRD (API + Vite, Evolution produção)
+
+Sync a partir do notebook (WSL):
+
+```bash
+bash /mnt/c/Users/jpaulosi/projetos/client-manager/wsl_sync_macbird.sh
+```
+
+Ou no MACBIRD após `git pull`:
+
+```bash
+cd ~/projetos/client-manager
+bash deploy/scripts/macbird-apply-charge-messages.sh
+```
+
+O stack dev usa `BILLING_SCHEDULER_INTERVAL_MINUTES=10` (todos os tenants ativos a cada 10 min).  
+Documentação completa: [docs/iptv-manager/12-billing-automation-scheduler.md](../docs/iptv-manager/12-billing-automation-scheduler.md).

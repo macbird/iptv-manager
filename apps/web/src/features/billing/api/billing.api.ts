@@ -5,6 +5,8 @@ import type {
   CreateManualInvoiceInput,
   InvoiceDetailDto,
   InvoiceListItem,
+  MetaEmbeddedSignupConfigDto,
+  MetaEmbeddedSignupInput,
   PaginatedResponse,
   PaymentDetailDto,
   PaymentListItem,
@@ -12,6 +14,15 @@ import type {
   PlatformSettingsDto,
   RegisterPaymentInput,
   TenantSettingsDto,
+  WhatsAppEvolutionConnectionDto,
+  WhatsAppMetaConnectionDto,
+  ChargeMessageSettingsDto,
+  TenantChargeMessagesSettingsDto,
+  BillingAutomationSettingsDto,
+  EvolutionConnectInput,
+  EvolutionConnectResponseDto,
+  EvolutionTestMessageInput,
+  EvolutionTestMessageResponseDto,
 } from '@client-manager/shared';
 
 export const platformBillingApi = {
@@ -77,6 +88,71 @@ export const tenantBillingApi = {
   },
   updateSettings: async (payload: Record<string, unknown>) => {
     const { data } = await api.patch('/settings', payload);
+    return data;
+  },
+  getMetaWhatsappConfig: async (): Promise<MetaEmbeddedSignupConfigDto> => {
+    const { data } = await api.get('/settings/whatsapp/meta/config');
+    return data;
+  },
+  getMetaWhatsappConnection: async (): Promise<WhatsAppMetaConnectionDto> => {
+    const { data } = await api.get('/settings/whatsapp/meta/connection');
+    return data;
+  },
+  connectMetaWhatsapp: async (
+    payload: MetaEmbeddedSignupInput,
+  ): Promise<WhatsAppMetaConnectionDto> => {
+    const { data } = await api.post('/settings/whatsapp/meta/connect', payload);
+    return data;
+  },
+  disconnectMetaWhatsapp: async (): Promise<WhatsAppMetaConnectionDto> => {
+    const { data } = await api.post('/settings/whatsapp/meta/disconnect');
+    return data;
+  },
+  getEvolutionWhatsappConnection: async (): Promise<WhatsAppEvolutionConnectionDto> => {
+    const { data } = await api.get('/settings/whatsapp/evolution/connection');
+    return data;
+  },
+  connectEvolutionWhatsapp: async (
+    payload?: EvolutionConnectInput,
+  ): Promise<EvolutionConnectResponseDto> => {
+    const { data } = await api.post('/settings/whatsapp/evolution/connect', payload ?? {});
+    return data;
+  },
+  disconnectEvolutionWhatsapp: async (): Promise<WhatsAppEvolutionConnectionDto> => {
+    const { data } = await api.post('/settings/whatsapp/evolution/disconnect');
+    return data;
+  },
+  sendEvolutionTestMessage: async (
+    payload?: EvolutionTestMessageInput,
+  ): Promise<EvolutionTestMessageResponseDto> => {
+    const { data } = await api.post('/settings/whatsapp/evolution/test-message', payload ?? {});
+    return data;
+  },
+  getChargeMessages: async (): Promise<TenantChargeMessagesSettingsDto> => {
+    const { data } = await api.get('/settings/charge-messages');
+    return data;
+  },
+  updateChargeMessages: async (
+    payload: TenantChargeMessagesSettingsDto,
+  ): Promise<TenantChargeMessagesSettingsDto> => {
+    const { data } = await api.patch('/settings/charge-messages', payload);
+    return data;
+  },
+  getBillingAutomation: async (): Promise<BillingAutomationSettingsDto> => {
+    const { data } = await api.get('/settings/billing-automation');
+    return data;
+  },
+  updateBillingAutomation: async (
+    payload: BillingAutomationSettingsDto,
+  ): Promise<BillingAutomationSettingsDto> => {
+    const { data } = await api.patch('/settings/billing-automation', payload);
+    return data;
+  },
+  updateInvoiceChargeMessages: async (
+    invoiceId: string,
+    payload: ChargeMessageSettingsDto,
+  ): Promise<InvoiceDetailDto> => {
+    const { data } = await api.patch(`/invoices/${invoiceId}/charge-messages`, payload);
     return data;
   },
   updatePaymentCredentials: async (payload: {

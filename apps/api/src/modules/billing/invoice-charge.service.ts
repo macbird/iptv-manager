@@ -1,6 +1,5 @@
 import { prisma } from '../../core/database';
 import {
-  buildBillingChargeMessage,
   isPayableInvoiceStatus,
   normalizePhoneE164,
   type BillingInvoiceStatusValue,
@@ -8,9 +7,11 @@ import {
 import { PaymentGenerationService } from '../../integrations/payment/payment-generation.service';
 import { WhatsAppProviderFactory } from '../../integrations/whatsapp/whatsapp-provider.factory';
 import { InvoiceActionError } from './invoice-errors';
+import { TenantChargeMessageConfigLoader } from './tenant-charge-message-config.loader';
 
 const paymentGeneration = new PaymentGenerationService();
 const whatsappFactory = new WhatsAppProviderFactory();
+const chargeMessageConfigLoader = new TenantChargeMessageConfigLoader();
 
 /**
  * Sends PIX billing charges via WhatsApp after ensuring PIX is generated.
@@ -18,14 +19,18 @@ const whatsappFactory = new WhatsAppProviderFactory();
  * @author João Paulo da Silva
  * @since 4.9.0
  * @creationDate 04/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultoria de Negócio e Tecnologia da Informação Ltda.
+ * Copyright (c) 2026 NTT DATA Brasil Consultologia de Negócio e Tecnologia da Informação Ltda.
  * Todos os direitos reservados.
  */
 export class InvoiceChargeService {
   /**
-   * Generates PIX (if needed) and sends the billing message to the payer phone.
+   * Generates PIX (if needed) and sends billing messages to the payer phone.
    */
-  async sendChargeViaWhatsApp(invoiceId: string, tenantId?: string) {
+  async sendChargeViaWhatsApp(
+    invoiceId: string,
+    tenantId?: string,
+    source: 'manual' | 'automation' = 'manual',
+  ) {
     let invoice = await prisma.invoice.findFirst({
       where: {
         id: invoiceId,
@@ -78,15 +83,33 @@ export class InvoiceChargeService {
     const payerName =
       invoice.customer?.name ?? invoice.account.users[0]?.name ?? invoice.account.name;
 
-    const message = buildBillingChargeMessage({
-      payerName,
-      invoice: {
-        pixCopyPaste: invoice.pixCopyPaste,
-        amountCents: invoice.amountCents,
-        billingCycleKey: invoice.billingCycleKey,
-        dueDate: invoice.dueDate,
+    const { messages, delayMs } = await chargeMessageConfigLoader.buildMessages(
+      invoice.accountId,
+      {
+        payerName,
+        tenantName: invoice.account.name,
+        description: invoice.description ?? undefined,
+        invoice: {
+          pixCopyPaste: invoice.pixCopyPaste,
+          amountCents: invoice.amountCents,
+          billingCycleKey: invoice.billingCycleKey,
+          dueDate: invoice.dueDate,
+        },
       },
-    });
+      {
+        kind: invoice.kind,
+        chargeMessageTemplates: invoice.chargeMessageTemplates,
+        chargeMessageDelayMs: invoice.chargeMessageDelayMs,
+        description: invoice.description,
+      },
+    );
+
+    if (messages.length === 0) {
+      throw new InvoiceActionError(
+        'Nenhuma mensagem de cobrança configurada. Ajuste em Configurações → Mensagem de cobrança.',
+        'NOT_ALLOWED',
+      );
+    }
 
     let whatsapp;
     try {
@@ -96,17 +119,49 @@ export class InvoiceChargeService {
       throw new InvoiceActionError(messageText, 'NOT_ALLOWED');
     }
 
-    let result: { providerMessageId: string };
+    const providerMessageIds: string[] = [];
+
     try {
-      result = await whatsapp.sendText({ phoneE164: phone, text: message });
+      for (let index = 0; index < messages.length; index += 1) {
+        const result = await whatsapp.sendText({ phoneE164: phone, text: messages[index] });
+        providerMessageIds.push(result.providerMessageId);
+
+        if (index < messages.length - 1 && delayMs > 0) {
+          await sleep(delayMs);
+        }
+      }
+
+      await prisma.invoiceChargeDelivery.create({
+        data: {
+          invoiceId: invoice.id,
+          channel: 'whatsapp',
+          source,
+          messagesCount: messages.length,
+          providerMessageIds,
+          success: true,
+        },
+      });
     } catch (error) {
       const messageText = error instanceof Error ? error.message : 'Falha ao enviar WhatsApp';
+      await prisma.invoiceChargeDelivery.create({
+        data: {
+          invoiceId: invoice.id,
+          channel: 'whatsapp',
+          source,
+          messagesCount: providerMessageIds.length,
+          providerMessageIds,
+          success: false,
+          errorMessage: messageText,
+        },
+      });
       throw new InvoiceActionError(messageText, 'CONFLICT');
     }
 
     return {
       sent: true,
-      providerMessageId: result.providerMessageId,
+      messagesCount: messages.length,
+      providerMessageId: providerMessageIds[providerMessageIds.length - 1] ?? null,
+      providerMessageIds,
       phoneMasked: maskPhone(phone),
     };
   }
@@ -125,4 +180,8 @@ function resolvePayerPhone(invoice: {
 function maskPhone(phone: string): string {
   if (phone.length <= 4) return '****';
   return `${phone.slice(0, 4)}****${phone.slice(-2)}`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

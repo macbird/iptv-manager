@@ -67,6 +67,12 @@ enum WhatsAppProviderType {
   meta
 }
 
+enum WhatsAppConnectionStatus {
+  disconnected
+  pending
+  connected
+}
+
 enum BillingScope {
   platform
   tenant
@@ -78,6 +84,11 @@ enum BillingInvoiceStatus {
   paid
   overdue
   canceled
+}
+
+enum InvoiceKind {
+  subscription
+  one_off
 }
 
 enum SubscriptionStatus {
@@ -260,11 +271,16 @@ model PlatformPaymentConfig {
 }
 
 model PlatformWhatsappConfig {
-  id          String               @id @default("default")
-  provider    WhatsAppProviderType @default(evolution)
-  instanceUrl String?
-  apiKey      String?
-  updatedAt   DateTime             @updatedAt
+  id                 String                   @id @default("default")
+  provider           WhatsAppProviderType     @default(evolution)
+  instanceUrl        String?
+  apiKey             String?
+  wabaId             String?
+  phoneNumberId      String?
+  displayPhoneNumber String?
+  connectionStatus   WhatsAppConnectionStatus @default(disconnected)
+  tokenExpiresAt     DateTime?
+  updatedAt          DateTime                 @updatedAt
 
   @@map("platform_whatsapp_config")
 }
@@ -327,26 +343,39 @@ model TenantPaymentConfig {
 }
 
 model TenantWhatsappConfig {
-  id          String               @id @default(uuid())
-  accountId   String               @unique
-  account     Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  provider    WhatsAppProviderType @default(evolution)
-  instanceUrl String?
-  apiKey      String?
-  updatedAt   DateTime             @updatedAt
+  id                 String                   @id @default(uuid())
+  accountId          String                   @unique
+  account            Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  provider           WhatsAppProviderType     @default(evolution)
+  instanceUrl        String?
+  apiKey             String?
+  wabaId             String?
+  phoneNumberId      String?
+  displayPhoneNumber String?
+  connectionStatus   WhatsAppConnectionStatus @default(disconnected)
+  tokenExpiresAt     DateTime?
+  updatedAt          DateTime                 @updatedAt
 
+  @@index([phoneNumberId])
   @@map("tenant_whatsapp_config")
 }
 
 model TenantBillingAutomationConfig {
-  id                 String   @id @default(uuid())
-  accountId          String   @unique
-  account            Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  daysBeforeDue      Int      @default(3)
-  sendWhatsapp       Boolean  @default(true)
-  sendPaymentCharge  Boolean  @default(true)
-  active             Boolean  @default(true)
-  updatedAt          DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  accountId             String   @unique
+  account               Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  daysBeforeDue         Int      @default(3)
+  sendWhatsapp          Boolean  @default(true)
+  sendPaymentCharge     Boolean  @default(true)
+  active                Boolean  @default(true)
+  chargeMessageTemplates Json?
+  chargeMessageDelayMs  Int      @default(1500)
+  oneOffMessageTemplates Json?
+  automationRunHour     Int      @default(9)
+  automationRunMinute   Int      @default(0)
+  autoCloseSubscriptionInvoices Boolean @default(false)
+  closeSubscriptionInvoiceAfterDays Int @default(30)
+  updatedAt             DateTime @updatedAt
 
   @@map("tenant_billing_automation_config")
 }
@@ -354,11 +383,13 @@ model TenantBillingAutomationConfig {
 model Invoice {
   id                String               @id @default(uuid())
   scope             BillingScope
+  kind              InvoiceKind          @default(subscription)
   accountId         String
   account           Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   customerId        String?
   customer          Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
   billingCycleKey   String
+  description       String?
   amountCents       Int
   dueDate           DateTime
   status            BillingInvoiceStatus @default(open)
@@ -367,6 +398,8 @@ model Invoice {
   pixQrCodeBase64   String?
   providerChargeId  String?              @unique
   paidAt            DateTime?
+  chargeMessageTemplates Json?
+  chargeMessageDelayMs   Int?
   replacesInvoiceId String?              @unique
   replacesInvoice   Invoice?             @relation("InvoiceReplacement", fields: [replacesInvoiceId], references: [id], onDelete: SetNull)
   replacement       Invoice?             @relation("InvoiceReplacement")
@@ -376,10 +409,39 @@ model Invoice {
   updatedAt         DateTime             @updatedAt
   payments                 Payment[]
   connectionRenewalTasks   ConnectionRenewalTask[]
+  chargeDeliveries         InvoiceChargeDelivery[]
 
   @@index([scope, accountId, customerId, billingCycleKey])
   @@index([accountId, scope, status])
+  @@index([accountId, kind, status])
   @@map("invoices")
+}
+
+model InvoiceChargeDelivery {
+  id                 String   @id @default(uuid())
+  invoiceId          String
+  invoice            Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  channel            String   @default("whatsapp")
+  source             String
+  sentAt             DateTime @default(now())
+  messagesCount      Int
+  providerMessageIds Json?
+  success            Boolean  @default(true)
+  errorMessage       String?
+
+  @@index([invoiceId, sentAt])
+  @@map("invoice_charge_deliveries")
+}
+
+model BillingJobRun {
+  id         String    @id @default(uuid())
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  status     String
+  summary    Json?
+
+  @@index([startedAt])
+  @@map("billing_job_runs")
 }
 
 model Payment {

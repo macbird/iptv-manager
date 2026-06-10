@@ -14,6 +14,7 @@ import { registerAdminModule } from './modules/admin';
 import { registerBillingModule } from './modules/billing';
 import { paymentWebhookRoutes } from './modules/billing/payment-webhook.routes';
 import { registerActivationsModule } from './modules/activations';
+import { startBillingScheduler } from './modules/billing/billing-scheduler';
 import { tenantContextMiddleware } from './core/middleware/tenant-context';
 import { prisma } from './core/database';
 
@@ -108,6 +109,7 @@ const start = async () => {
     const port = process.env.NODE_ENV === 'production' ? 80 : (Number(process.env.PORT) || 3001);
 
     await app.listen({ port, host: '0.0.0.0' });
+    startBillingScheduler();
     console.log('Registered routes:', app.printRoutes());
     console.log(`Server listening on port ${port}`);
   } catch (err) {

@@ -58,7 +58,7 @@ export class PaymentConfirmationService {
         throw new Error('Invoice already paid');
       }
 
-      if (invoice.scope === 'tenant' && invoice.customerId) {
+      if (invoice.scope === 'tenant' && invoice.customerId && invoice.kind === 'subscription') {
         const activationTasks = await activationsService.createTasksForPayment(
           {
             tenantId: invoice.accountId,
@@ -101,7 +101,7 @@ export class PaymentConfirmationService {
 
       let activationTasks: Awaited<ReturnType<ActivationsService['createTasksForPayment']>> = [];
 
-      if (invoice.scope === 'tenant' && invoice.customerId) {
+      if (invoice.scope === 'tenant' && invoice.customerId && invoice.kind === 'subscription') {
         activationTasks = await activationsService.createTasksForPayment(
           {
             tenantId: invoice.accountId,

@@ -58,3 +58,11 @@ export function getBillingInvoiceStatusBadgeClass(status: BillingInvoiceStatusVa
       return 'bg-slate-100 text-slate-600';
   }
 }
+
+export const INVOICE_KIND_VALUES = ['subscription', 'one_off'] as const;
+export type InvoiceKindValue = (typeof INVOICE_KIND_VALUES)[number];
+
+export const INVOICE_KIND_LABELS: Record<InvoiceKindValue, string> = {
+  subscription: 'Assinatura',
+  one_off: 'Avulsa',
+};
