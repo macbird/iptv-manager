@@ -87,6 +87,33 @@ export DEPLOYED_AT="${DEPLOYED_AT}"
 EOF
 cat >> start-prod.sh <<'EOF'
 
+DEPLOY_STAMP_FILE="/application/.deploy-sha"
+
+install_deps_if_needed() {
+  local need_install=0
+  if [ ! -f "$DEPLOY_STAMP_FILE" ] || [ "$(cat "$DEPLOY_STAMP_FILE")" != "${DEPLOY_GIT_SHA}" ]; then
+    need_install=1
+  fi
+  if ! find node_modules/argon2 -name 'argon2.node' -print -quit 2>/dev/null | grep -q .; then
+    need_install=1
+  fi
+  if [ ! -f node_modules/.prisma/client/default.js ] 2>/dev/null; then
+    need_install=1
+  fi
+
+  if [ "$need_install" -eq 1 ]; then
+    echo "==> Install production dependencies (deploy ${DEPLOY_GIT_SHA})"
+    rm -rf node_modules
+    npm install --omit=dev --foreground-scripts
+    npx prisma generate --schema apps/api/prisma/schema.prisma
+    echo "${DEPLOY_GIT_SHA}" > "$DEPLOY_STAMP_FILE"
+  else
+    echo "==> Dependencies already installed for ${DEPLOY_GIT_SHA}"
+  fi
+}
+
+install_deps_if_needed
+
 echo "==> Start API"
 exec node apps/api/dist/main.js
 EOF

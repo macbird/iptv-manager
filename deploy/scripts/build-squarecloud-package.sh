@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds a prebuilt zip for Square Cloud (dist + fresh production node_modules).
+# Builds a slim Square Cloud zip (dist + package files, NO node_modules).
+# Dependencies install on app boot via start-prod.sh when deploy SHA changes.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -7,7 +8,7 @@ cd "$ROOT_DIR"
 
 PKG_DIR="${ROOT_DIR}/deploy/artifacts/pixflow-prebuilt-pkg"
 ZIP="${ROOT_DIR}/deploy/artifacts/pixflow-prebuilt.zip"
-MAX_ZIP_BYTES=$((85 * 1024 * 1024))
+MAX_ZIP_BYTES=$((25 * 1024 * 1024))
 
 require_file() {
   local path="$1"
@@ -36,7 +37,7 @@ mkdir -p deploy/artifacts
 rm -rf "$PKG_DIR" "$ZIP"
 mkdir -p "$PKG_DIR"
 
-echo "==> Copying app tree (no node_modules)"
+echo "==> Copying slim runtime tree (no node_modules)"
 cp package.json squarecloud.app start-prod.sh client.p12 "$PKG_DIR/"
 
 mkdir -p "$PKG_DIR/packages/shared"
@@ -54,31 +55,15 @@ if [ -f apps/web/package.json ]; then
 fi
 rsync -a apps/web/dist "$PKG_DIR/apps/web/"
 
-echo "==> Fresh production install inside package dir"
-(
-  cd "$PKG_DIR"
-  npm install --omit=dev --foreground-scripts
-  npx prisma generate --schema apps/api/prisma/schema.prisma
-)
-
-ARGON2_NODE="$(find "$PKG_DIR/node_modules/argon2" -name 'argon2.node' -print -quit 2>/dev/null || true)"
-if [ -z "${ARGON2_NODE}" ]; then
-  echo "::error::Missing argon2 native binding in package node_modules" >&2
-  exit 1
-fi
-echo "argon2 OK: ${ARGON2_NODE}"
-
-require_file "$PKG_DIR/node_modules/.prisma/client/default.js" "Prisma client"
-
 echo "==> Creating zip"
 (cd "$PKG_DIR" && zip -qr "$ZIP" .)
 
 ls -lh "$ZIP"
-ZIP_BYTES="$(wc -c < "$ZIP" | tr -d ' ')"
-ZIP_MB="$(du -m "$ZIP" | awk '{print $1}')"
-echo "zip size: ${ZIP_MB}MB (${ZIP_BYTES} bytes)"
+ZIP_BYTES="$(wc -c < "$ZIP" | tr -d ' \n')"
+echo "zip size: ${ZIP_BYTES} bytes (~$((ZIP_BYTES / 1024 / 1024))MB)"
+
 if [ "${ZIP_BYTES}" -ge "${MAX_ZIP_BYTES}" ]; then
-  echo "::error::Package exceeds ${MAX_ZIP_BYTES} bytes — Square Cloud rejects large commits (CLUSTER_COMMIT_FAILED)" >&2
+  echo "::error::Slim package exceeds ${MAX_ZIP_BYTES} bytes" >&2
   exit 1
 fi
 
@@ -90,13 +75,19 @@ for required in \
   squarecloud.app \
   start-prod.sh \
   client.p12 \
+  package.json \
   apps/api/dist/main.js \
   apps/web/dist/index.html \
-  node_modules/.prisma/client/default.js; do
+  apps/api/prisma/schema.prisma; do
   if ! grep -Fq "$required" "$ZIP_LIST"; then
     echo "::error::Missing ${required} in zip" >&2
     exit 1
   fi
 done
+
+if grep -Fq 'node_modules/' "$ZIP_LIST"; then
+  echo "::error::Slim zip must not include node_modules" >&2
+  exit 1
+fi
 
 echo "PIXFLOW_PACKAGE=${ZIP}"

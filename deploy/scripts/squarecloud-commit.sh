@@ -1,73 +1,53 @@
 #!/usr/bin/env bash
-# Uploads prebuilt zip to Square Cloud and fails on any commit error.
+# Upload zip to Square Cloud via API (explicit JSON errors, retry on rate limit).
 set -euo pipefail
 
 APP_ID="${SQUARE_CLOUD_APP_ID:?SQUARE_CLOUD_APP_ID is required}"
 TOKEN="${SQUARE_CLOUD_API_TOKEN:?SQUARE_CLOUD_API_TOKEN is required}"
 ZIP="${1:?Usage: squarecloud-commit.sh <path-to-zip>}"
+API="https://api.squarecloud.app/v2/apps/${APP_ID}/commit"
 
 if [ ! -f "$ZIP" ]; then
   echo "::error::Zip not found: $ZIP" >&2
   exit 1
 fi
 
-COMMIT_LOG="$(mktemp)"
-trap 'rm -f "$COMMIT_LOG"' EXIT
+RESP_FILE="$(mktemp)"
+trap 'rm -f "$RESP_FILE"' EXIT
 
 report_failure() {
   local reason="$1"
+  local http="${2:-unknown}"
 
   echo "::error::${reason}" >&2
   echo ""
   echo "========================================"
   echo " Square Cloud commit FAILED"
   echo " Reason: ${reason}"
+  echo " HTTP: ${http}"
   echo "========================================"
-  echo ""
-  echo "=== CLI output (full) ==="
-  if [ -s "$COMMIT_LOG" ]; then
-    cat "$COMMIT_LOG"
-  else
-    echo "(empty)"
-  fi
-  echo ""
-  echo "=== CLI error lines ==="
-  grep -inE 'CLUSTER_COMMIT_FAILED|commit failed|error|400|fail|invalid|memory|ram|size|limit' "$COMMIT_LOG" 2>/dev/null || echo "(no matching error lines)"
   echo ""
   echo "=== Package ==="
   ls -lh "$ZIP"
-  du -m "$ZIP" | awk '{print "zip size (MB):", $1}'
+  wc -c "$ZIP" | awk '{print "bytes:", $1}'
   echo ""
-  echo "=== squarecloud.app inside zip ==="
+  echo "=== squarecloud.app ==="
   unzip -p "$ZIP" squarecloud.app 2>/dev/null || echo "(missing)"
   echo ""
-  echo "=== zip entries (top 30) ==="
-  unzip -l "$ZIP" 2>/dev/null | head -30 || true
+  echo "=== API response ==="
+  cat "$RESP_FILE" 2>/dev/null || echo "(empty)"
   echo ""
-  echo "=== App status via API ==="
-  APP_HTTP="$(curl -sS -m 30 -o /tmp/sc_app_status.json -w '%{http_code}' \
-    -H "Authorization: ${TOKEN}" \
-    "https://api.squarecloud.app/v2/apps/${APP_ID}")"
-  echo "GET /apps/${APP_ID} HTTP ${APP_HTTP}"
-  if [ -f /tmp/sc_app_status.json ]; then
-    cat /tmp/sc_app_status.json
-    echo
-  fi
 
   if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
       echo "## Square Cloud commit FAILED"
       echo ""
       echo "**Reason:** ${reason}"
+      echo "**HTTP:** ${http}"
       echo ""
-      echo "### CLI output"
-      echo '```text'
-      cat "$COMMIT_LOG" 2>/dev/null || echo "(empty)"
-      echo '```'
-      echo ""
-      echo "### squarecloud.app in zip"
-      echo '```ini'
-      unzip -p "$ZIP" squarecloud.app 2>/dev/null || echo "(missing)"
+      echo "### API response"
+      echo '```json'
+      cat "$RESP_FILE" 2>/dev/null || echo "(empty)"
       echo '```'
     } >> "${GITHUB_STEP_SUMMARY}"
   fi
@@ -75,29 +55,38 @@ report_failure() {
   exit 1
 }
 
-ZIP_MB="$(du -m "$ZIP" | awk '{print $1}')"
-echo "Committing ${ZIP} (${ZIP_MB}MB) to app ${APP_ID}"
+ZIP_BYTES="$(wc -c < "$ZIP" | tr -c '0-9' '')"
+echo "Committing ${ZIP} (${ZIP_BYTES} bytes) to app ${APP_ID}"
+echo "squarecloud.app:"
+unzip -p "$ZIP" squarecloud.app
 
-npm install -g @squarecloud/cli
-squarecloud auth login --token "$TOKEN"
+HTTP=""
+for attempt in 1 2 3 4 5 6; do
+  echo "==> Commit attempt ${attempt}/6"
+  HTTP="$(curl -sS -m 600 -o "$RESP_FILE" -w '%{http_code}' \
+    -H "Authorization: ${TOKEN}" \
+    -F "file=@${ZIP}" \
+    "${API}")"
+  echo "HTTP ${HTTP}"
+  cat "$RESP_FILE"
+  echo
 
-echo "=== Running: squarecloud app commit ${APP_ID} --file ${ZIP} --restart ==="
-set +e
-squarecloud app commit "$APP_ID" --file "$ZIP" --restart 2>&1 | tee "$COMMIT_LOG"
-CLI_EXIT="${PIPESTATUS[0]}"
-set -e
+  if [ "$HTTP" = "429" ]; then
+    echo "Rate limited (KEEP_CALM) — waiting 12s..."
+    sleep 12
+    continue
+  fi
+  break
+done
 
-echo "CLI exit code: ${CLI_EXIT}"
-
-if [ "$CLI_EXIT" -ne 0 ]; then
-  report_failure "squarecloud app commit exited with code ${CLI_EXIT}"
+if [ "$HTTP" != "200" ]; then
+  CODE="$(python3 -c "import json; print(json.load(open('${RESP_FILE}')).get('code',''))" 2>/dev/null || true)"
+  MSG="$(python3 -c "import json; print(json.load(open('${RESP_FILE}')).get('message',''))" 2>/dev/null || true)"
+  report_failure "Square Cloud API error code=${CODE} message=${MSG}" "$HTTP"
 fi
 
-if grep -qiE 'CLUSTER_COMMIT_FAILED|KEEP_CALM|"status"[[:space:]]*:[[:space:]]*"error"' "$COMMIT_LOG"; then
-  MATCH="$(grep -iE 'CLUSTER_COMMIT_FAILED|KEEP_CALM|"status"[[:space:]]*:[[:space:]]*"error"' "$COMMIT_LOG" | head -5)"
-  report_failure "Square Cloud commit error — ${MATCH}"
+if ! python3 -c "import json,sys; d=json.load(open('${RESP_FILE}')); sys.exit(0 if d.get('status')=='success' else 1)"; then
+  report_failure "Square Cloud API returned non-success status" "$HTTP"
 fi
 
-echo "=== Square Cloud CLI output ==="
-cat "$COMMIT_LOG"
 echo "Square Cloud commit OK"

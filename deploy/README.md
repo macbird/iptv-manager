@@ -6,113 +6,64 @@ Todo o deploy roda **no MACBIRD** (`192.168.18.88`).
 ## Pré-requisitos (uma vez no MACBIRD)
 
 ```bash
-# Clone do repositório
 git clone <url-do-repo> ~/client-manager
 cd ~/client-manager
-
-# Node via nvm (v20.20.2), pm2, squarecloud CLI, postgres, cloudflared
-# já configurados no ambiente de produção
 ```
 
-## Square Cloud (GitHub Actions)
+## Square Cloud — pipeline (GitHub Actions)
 
-Push em `main` dispara `.github/workflows/deploy.yml`:
+Push em `main` → `.github/workflows/deploy.yml`
 
-1. **Build** — `npm install` + `npm run build` (Node 24)
-2. **Production deps** — `npm prune --omit=dev` + validação do `argon2`
-3. **Prepare** — `client.p12` + `start-prod.sh`
-4. **Migrations** — `prisma migrate deploy` no CI (com `client.p12` local)
-5. **Package** — monta pasta limpa, `npm install --omit=dev` dentro dela, zip < 85MB
-6. **Deploy** — `squarecloud app commit --file pixflow-prebuilt.zip --restart`
-7. **Verify** — `/health` e `/health/db`
+| Step | O que faz |
+|------|-----------|
+| 1. Install + Build | `npm install` + `npm run build` (Node 24) |
+| 2. Prepare | `client.p12` + `start-prod.sh` + env vars |
+| 3. Migrations | `prisma migrate deploy` no CI (com p12 local) |
+| 4. Slim zip | `dist` + `package.json` + prisma — **sem node_modules** (~5–15MB) |
+| 5. Commit | API Square Cloud (`MEMORY=512`) |
+| 6. Verify | `/health` + `/health/db` (até ~10 min no 1º boot) |
 
-No boot (`start-prod.sh`): só `node apps/api/dist/main.js` — sem `npm install`.
+### Por que zip slim?
 
-Pacote prebuilt inclui: `dist`, `node_modules`, `client.p12`, `squarecloud.app` (`MEMORY=512`), `start-prod.sh`.
+Testes na API Square Cloud (macbird):
 
-**Importante:** `MEMORY` no zip deve bater com a RAM da app no painel (512MB). Pedir 1024MB com plano sem RAM livre gera `CLUSTER_COMMIT_FAILED` (HTTP 400).
+- Zip **~1KB** + `MEMORY=512` → sucesso
+- Zip **~88MB** com `node_modules` → `CLUSTER_COMMIT_FAILED` (400)
+- Plano **standard-4** sem RAM livre → `MEMORY` no zip deve ser **512**
 
-**Fail-fast:** qualquer step com erro para o job (`bash -euo pipefail`). Commit Square Cloud falha se CLI retornar erro ou `CLUSTER_COMMIT_FAILED`. Verify só roda se todos os steps anteriores passarem.
+Monorepo com `node_modules` no zip **não cabe** no commit da Square Cloud.
 
-Diagnóstico na macbird:
+### Boot da app
+
+`start-prod.sh` instala deps **só quando o SHA do deploy muda** (ou se faltam argon2/prisma):
+
+```bash
+npm install --omit=dev → prisma generate → node apps/api/dist/main.js
+```
+
+Restarts do mesmo deploy **não** reinstalam.
+
+### Fail-fast
+
+- `bash -euo pipefail` em todos os steps
+- Commit via API com JSON de erro explícito
+- Verify só roda se commit passou (`if: success()`)
+
+### Diagnóstico
 
 ```bash
 squarecloud app status 09455ba819f445af9c92a3d8319e26b4
 squarecloud app logs 09455ba819f445af9c92a3d8319e26b4 | tail -80
+curl -sS https://pixflow.squareweb.app/health
 ```
 
-## Deploy completo (macbird local)
-
-Conecte no MACBIRD (SSH ou console local) e execute:
+## Deploy local (macbird)
 
 ```bash
 cd ~/client-manager
-chmod +x deploy/scripts/*.sh
 ./deploy/scripts/deploy-all.sh
 ```
 
-O script faz, **no MACBIRD**:
-
-1. `git pull` (branch `main`)
-2. `npm install`, Prisma migrate, PM2 API (`start:ts`)
-3. Cloudflared Quick Tunnel (se necessário)
-4. Build da web + commit na Square Cloud
-
-## Comandos úteis (sempre no MACBIRD)
-
-```bash
-# Só API
-./deploy/scripts/macbird-run-api.sh
-
-# Só web (requer api_public_url.txt)
-./deploy/scripts/macbird-deploy-web.sh
-
-# Status (health só em localhost)
-./deploy/scripts/status.sh
-
-# Deploy sem git pull (código já atualizado)
-SKIP_GIT_PULL=1 ./deploy/scripts/deploy-all.sh
-```
-
-## Atualizar código antes do deploy
-
-No seu ambiente de desenvolvimento, faça `git push`.  
-No MACBIRD, `deploy-all.sh` puxa automaticamente.
-
-## O que NÃO fazer no notebook corporativo
-
-- `python deploy/macbird-deploy.py`
-- `python deploy/remote-*.py`
-- `python -c` com Paramiko + senha SSH
-- `curl` para `*.trycloudflare.com` a partir da máquina NTTD
-
-## Artefatos
-
-Logs e URLs ficam em `deploy/artifacts/` (gitignored):
-
-- `api_public_url.txt` — URL atual do túnel
-- `deploy-summary.txt` — resumo do último deploy
-- `macbird-api.log` / `macbird-web.log`
-
 ## Credenciais
 
-Use `deploy/CREDENTIALS.local.md` apenas localmente (gitignored).  
-Não commitar senhas nem tokens.
-
-## Dev no MACBIRD (API + Vite, Evolution produção)
-
-Sync a partir do notebook (WSL):
-
-```bash
-bash /mnt/c/Users/jpaulosi/projetos/client-manager/wsl_sync_macbird.sh
-```
-
-Ou no MACBIRD após `git pull`:
-
-```bash
-cd ~/projetos/client-manager
-bash deploy/scripts/macbird-apply-charge-messages.sh
-```
-
-O stack dev usa `BILLING_SCHEDULER_INTERVAL_MINUTES=10` (todos os tenants ativos a cada 10 min).  
-Documentação completa: [docs/iptv-manager/12-billing-automation-scheduler.md](../docs/iptv-manager/12-billing-automation-scheduler.md).
+Use `deploy/CREDENTIALS.local.md` localmente (gitignored).
