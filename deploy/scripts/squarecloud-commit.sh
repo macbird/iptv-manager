@@ -90,3 +90,38 @@ if ! python3 -c "import json,sys; d=json.load(open('${RESP_FILE}')); sys.exit(0 
 fi
 
 echo "Square Cloud commit OK"
+
+RESTART_FILE="$(mktemp)"
+trap 'rm -f "$RESP_FILE" "$RESTART_FILE"' EXIT
+
+echo "==> Restart app ${APP_ID} (commit API does not auto-start exited apps)"
+RESTART_HTTP=""
+for attempt in 1 2 3 4 5 6; do
+  echo "==> Restart attempt ${attempt}/6"
+  RESTART_HTTP="$(curl -sS -m 120 -o "$RESTART_FILE" -w '%{http_code}' \
+    -X POST \
+    -H "Authorization: ${TOKEN}" \
+    "${API%/commit}/restart")"
+  echo "HTTP ${RESTART_HTTP}"
+  cat "$RESTART_FILE"
+  echo
+
+  if [ "$RESTART_HTTP" = "429" ]; then
+    echo "Rate limited on restart — waiting 12s..."
+    sleep 12
+    continue
+  fi
+  break
+done
+
+if [ "$RESTART_HTTP" != "200" ]; then
+  CODE="$(python3 -c "import json; print(json.load(open('${RESTART_FILE}')).get('code',''))" 2>/dev/null || true)"
+  MSG="$(python3 -c "import json; print(json.load(open('${RESTART_FILE}')).get('message',''))" 2>/dev/null || true)"
+  report_failure "Square Cloud restart failed code=${CODE} message=${MSG}" "$RESTART_HTTP"
+fi
+
+if ! python3 -c "import json,sys; d=json.load(open('${RESTART_FILE}')); sys.exit(0 if d.get('status')=='success' else 1)"; then
+  report_failure "Square Cloud restart returned non-success status" "$RESTART_HTTP"
+fi
+
+echo "Square Cloud restart OK"

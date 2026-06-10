@@ -20,7 +20,7 @@ Push em `main` → `.github/workflows/deploy.yml`
 | 2. Prepare | `client.p12` + `start-prod.sh` + env vars |
 | 3. Migrations | `prisma migrate deploy` no CI (com p12 local) |
 | 4. Slim zip | `dist` + `package.json` + prisma — **sem node_modules** (~5–15MB) |
-| 5. Commit | API Square Cloud (`MEMORY=512`) |
+| 5. Commit + restart | API Square Cloud (`MEMORY=512`) + `POST /apps/{id}/restart` |
 | 6. Verify | `/health` + `/health/db` (até ~10 min no 1º boot) |
 
 ### Por que zip slim?
