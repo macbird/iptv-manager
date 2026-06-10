@@ -57,17 +57,17 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
   const [invoiceChargeMessages, setInvoiceChargeMessages] =
     React.useState<ChargeMessageSettingsDto | null>(null);
 
-  React.useEffect(() => {
-    if (invoice?.chargeMessages) {
-      setInvoiceChargeMessages(invoice.chargeMessages);
-    }
-  }, [invoice?.chargeMessages]);
-
   const { data: invoice, isLoading, isError } = useQuery({
     queryKey: invoiceQueryKey,
     queryFn: () => api.getInvoice(id!),
     enabled: Boolean(id),
   });
+
+  React.useEffect(() => {
+    if (invoice?.chargeMessages) {
+      setInvoiceChargeMessages(invoice.chargeMessages);
+    }
+  }, [invoice?.chargeMessages]);
 
   React.useEffect(() => {
     if (!invoice || !recreateOpen) return;
