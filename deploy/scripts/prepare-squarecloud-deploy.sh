@@ -76,8 +76,8 @@ export API_PUBLIC_BASE_URL="\${API_PUBLIC_BASE_URL:-${API_PUBLIC_BASE_URL}}"
 EOF
 cat >> start-prod.sh <<'EOF'
 
-echo "==> Install production dependencies"
-npm install --omit=dev --ignore-scripts
+echo "==> Install production dependencies (prisma postinstall required)"
+npm install --omit=dev
 
 echo "==> Prisma generate"
 npx prisma generate --schema apps/api/prisma/schema.prisma

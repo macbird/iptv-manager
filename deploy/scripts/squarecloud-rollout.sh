@@ -84,7 +84,7 @@ squarecloud auth login --token "${SQUARE_CLOUD_API_TOKEN}"
 echo "==> Commit + restart"
 squarecloud app commit "${SQUARE_CLOUD_APP_ID}" --restart
 
-if ! wait_for_health 20 15; then
+if ! wait_for_health 30 15; then
   echo "::error::Post-deploy health check failed"
   squarecloud app logs "${SQUARE_CLOUD_APP_ID}" 2>&1 | tail -40 || true
   exit 1
