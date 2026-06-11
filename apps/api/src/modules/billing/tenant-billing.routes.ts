@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { createManualInvoiceSchema, registerPaymentSchema, tenantChargeMessagesSettingsSchema, billingAutomationSettingsSchema, updateInvoiceChargeMessagesSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
+import { sendApiError, sendNotFound, sendValidationError } from '../../core/errors/send-api-error';
 import { TenantSettingsService } from './tenant-settings.service';
 import { TenantPaymentSettingsService } from './tenant-payment-settings.service';
 import { TenantChargeMessageService } from './tenant-charge-message.service';
@@ -44,14 +45,18 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     const tenantId = requireTenantId(request, reply);
     if (!tenantId) return;
     const body = request.body as Record<string, unknown>;
-    return tenantSettings.update(tenantId, {
-      paymentProvider: body.paymentProvider as 'asaas' | 'efi' | 'mercadopago' | undefined,
-      paymentApiKey: body.paymentApiKey as string | undefined,
-      paymentWebhookToken: body.paymentWebhookToken as string | undefined,
-      whatsappProvider: body.whatsappProvider as 'evolution' | 'meta' | undefined,
-      whatsappInstanceUrl: body.whatsappInstanceUrl as string | undefined,
-      whatsappApiKey: body.whatsappApiKey as string | undefined,
-    });
+    try {
+      return await tenantSettings.update(tenantId, {
+        paymentProvider: body.paymentProvider as 'asaas' | 'efi' | 'mercadopago' | undefined,
+        paymentApiKey: body.paymentApiKey as string | undefined,
+        paymentWebhookToken: body.paymentWebhookToken as string | undefined,
+        whatsappProvider: body.whatsappProvider as 'evolution' | 'meta' | undefined,
+        whatsappInstanceUrl: body.whatsappInstanceUrl as string | undefined,
+        whatsappApiKey: body.whatsappApiKey as string | undefined,
+      });
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.get('/settings/webhook-logs', async (request, reply) => {
@@ -72,9 +77,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
 
     const parsed = tenantChargeMessagesSettingsSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Configuração de mensagens inválida',
-      });
+      return sendValidationError(reply, parsed.error);
     }
 
     return tenantChargeMessageService.update(tenantId, parsed.data);
@@ -92,9 +95,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
 
     const parsed = billingAutomationSettingsSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Configuração de automação inválida',
-      });
+      return sendValidationError(reply, parsed.error);
     }
 
     return tenantBillingAutomationService.update(tenantId, parsed.data);
@@ -118,7 +119,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     try {
       return await tenantPaymentSettings.updateCredentials(tenantId, request.body);
     } catch (error) {
-      return reply.status(400).send({ message: (error as Error).message });
+      return sendApiError(reply, error);
     }
   });
 
@@ -134,7 +135,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     try {
       return await tenantPaymentSettings.updateRoutingRules(tenantId, request.body);
     } catch (error) {
-      return reply.status(400).send({ message: (error as Error).message });
+      return sendApiError(reply, error);
     }
   });
 
@@ -146,7 +147,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     try {
       return await tenantPaymentSettings.previewRouting(tenantId, cents);
     } catch (error) {
-      return reply.status(400).send({ message: (error as Error).message });
+      return sendApiError(reply, error);
     }
   });
 
@@ -175,7 +176,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
 
     const parsed = createManualInvoiceSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return reply.status(400).send({ message: parsed.error.errors[0]?.message ?? 'Invalid payload' });
+      return sendValidationError(reply, parsed.error);
     }
 
     try {
@@ -205,7 +206,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const invoice = await invoicesService.getById('tenant', id, tenantId);
     if (!invoice) {
-      return reply.status(404).send({ message: 'Invoice not found' });
+      return sendNotFound(reply, 'Fatura não encontrada');
     }
     return invoice;
   });
@@ -240,7 +241,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const payment = await paymentsService.getById('tenant', id, tenantId);
     if (!payment) {
-      return reply.status(404).send({ message: 'Payment not found' });
+      return sendNotFound(reply, 'Pagamento não encontrado');
     }
     return payment;
   });
@@ -262,9 +263,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const parsed = updateInvoiceChargeMessagesSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Mensagens inválidas',
-      });
+      return sendValidationError(reply, parsed.error);
     }
     try {
       return await invoicesService.updateChargeMessages('tenant', id, tenantId, parsed.data);
@@ -292,11 +291,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     try {
       return await invoicesService.markPaidManual(id, tenantId, body);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Invoice not found';
-      if (message.includes('not found') || message.includes('not supported') || message.includes('canceled') || message.includes('paid')) {
-        return reply.status(400).send({ message });
-      }
-      return reply.status(404).send({ message: 'Invoice not found' });
+      return sendApiError(reply, error);
     }
   });
 
@@ -307,7 +302,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
 
     const parsed = registerPaymentSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return reply.status(400).send({ message: parsed.error.errors[0]?.message ?? 'Invalid payload' });
+      return sendValidationError(reply, parsed.error);
     }
 
     try {
@@ -317,11 +312,7 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
         paidAt: parsed.data.paidAt,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Payment registration failed';
-      if (message.includes('not found')) {
-        return reply.status(404).send({ message });
-      }
-      return reply.status(400).send({ message });
+      return sendApiError(reply, error);
     }
   });
 }

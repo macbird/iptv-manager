@@ -24,4 +24,12 @@ describe('getApiErrorMessage', () => {
   it('testGetApiErrorMessage_whenPlainError_shouldUseMessage', () => {
     expect(getApiErrorMessage(new Error('Falha de rede'), 'fallback')).toBe('Falha de rede');
   });
+
+  it('testGetApiErrorMessage_whenAxiosGenericMessage_shouldUseFallback', () => {
+    const error = {
+      response: { data: {}, status: 400 },
+      message: 'Request failed with status code 400',
+    };
+    expect(getApiErrorMessage(error, 'Erro ao gerar PIX')).toBe('Erro ao gerar PIX');
+  });
 });

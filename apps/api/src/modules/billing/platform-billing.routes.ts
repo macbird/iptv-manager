@@ -3,6 +3,7 @@ import { PlatformSettingsService } from './platform-settings.service';
 import { InvoicesService } from './invoices.service';
 import { InvoiceChargeService } from './invoice-charge.service';
 import { PaymentsService } from './payments.service';
+import { sendApiError, sendNotFound } from '../../core/errors/send-api-error';
 import { handleInvoiceActionError } from './invoice-route.util';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
 
@@ -26,19 +27,23 @@ export async function platformBillingRoutes(app: FastifyInstance) {
 
   app.get('/platform-settings', async () => platformSettings.get());
 
-  app.patch('/platform-settings', async (request) => {
+  app.patch('/platform-settings', async (request, reply) => {
     const body = request.body as Record<string, unknown>;
-    return platformSettings.update({
-      planName: body.planName as string | undefined,
-      priceCents: body.priceCents !== undefined ? Number(body.priceCents) : undefined,
-      paymentProvider: body.paymentProvider as 'asaas' | 'efi' | 'mercadopago' | undefined,
-      paymentApiKey: body.paymentApiKey as string | undefined,
-      paymentWebhookToken: body.paymentWebhookToken as string | undefined,
-      overdueDays: body.overdueDays !== undefined ? Number(body.overdueDays) : undefined,
-      whatsappProvider: body.whatsappProvider as 'evolution' | 'meta' | undefined,
-      whatsappInstanceUrl: body.whatsappInstanceUrl as string | undefined,
-      whatsappApiKey: body.whatsappApiKey as string | undefined,
-    });
+    try {
+      return await platformSettings.update({
+        planName: body.planName as string | undefined,
+        priceCents: body.priceCents !== undefined ? Number(body.priceCents) : undefined,
+        paymentProvider: body.paymentProvider as 'asaas' | 'efi' | 'mercadopago' | undefined,
+        paymentApiKey: body.paymentApiKey as string | undefined,
+        paymentWebhookToken: body.paymentWebhookToken as string | undefined,
+        overdueDays: body.overdueDays !== undefined ? Number(body.overdueDays) : undefined,
+        whatsappProvider: body.whatsappProvider as 'evolution' | 'meta' | undefined,
+        whatsappInstanceUrl: body.whatsappInstanceUrl as string | undefined,
+        whatsappApiKey: body.whatsappApiKey as string | undefined,
+      });
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.get('/invoices', async (request) => {
@@ -74,7 +79,7 @@ export async function platformBillingRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const invoice = await invoicesService.getById('platform', id, null);
     if (!invoice) {
-      return reply.status(404).send({ message: 'Invoice not found' });
+      return sendNotFound(reply, 'Fatura não encontrada');
     }
     return invoice;
   });
@@ -103,7 +108,7 @@ export async function platformBillingRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const payment = await paymentsService.getById('platform', id, null);
     if (!payment) {
-      return reply.status(404).send({ message: 'Payment not found' });
+      return sendNotFound(reply, 'Pagamento não encontrado');
     }
     return payment;
   });
@@ -130,8 +135,8 @@ export async function platformBillingRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     try {
       return await invoicesService.markPaidManual(id);
-    } catch {
-      return reply.status(404).send({ message: 'Invoice not found' });
+    } catch (error) {
+      return sendApiError(reply, error);
     }
   });
 }

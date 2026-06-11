@@ -10,6 +10,7 @@ import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { AccountFormModal } from '../components/AccountFormModal';
 import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import type { AccountListItem } from '@client-manager/shared';
 
@@ -65,7 +66,7 @@ export const AccountsPage: React.FC = () => {
       showToast.success('Fatura SaaS gerada');
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao gerar fatura');
+      showToast.error(getApiErrorMessage(err, 'Erro ao gerar fatura'));
     },
   });
 

@@ -1,22 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { metaEmbeddedSignupSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
+import { sendApiError, sendValidationError } from '../../core/errors/send-api-error';
 import { MetaEmbeddedSignupService } from '../../integrations/whatsapp/meta/meta-embedded-signup.service';
-import { MetaWhatsAppError } from '../../integrations/whatsapp/meta/meta-whatsapp.errors';
 import { getMetaPlatformConfig } from '../../integrations/whatsapp/meta/meta-whatsapp.config';
 
 const metaSignupService = new MetaEmbeddedSignupService();
-
-function handleMetaError(error: unknown) {
-  if (error instanceof MetaWhatsAppError) {
-    const status = error.code === 'NOT_CONFIGURED' ? 503 : 400;
-    return { status, body: { message: error.message, code: error.code } };
-  }
-  return {
-    status: 500,
-    body: { message: error instanceof Error ? error.message : 'Erro interno Meta WhatsApp' },
-  };
-}
 
 /**
  * Tenant Meta WhatsApp routes (Tech Provider / Embedded Signup).
@@ -28,8 +17,7 @@ export async function tenantWhatsappMetaRoutes(app: FastifyInstance) {
     try {
       return metaSignupService.getPublicConfig();
     } catch (error) {
-      const handled = handleMetaError(error);
-      return reply.status(handled.status).send(handled.body);
+      return sendApiError(reply, error);
     }
   });
 
@@ -45,16 +33,13 @@ export async function tenantWhatsappMetaRoutes(app: FastifyInstance) {
 
     const parsed = metaEmbeddedSignupSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Dados de conexão Meta inválidos',
-      });
+      return sendValidationError(reply, parsed.error);
     }
 
     try {
       return await metaSignupService.completeSignup('tenant', tenantId, parsed.data);
     } catch (error) {
-      const handled = handleMetaError(error);
-      return reply.status(handled.status).send(handled.body);
+      return sendApiError(reply, error);
     }
   });
 
@@ -65,8 +50,7 @@ export async function tenantWhatsappMetaRoutes(app: FastifyInstance) {
     try {
       return await metaSignupService.disconnect('tenant', tenantId);
     } catch (error) {
-      const handled = handleMetaError(error);
-      return reply.status(handled.status).send(handled.body);
+      return sendApiError(reply, error);
     }
   });
 }

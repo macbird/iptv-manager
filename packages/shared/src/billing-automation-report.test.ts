@@ -25,7 +25,7 @@ describe('buildBillingAutomationReportMessage', () => {
     expect(message).toContain('Toro TV');
     expect(message).toContain('Cobranças enviadas (1)');
     expect(message).toContain('Ana Maria');
-    expect(message).toContain('R$ 35,00');
+    expect(message).toMatch(/R\$\s?35,00/);
     expect(message).toContain('2 msg(s) via WhatsApp');
   });
 

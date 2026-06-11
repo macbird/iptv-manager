@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../utils/toast';
 
 interface CrudOptions<TData, TInput> {
@@ -36,7 +37,8 @@ export function useCrud<TData, TInput>({
         navigate(listPath);
       }
     },
-    onError: (err: any) => showToast.error(err.response?.data?.message || `Erro ao criar ${entityName.toLowerCase()}`),
+    onError: (err: unknown) =>
+      showToast.error(getApiErrorMessage(err, `Erro ao criar ${entityName.toLowerCase()}`)),
   });
 
   const updateMutation = useMutation({
@@ -49,7 +51,8 @@ export function useCrud<TData, TInput>({
         navigate(listPath);
       }
     },
-    onError: (err: any) => showToast.error(err.response?.data?.message || `Erro ao atualizar ${entityName.toLowerCase()}`),
+    onError: (err: unknown) =>
+      showToast.error(getApiErrorMessage(err, `Erro ao atualizar ${entityName.toLowerCase()}`)),
   });
 
   const deleteMutation = useMutation({
@@ -58,7 +61,8 @@ export function useCrud<TData, TInput>({
       queryClient.invalidateQueries({ queryKey });
       showToast.success(`${entityName} excluído com sucesso!`);
     },
-    onError: (err: any) => showToast.error(err.response?.data?.message || `Erro ao excluir ${entityName.toLowerCase()}`),
+    onError: (err: unknown) =>
+      showToast.error(getApiErrorMessage(err, `Erro ao excluir ${entityName.toLowerCase()}`)),
   });
 
   return {

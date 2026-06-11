@@ -17,6 +17,7 @@ import { registerActivationsModule } from './modules/activations';
 import { startBillingScheduler } from './modules/billing/billing-scheduler';
 import { tenantContextMiddleware } from './core/middleware/tenant-context';
 import { prisma } from './core/database';
+import { API_ERROR_CODES } from '@client-manager/shared';
 import { mapErrorToApiResponse } from './core/errors/api-error.mapper';
 
 const app = Fastify({
@@ -115,7 +116,7 @@ const start = async () => {
     // Handle SPA routing
     app.setNotFoundHandler((request, reply) => {
       if (request.url.startsWith('/api')) {
-        reply.code(404).send({ error: 'Not Found' });
+        reply.code(404).send({ message: 'Recurso não encontrado', code: API_ERROR_CODES.NOT_FOUND });
         return;
       }
       reply.sendFile('index.html');

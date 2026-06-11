@@ -4,6 +4,7 @@ import { customersApi } from '../api/customers.api';
 import { CustomerForm, type CustomerFormPayload } from '../pages/CustomerForm';
 import { FormModal } from '../../../shared/ui/modals/FormModal';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 
 interface CustomerFormModalProps {
@@ -40,7 +41,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
       onClose();
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao criar cliente');
+      showToast.error(getApiErrorMessage(err, 'Erro ao criar cliente'));
     },
   });
 
@@ -53,7 +54,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
       onClose();
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao atualizar cliente');
+      showToast.error(getApiErrorMessage(err, 'Erro ao atualizar cliente'));
     },
   });
 

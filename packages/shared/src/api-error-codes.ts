@@ -79,8 +79,13 @@ export function getApiErrorMessage(error: unknown, fallback = 'Erro inesperado')
   }
 
   if (error instanceof Error) {
-    if (error.message && error.message !== 'Network Error') {
-      return error.message;
+    const message = error.message?.trim();
+    if (
+      message &&
+      message !== 'Network Error' &&
+      !message.startsWith('Request failed with status code')
+    ) {
+      return message;
     }
   }
 

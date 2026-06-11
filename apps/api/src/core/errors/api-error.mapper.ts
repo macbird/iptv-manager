@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import {
   API_ERROR_CODES,
+  PaymentProviderDisabledError,
   type ApiErrorBody,
   resolveApiErrorMessage,
 } from '@client-manager/shared';
@@ -37,6 +38,17 @@ export function mapErrorToApiResponse(error: unknown): MappedApiError {
     return {
       statusCode,
       body: { message: error.message, code: error.code },
+    };
+  }
+
+  if (error instanceof PaymentProviderDisabledError) {
+    return {
+      statusCode: 400,
+      body: {
+        message: error.message,
+        code: error.code,
+        details: { provider: error.provider },
+      },
     };
   }
 
@@ -83,16 +95,6 @@ export function mapErrorToApiResponse(error: unknown): MappedApiError {
       body: {
         message: 'Registro duplicado. Verifique se o identificador ou e-mail já existe.',
         code: API_ERROR_CODES.CONFLICT,
-      },
-    };
-  }
-
-  if (error instanceof Error && error.message.includes('não está disponível')) {
-    return {
-      statusCode: 400,
-      body: {
-        message: error.message,
-        code: API_ERROR_CODES.PAYMENT_PROVIDER_DISABLED,
       },
     };
   }

@@ -1,3 +1,5 @@
+import { PaymentProviderDisabledError } from './domain-errors';
+
 export const PAYMENT_PROVIDER_VALUES = ['asaas', 'efi', 'mercadopago'] as const;
 export type PaymentProviderValue = (typeof PAYMENT_PROVIDER_VALUES)[number];
 
@@ -14,9 +16,7 @@ export function isEnabledPaymentProvider(value: string): value is EnabledPayment
  */
 export function assertEnabledPaymentProvider(value: string): asserts value is EnabledPaymentProviderValue {
   if (!isEnabledPaymentProvider(value)) {
-    throw new Error(
-      `O provedor de pagamento "${value}" não está disponível. No momento, use apenas Mercado Pago.`,
-    );
+    throw new PaymentProviderDisabledError(value);
   }
 }
 

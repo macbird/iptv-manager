@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MetaEmbeddedSignupInput, WhatsAppMetaConnectionDto } from '@client-manager/shared';
 import { WHATSAPP_CONNECTION_STATUS_LABELS } from '@client-manager/shared';
 import { tenantBillingApi } from '../../billing/api/billing.api';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 
 declare global {
@@ -94,7 +95,8 @@ export const MetaWhatsAppConnect: React.FC<MetaWhatsAppConnectProps> = ({ connec
       queryClient.invalidateQueries({ queryKey: ['meta-whatsapp-connection'] });
       showToast.success('WhatsApp Business conectado via Meta');
     },
-    onError: (error: Error) => showToast.error(error.message || 'Falha ao conectar WhatsApp Meta'),
+    onError: (error: unknown) =>
+      showToast.error(getApiErrorMessage(error, 'Falha ao conectar WhatsApp Meta')),
   });
 
   const disconnectMutation = useMutation({
@@ -104,7 +106,8 @@ export const MetaWhatsAppConnect: React.FC<MetaWhatsAppConnectProps> = ({ connec
       queryClient.invalidateQueries({ queryKey: ['meta-whatsapp-connection'] });
       showToast.success('WhatsApp Meta desconectado');
     },
-    onError: (error: Error) => showToast.error(error.message || 'Falha ao desconectar'),
+    onError: (error: unknown) =>
+      showToast.error(getApiErrorMessage(error, 'Falha ao desconectar')),
   });
 
   const handleConnect = async () => {

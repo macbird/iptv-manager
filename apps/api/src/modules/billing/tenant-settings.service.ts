@@ -1,4 +1,4 @@
-import { isEnabledPaymentProvider } from '@client-manager/shared';
+import { assertEnabledPaymentProvider, isEnabledPaymentProvider } from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import type { PaymentProviderType, WhatsAppProviderType } from '@prisma/client';
 import { safeDecryptCredential } from '../../core/crypto/credential-crypto';
@@ -100,11 +100,7 @@ export class TenantSettingsService {
   ) {
     const paymentUpdate: Record<string, unknown> = { accountId: tenantId };
     if (data.paymentProvider !== undefined) {
-      if (!isEnabledPaymentProvider(data.paymentProvider)) {
-        throw new Error(
-          `O provedor "${data.paymentProvider}" não está disponível. Use Mercado Pago.`,
-        );
-      }
+      assertEnabledPaymentProvider(data.paymentProvider);
       paymentUpdate.provider = data.paymentProvider;
     }
     if (data.paymentApiKey !== undefined && data.paymentApiKey !== '')

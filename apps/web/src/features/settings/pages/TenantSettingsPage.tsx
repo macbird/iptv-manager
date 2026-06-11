@@ -75,8 +75,7 @@ export const TenantSettingsPage: React.FC = () => {
   });
 
   const [credentials, setCredentials] = React.useState<PaymentCredentialFormState[]>([]);
-  const [paymentProvider, setPaymentProvider] =
-    React.useState<EnabledPaymentProviderValue>('mercadopago');
+  const paymentProvider: EnabledPaymentProviderValue = 'mercadopago';
   const [whatsappProvider, setWhatsappProvider] = React.useState('evolution');
   const [whatsappInstanceUrl, setWhatsappInstanceUrl] = React.useState('');
   const [whatsappApiKey, setWhatsappApiKey] = React.useState('');
@@ -88,12 +87,6 @@ export const TenantSettingsPage: React.FC = () => {
   React.useEffect(() => {
     if (!data) return;
     setCredentials(buildCredentialFormState(data.paymentCredentials));
-    setPaymentProvider(
-      resolveInitialPaymentProvider(
-        data.paymentCredentials,
-        extractSelectedProvider(data.paymentRouting),
-      ),
-    );
     setWhatsappProvider(data.whatsapp.provider);
     setWhatsappInstanceUrl(data.whatsapp.instanceUrl ?? '');
     if (data.chargeMessages) {
@@ -206,8 +199,6 @@ export const TenantSettingsPage: React.FC = () => {
               <h2 className="text-base font-semibold text-slate-900">Meios de pagamento (PIX)</h2>
               <div className="mt-4">
                 <PaymentCredentialsSection
-                  selectedProvider={paymentProvider}
-                  onProviderChange={setPaymentProvider}
                   credentials={credentials}
                   onChange={setCredentials}
                   mercadoPagoWebhookUrl={data?.mercadoPagoWebhookUrl}

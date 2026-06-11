@@ -4,6 +4,7 @@ import { plansApi } from '../api/plans.api';
 import { PlanForm } from '../pages/PlanForm';
 import { FormModal } from '../../../shared/ui/modals/FormModal';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import type { PlanInput } from '@client-manager/shared';
 
@@ -31,7 +32,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({ isOpen, editId, on
       onClose();
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao criar plano');
+      showToast.error(getApiErrorMessage(err, 'Erro ao criar plano'));
     },
   });
 
@@ -43,7 +44,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({ isOpen, editId, on
       onClose();
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao atualizar plano');
+      showToast.error(getApiErrorMessage(err, 'Erro ao atualizar plano'));
     },
   });
 

@@ -4,6 +4,7 @@ import { serversApi } from '../api/servers.api';
 import { ServerForm } from '../pages/ServerForm';
 import { FormModal } from '../../../shared/ui/modals/FormModal';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import type { ServerFormPayload } from '../pages/ServerForm';
 
@@ -40,7 +41,7 @@ export const ServerFormModal: React.FC<ServerFormModalProps> = ({ isOpen, editId
       onClose();
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao criar servidor');
+      showToast.error(getApiErrorMessage(err, 'Erro ao criar servidor'));
     },
   });
 
@@ -54,7 +55,7 @@ export const ServerFormModal: React.FC<ServerFormModalProps> = ({ isOpen, editId
       onClose();
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao atualizar servidor');
+      showToast.error(getApiErrorMessage(err, 'Erro ao atualizar servidor'));
     },
   });
 

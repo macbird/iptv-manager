@@ -18,6 +18,7 @@ import {
   type ActivationListItem,
   type ActivationStatusInputValue,
 } from '@client-manager/shared';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import { formatCents } from '../../../shared/ui/billing/format-billing';
 
@@ -92,7 +93,7 @@ export const ActivationsPage: React.FC = () => {
       showToast.success('Status atualizado');
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao alterar status');
+      showToast.error(getApiErrorMessage(err, 'Erro ao alterar status'));
     },
   });
 

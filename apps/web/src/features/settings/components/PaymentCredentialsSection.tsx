@@ -57,8 +57,6 @@ export function resolveInitialPaymentProvider(
 }
 
 interface PaymentCredentialsSectionProps {
-  selectedProvider: EnabledPaymentProviderValue;
-  onProviderChange: (provider: EnabledPaymentProviderValue) => void;
   credentials: PaymentCredentialFormState[];
   onChange: (credentials: PaymentCredentialFormState[]) => void;
   mercadoPagoWebhookUrl?: string | null;
@@ -66,9 +64,9 @@ interface PaymentCredentialsSectionProps {
   legacyProviderWarning?: boolean;
 }
 
+const ACTIVE_PROVIDER: EnabledPaymentProviderValue = 'mercadopago';
+
 export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps> = ({
-  selectedProvider,
-  onProviderChange,
   credentials,
   onChange,
   mercadoPagoWebhookUrl,
@@ -77,23 +75,23 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
 }) => {
   const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
   const selected =
-    credentials.find((item) => item.provider === selectedProvider) ??
-    emptyCredential(selectedProvider);
+    credentials.find((item) => item.provider === ACTIVE_PROVIDER) ??
+    emptyCredential(ACTIVE_PROVIDER);
 
   const updateSelected = (patch: Partial<PaymentCredentialFormState>) => {
-    const exists = credentials.some((item) => item.provider === selectedProvider);
+    const exists = credentials.some((item) => item.provider === ACTIVE_PROVIDER);
     if (!exists) {
-      onChange([...credentials, { ...emptyCredential(selectedProvider), ...patch }]);
+      onChange([...credentials, { ...emptyCredential(ACTIVE_PROVIDER), ...patch }]);
       return;
     }
     onChange(
       credentials.map((item) =>
-        item.provider === selectedProvider ? { ...item, ...patch } : item,
+        item.provider === ACTIVE_PROVIDER ? { ...item, ...patch } : item,
       ),
     );
   };
 
-  const hint = PAYMENT_PROVIDER_FEE_HINTS[selectedProvider];
+  const hint = PAYMENT_PROVIDER_FEE_HINTS[ACTIVE_PROVIDER];
 
   const copyWebhookUrl = () => {
     if (!mercadoPagoWebhookUrl) return;
@@ -126,12 +124,12 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
       </div>
 
       <div className="rounded-lg border border-indigo-200 bg-indigo-50/30 p-4">
-        <h3 className="font-medium text-slate-900">{PAYMENT_PROVIDER_LABELS[selectedProvider]}</h3>
+        <h3 className="font-medium text-slate-900">{PAYMENT_PROVIDER_LABELS[ACTIVE_PROVIDER]}</h3>
         <p className="mt-0.5 text-xs text-slate-500">Credenciais para integração com o PIX</p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <SecretCredentialField
-            id={`payment-api-key-${selectedProvider}`}
+            id={`payment-api-key-${ACTIVE_PROVIDER}`}
             label="API Key / Access Token"
             value={selected.apiKey}
             configured={selected.apiKeyConfigured}
@@ -140,18 +138,17 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
             configuredHint="Access token salvo — não exibido por segurança"
           />
           <SecretCredentialField
-            id={`payment-webhook-${selectedProvider}`}
-            label={selectedProvider === 'mercadopago' ? 'Assinatura secreta (Webhook secret)' : 'Token do webhook'}
+            id={`payment-webhook-${ACTIVE_PROVIDER}`}
+            label="Assinatura secreta (Webhook secret)"
             value={selected.webhookToken}
             configured={selected.webhookTokenConfigured}
             onChange={(webhookToken) => updateSelected({ webhookToken })}
-            emptyPlaceholder={selectedProvider === 'mercadopago' ? 'Cole o secret do painel MP' : 'Opcional'}
+            emptyPlaceholder="Cole o secret do painel MP"
             configuredHint="Secret salvo — não exibido por segurança"
           />
         </div>
 
-        {selectedProvider === 'mercadopago' ? (
-          <>
+        <>
             <p className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
               Mercado Pago: copie o <strong>Access Token</strong> (token longo) em{' '}
               <a
@@ -271,8 +268,6 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
                 <code className="font-mono">API_PUBLIC_BASE_URL</code> configurada.
               </p>
             )}
-          </>
-        ) : null}
         {!selected.apiKeyConfigured ? (
           <p className="mt-3 text-xs text-amber-700">
             Informe a API key e clique em <strong>Salvar</strong> no fim da página.

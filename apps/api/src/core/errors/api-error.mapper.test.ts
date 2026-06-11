@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { API_ERROR_CODES } from '@client-manager/shared';
+import { API_ERROR_CODES, PaymentProviderDisabledError, assertEnabledPaymentProvider } from '@client-manager/shared';
 import { PaymentProviderError } from '../../integrations/payment/payment-provider.errors';
 import { InvoiceActionError } from '../../modules/billing/invoice-errors';
 import { EvolutionWhatsAppError } from '../../integrations/whatsapp/evolution/evolution-whatsapp.errors';
@@ -19,16 +19,14 @@ describe('mapErrorToApiResponse', () => {
   });
 
   it('testMapErrorToApiResponse_whenPaymentProviderDisabled_shouldReturn400', () => {
-    const error = new PaymentProviderError(
-      'Provider desabilitado',
-      'asaas',
-      400,
-      API_ERROR_CODES.PAYMENT_PROVIDER_DISABLED,
-    );
-
-    const mapped = mapErrorToApiResponse(error);
+    const mapped = mapErrorToApiResponse(new PaymentProviderDisabledError('asaas'));
     expect(mapped.statusCode).toBe(400);
     expect(mapped.body.code).toBe(API_ERROR_CODES.PAYMENT_PROVIDER_DISABLED);
+    expect(mapped.body.details).toEqual({ provider: 'asaas' });
+  });
+
+  it('testAssertEnabledPaymentProvider_whenAsaas_shouldThrowDisabledError', () => {
+    expect(() => assertEnabledPaymentProvider('asaas')).toThrow(PaymentProviderDisabledError);
   });
 
   it('testMapErrorToApiResponse_whenInvoiceNotAllowed_shouldReturn400', () => {

@@ -18,6 +18,7 @@ Documentação para implementar o sistema com **Cursor**, em **fases**, com **fr
 | [11-payment-and-activations.md](./11-payment-and-activations.md) | **Automação D-N, ativações pendentes, pagamento manual** |
 | [12-billing-automation-scheduler.md](./12-billing-automation-scheduler.md) | **Scheduler node-cron, env vars, macbird dev, auto-close** |
 | [13-mercadopago-only-and-api-errors.md](./13-mercadopago-only-and-api-errors.md) | **MP único + erros mapeados API→UI** (em andamento) |
+| [13-feature-gemini-devtools-test-prompt.md](./13-feature-gemini-devtools-test-prompt.md) | **Prompt Gemini + testes Feature 13** |
 | [14-admin-panel-overhaul.md](./14-admin-panel-overhaul.md) | **Próxima: overhaul painel admin** |
 | [15-billing-automation-observability.md](./15-billing-automation-observability.md) | Automação: último run, minuto, erros na UI |
 | [16-whatsapp-payment-notification-and-templates.md](./16-whatsapp-payment-notification-and-templates.md) | WhatsApp pós-pagamento + `payment_block` |

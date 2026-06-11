@@ -1,11 +1,6 @@
 import type { FastifyReply } from 'fastify';
-import { InvoiceActionError } from './invoice-errors';
+import { sendApiError } from '../../core/errors/send-api-error';
 
 export function handleInvoiceActionError(reply: FastifyReply, error: unknown) {
-  if (error instanceof InvoiceActionError) {
-    const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'CONFLICT' ? 409 : 400;
-    return reply.status(status).send({ message: error.message, code: error.code });
-  }
-  throw error;
+  return sendApiError(reply, error);
 }
