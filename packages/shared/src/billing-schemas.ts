@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { accountSlugSchema } from './account-slug';
 import { INVOICE_KIND_VALUES } from './billing-enums';
 import { chargeMessageSettingsSchema } from './charge-message';
 
@@ -59,12 +60,12 @@ export const updateActivationStatusSchema = z.object({
 export type UpdateActivationStatusInput = z.infer<typeof updateActivationStatusSchema>;
 
 export const createTenantAccountSchema = z.object({
-  name: z.string().min(1),
-  slug: z.string().min(1).optional(),
-  ownerName: z.string().min(1),
-  ownerEmail: z.string().email(),
+  name: z.string().min(1, 'Nome da conta é obrigatório'),
+  slug: accountSlugSchema,
+  ownerName: z.string().min(1, 'Nome do proprietário é obrigatório'),
+  ownerEmail: z.string().email('Informe um e-mail válido'),
   initialPassword: z.string().min(6).optional(),
-  dueDate: z.string().min(1),
+  dueDate: z.string().min(1, 'Informe a data de vencimento'),
 });
 
 export type CreateTenantAccountInput = z.infer<typeof createTenantAccountSchema>;

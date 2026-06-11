@@ -1,4 +1,5 @@
 export * from './app-version';
+export * from './account-slug';
 export * from './payment-routing';
 export * from './payment-message';
 export * from './charge-message';

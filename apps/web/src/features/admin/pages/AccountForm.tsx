@@ -1,5 +1,11 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  ACCOUNT_SLUG_FIELD_HINT,
+  ACCOUNT_SLUG_FIELD_LABEL,
+  createTenantAccountSchema,
+} from '@client-manager/shared';
 import { Building2, Calendar, Link2, Mail, ToggleLeft, User } from 'lucide-react';
 import { FormInput } from '../../../shared/ui/forms/FormInput';
 import { FormPasswordInput } from '../../../shared/ui/forms/FormPasswordInput';
@@ -8,7 +14,7 @@ import { showToast } from '../../../shared/utils/toast';
 
 export interface AccountCreateInput {
   name: string;
-  slug?: string;
+  slug: string;
   ownerName: string;
   ownerEmail: string;
   initialPassword?: string;
@@ -75,6 +81,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({
     reset,
     formState: { errors },
   } = useForm({
+    resolver: mode === 'create' ? zodResolver(createTenantAccountSchema) : undefined,
     defaultValues: {
       dueDate: suggestedDueDateValue(),
     },
@@ -99,7 +106,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({
     if (mode === 'create') {
       await onSubmit({
         name: data.name,
-        slug: data.slug || undefined,
+        slug: data.slug,
         ownerName: data.ownerName,
         ownerEmail: data.ownerEmail,
         initialPassword: data.initialPassword || undefined,
@@ -153,10 +160,11 @@ export const AccountForm: React.FC<AccountFormProps> = ({
             {...register('name')}
           />
           <FormInput
-            label="Slug"
+            label={ACCOUNT_SLUG_FIELD_LABEL}
             prefixIcon={Link2}
             disabled
             className="cursor-not-allowed font-mono opacity-80"
+            hint="Definido na criação da conta; não pode ser alterado depois."
             {...register('slug')}
           />
         </div>
@@ -209,9 +217,12 @@ export const AccountForm: React.FC<AccountFormProps> = ({
           {...register('name', { required: 'Nome da conta é obrigatório' })}
         />
         <FormInput
-          label="Slug (URL)"
+          label={ACCOUNT_SLUG_FIELD_LABEL}
           prefixIcon={Link2}
           placeholder="ex: revenda-master"
+          error={errors.slug?.message ? String(errors.slug.message) : undefined}
+          hint={errors.slug ? undefined : ACCOUNT_SLUG_FIELD_HINT}
+          className="font-mono"
           {...register('slug')}
         />
       </div>

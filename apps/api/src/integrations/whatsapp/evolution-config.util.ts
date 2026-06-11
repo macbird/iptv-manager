@@ -22,7 +22,10 @@ export function parseEvolutionConnectionConfig(instanceUrl: string): EvolutionCo
 
   try {
     const url = new URL(instanceUrl);
-    const pathSegment = url.pathname.replace(/^\/|\/$/g, '');
+    const rawSegment = url.pathname.replace(/^\/|\/$/g, '');
+    const pathSegment = rawSegment
+      ? decodeURIComponent(rawSegment)
+      : '';
     const instanceName =
       fromEnv || (pathSegment && !pathSegment.includes('/') ? pathSegment : 'default');
     return { baseUrl: url.origin, instanceName };

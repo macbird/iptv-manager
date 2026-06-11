@@ -266,12 +266,17 @@ flowchart TD
 
 ## 🚀 Próximo passo imediato
 
-1. ~~**`AsaasPaymentProvider`** + **`MercadoPagoPaymentProvider`** (EMV)~~ ✅  
-2. ~~**Webhooks** Mercado Pago com idempotência~~ ✅ (MP; Asaas webhook pendente)  
-3. **WhatsApp — notificação de recebimento (tenant)** ⚠️ em andamento  
-4. Migration **`paymentDeliveryType`**, **`checkoutUrl`** + **`InfinityPayProvider`** (link).  
-5. **`{{payment_block}}`** em templates de cobrança automática (Fase 4).  
-6. **Job BullMQ** geração mensal de faturas SaaS.
+**Feature 13 (próxima etapa):** [13-mercadopago-only-and-api-errors.md](./13-mercadopago-only-and-api-errors.md)
+
+1. Travar PSP **somente Mercado Pago** (UI + API); Asaas/Efi/futuros congelados.  
+2. Contrato de erro padronizado + `getApiErrorMessage` no front (toasts com motivo real).  
+
+**Backlog após Feature 13:**
+
+3. **WhatsApp — notificação de recebimento (tenant)** — código pronto; depende Evolution conectado.  
+4. Migration **`paymentDeliveryType`**, **`checkoutUrl`** + InfinitePay — **congelado** enquanto MP-only.  
+5. **`{{payment_block}}`** em templates D-N (Fase 4).  
+6. **Job mensal** faturas SaaS.
 
 ### Plano: WhatsApp para o tenant (recebimentos)
 

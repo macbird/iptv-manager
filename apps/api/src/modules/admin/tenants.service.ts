@@ -1,6 +1,6 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../core/database';
 import argon2 from 'argon2';
-import slugify from 'slugify';
 import {
   advanceNextDueDate,
   billingCycleKeyFromDate,
@@ -145,19 +145,20 @@ export class TenantsService {
 
   async create(input: {
     name: string;
-    slug?: string;
+    slug: string;
     ownerEmail: string;
     ownerName: string;
     initialPassword?: string;
     dueDate: string;
   }) {
-    const slug = input.slug || slugify(input.name, { lower: true, strict: true });
+    const slug = input.slug;
     const initialPassword = input.initialPassword || 'Mudar123!';
     const passwordHash = await argon2.hash(initialPassword);
     const nextDueDate = parseDueDateInput(input.dueDate);
     const dueDay = dueDayFromDate(nextDueDate);
 
-    return await prisma.$transaction(async (tx) => {
+    try {
+      return await prisma.$transaction(async (tx) => {
       const platformPlanId = await resolveDefaultPlatformPlanId(tx);
 
       const account = await tx.account.create({
@@ -195,7 +196,16 @@ export class TenantsService {
       });
 
       return mapAccount(full!);
-    });
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new Error('Este identificador da conta já está em uso. Escolha outro.');
+      }
+      throw error;
+    }
   }
 
   async update(

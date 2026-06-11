@@ -16,4 +16,12 @@ describe('parseEvolutionConnectionConfig', () => {
       'http://localhost:8080/toro-tv',
     );
   });
+
+  it('decodes percent-encoded instance name from stored URL', () => {
+    const result = parseEvolutionConnectionConfig(
+      'https://evolution.example.app/Toro%20TV',
+    );
+    expect(result.baseUrl).toBe('https://evolution.example.app');
+    expect(result.instanceName).toBe('Toro TV');
+  });
 });
