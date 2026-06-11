@@ -148,8 +148,7 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
           />
         </div>
 
-        <>
-            <p className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+        <p className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
               Mercado Pago: copie o <strong>Access Token</strong> (token longo) em{' '}
               <a
                 href="https://www.mercadopago.com.br/developers/panel/app"
@@ -268,6 +267,7 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
                 <code className="font-mono">API_PUBLIC_BASE_URL</code> configurada.
               </p>
             )}
+
         {!selected.apiKeyConfigured ? (
           <p className="mt-3 text-xs text-amber-700">
             Informe a API key e clique em <strong>Salvar</strong> no fim da página.
