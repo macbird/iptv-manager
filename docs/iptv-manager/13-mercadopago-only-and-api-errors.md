@@ -1,6 +1,6 @@
 # Feature 13 — Mercado Pago único + erros mapeados (API → UI)
 
-**Status:** 📋 Próxima etapa de implementação  
+**Status:** 🔄 Em implementação (branch `feature/13-mercadopago-only-api-errors`)  
 **Prioridade:** Alta (operação + suporte)  
 **Última revisão:** 11/06/2026  
 

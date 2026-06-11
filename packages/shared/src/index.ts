@@ -12,6 +12,7 @@ export * from './activation-enums';
 export * from './activation-types';
 export * from './enums';
 export * from './billing-enums';
+export * from './api-error-codes';
 export * from './billing-schemas';
 export * from './billing-automation';
 export * from './billing-automation-report';

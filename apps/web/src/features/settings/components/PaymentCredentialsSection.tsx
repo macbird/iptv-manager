@@ -1,10 +1,10 @@
 import React from 'react';
 import { Copy, HelpCircle } from 'lucide-react';
 import {
+  ENABLED_PAYMENT_PROVIDER_VALUES,
   PAYMENT_PROVIDER_FEE_HINTS,
   PAYMENT_PROVIDER_LABELS,
-  PAYMENT_PROVIDER_VALUES,
-  type PaymentProviderValue,
+  type EnabledPaymentProviderValue,
   type TenantPaymentCredentialDto,
 } from '@client-manager/shared';
 import { SecretCredentialField } from './SecretCredentialField';
@@ -16,7 +16,7 @@ export type PaymentCredentialFormState = TenantPaymentCredentialDto & {
   webhookToken: string;
 };
 
-function emptyCredential(provider: PaymentProviderValue): PaymentCredentialFormState {
+function emptyCredential(provider: EnabledPaymentProviderValue): PaymentCredentialFormState {
   return {
     provider,
     apiKey: '',
@@ -32,7 +32,7 @@ function mergeCredentials(
 ): PaymentCredentialFormState[] {
   const byProvider = new Map(fromApi?.map((c) => [c.provider, c]));
 
-  return PAYMENT_PROVIDER_VALUES.map((provider) => {
+  return ENABLED_PAYMENT_PROVIDER_VALUES.map((provider) => {
     const existing = byProvider.get(provider);
     if (!existing) return emptyCredential(provider);
     return {
@@ -50,23 +50,20 @@ export function buildCredentialFormState(
 }
 
 export function resolveInitialPaymentProvider(
-  credentials: TenantPaymentCredentialDto[] | undefined,
-  routingProvider?: PaymentProviderValue,
-): PaymentProviderValue {
-  const active = credentials?.find((item) => item.active);
-  if (active) {
-    return active.provider as PaymentProviderValue;
-  }
-  return routingProvider ?? 'mercadopago';
+  _credentials?: TenantPaymentCredentialDto[] | undefined,
+  _routingProvider?: EnabledPaymentProviderValue,
+): EnabledPaymentProviderValue {
+  return 'mercadopago';
 }
 
 interface PaymentCredentialsSectionProps {
-  selectedProvider: PaymentProviderValue;
-  onProviderChange: (provider: PaymentProviderValue) => void;
+  selectedProvider: EnabledPaymentProviderValue;
+  onProviderChange: (provider: EnabledPaymentProviderValue) => void;
   credentials: PaymentCredentialFormState[];
   onChange: (credentials: PaymentCredentialFormState[]) => void;
   mercadoPagoWebhookUrl?: string | null;
   mercadoPagoWebhookRequiresToken?: boolean;
+  legacyProviderWarning?: boolean;
 }
 
 export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps> = ({
@@ -76,6 +73,7 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
   onChange,
   mercadoPagoWebhookUrl,
   mercadoPagoWebhookRequiresToken = false,
+  legacyProviderWarning = false,
 }) => {
   const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
   const selected =
@@ -106,26 +104,22 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
   return (
     <div className="space-y-5">
       <p className="text-sm text-slate-600">
-        Escolha o meio de pagamento para <strong>gerar PIX</strong> das faturas. Depois cadastre a
-        API key e o token do webhook desse meio.
+        Meio de pagamento para <strong>gerar PIX</strong> das faturas:{' '}
+        <strong>Mercado Pago</strong>. Outros provedores serão habilitados em versões futuras.
       </p>
 
+      {legacyProviderWarning ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Esta conta ainda tem credencial ou roteamento de um provedor antigo (ex.: Asaas). Salve
+          novamente com Mercado Pago para usar apenas o PSP ativo.
+        </p>
+      ) : null}
+
       <div>
-        <label className="block text-sm font-medium text-slate-700" htmlFor="payment-provider">
-          Meio de pagamento
-        </label>
-        <select
-          id="payment-provider"
-          value={selectedProvider}
-          onChange={(e) => onProviderChange(e.target.value as PaymentProviderValue)}
-          className="mt-2 block w-full max-w-md rounded-md border border-slate-300 p-2.5 text-sm shadow-sm"
-        >
-          {PAYMENT_PROVIDER_VALUES.map((value) => (
-            <option key={value} value={value}>
-              {PAYMENT_PROVIDER_LABELS[value]}
-            </option>
-          ))}
-        </select>
+        <p className="block text-sm font-medium text-slate-700">Meio de pagamento</p>
+        <p className="mt-2 inline-flex rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-900">
+          {PAYMENT_PROVIDER_LABELS.mercadopago}
+        </p>
         <p className="mt-1.5 text-xs text-slate-500">
           {hint.label} — {hint.description}
         </p>

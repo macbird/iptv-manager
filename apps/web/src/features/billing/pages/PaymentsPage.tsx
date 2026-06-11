@@ -12,6 +12,7 @@ import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { PAYMENT_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 import type { PaymentListItem, RegisterPaymentInput } from '@client-manager/shared';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 
 interface PaymentsPageProps {
@@ -42,7 +43,7 @@ export const PaymentsPage: React.FC<PaymentsPageProps> = ({ variant }) => {
       showToast.success('Pagamento registrado');
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao registrar pagamento');
+      showToast.error(getApiErrorMessage(err, 'Erro ao registrar pagamento'));
     },
   });
 

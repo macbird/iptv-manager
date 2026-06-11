@@ -21,6 +21,7 @@ import {
   type ChargeMessageTemplateContext,
   type InvoiceKindValue,
   type PaymentProviderValue,
+  getApiErrorMessage,
 } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import { ChargeMessageTemplatesSection } from '../../settings/components/ChargeMessageTemplatesSection';
@@ -95,7 +96,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
       showToast.success('Fatura cancelada');
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Não foi possível cancelar');
+      showToast.error(getApiErrorMessage(err, 'Não foi possível cancelar'));
     },
   });
 
@@ -121,7 +122,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
         return;
       }
       const apiErr = err as { response?: { data?: { message?: string } } };
-      showToast.error(apiErr.response?.data?.message ?? 'Não foi possível recriar');
+      showToast.error(getApiErrorMessage(apiErr, 'Não foi possível recriar'));
     },
   });
 
@@ -132,7 +133,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
       showToast.success('PIX gerado com sucesso');
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao gerar PIX');
+      showToast.error(getApiErrorMessage(err, 'Erro ao gerar PIX'));
     },
   });
 
@@ -148,7 +149,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
       );
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao enviar cobrança');
+      showToast.error(getApiErrorMessage(err, 'Erro ao enviar cobrança'));
     },
   });
 
@@ -159,7 +160,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
       showToast.success('Mensagens da fatura salvas');
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao salvar mensagens');
+      showToast.error(getApiErrorMessage(err, 'Erro ao salvar mensagens'));
     },
   });
 

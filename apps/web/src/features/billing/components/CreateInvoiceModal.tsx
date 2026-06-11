@@ -23,6 +23,7 @@ import {
   type InvoiceKindValue,
   type ManualPaymentMethodValue,
 } from '@client-manager/shared';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import { ChargeMessageTemplatesSection } from '../../settings/components/ChargeMessageTemplatesSection';
 import {
@@ -91,7 +92,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ isOpen, 
       showToast.success('Fatura criada');
       onClose();
     },
-    onError: (err: Error) => showToast.error(err.message || 'Erro ao criar fatura'),
+    onError: (err: unknown) => showToast.error(getApiErrorMessage(err, 'Erro ao criar fatura')),
   });
 
   const handleSubmit = (e: React.FormEvent) => {

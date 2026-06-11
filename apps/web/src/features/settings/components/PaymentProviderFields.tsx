@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   PAYMENT_PROVIDER_LABELS,
-  PAYMENT_PROVIDER_VALUES,
   WHATSAPP_PROVIDER_LABELS,
   WHATSAPP_PROVIDER_VALUES,
   type WhatsAppMetaConnectionDto,
@@ -34,18 +33,13 @@ export const PaymentProviderFields: React.FC<PaymentProviderFieldsProps> = ({
 }) => (
   <div className="space-y-4">
     <div>
-      <label className="block text-sm font-medium text-slate-700">Provider PIX</label>
-      <select
-        value={paymentProvider}
-        onChange={(e) => onPaymentProviderChange(e.target.value)}
-        className="mt-1 block w-full max-w-md rounded-md border border-slate-300 p-2 shadow-sm"
-      >
-        {PAYMENT_PROVIDER_VALUES.map((v) => (
-          <option key={v} value={v}>
-            {PAYMENT_PROVIDER_LABELS[v]}
-          </option>
-        ))}
-      </select>
+      <p className="block text-sm font-medium text-slate-700">Provider PIX</p>
+      <p className="mt-1 inline-flex rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-900">
+        {PAYMENT_PROVIDER_LABELS.mercadopago}
+      </p>
+      <p className="mt-1 text-xs text-slate-500">
+        Apenas Mercado Pago está habilitado nesta versão.
+      </p>
     </div>
     <SecretCredentialField
       id="platform-payment-api-key"

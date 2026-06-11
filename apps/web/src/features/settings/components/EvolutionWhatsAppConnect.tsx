@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { WhatsAppEvolutionConnectionDto } from '@client-manager/shared';
 import { WHATSAPP_CONNECTION_STATUS_LABELS, normalizePhoneE164 } from '@client-manager/shared';
 import { tenantBillingApi } from '../../billing/api/billing.api';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 
 interface EvolutionWhatsAppConnectProps {
@@ -105,7 +106,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
         showToast.info('Aguardando pareamento…');
       }
     },
-    onError: (error: Error) => showToast.error(error.message || 'Falha ao conectar'),
+    onError: (error: unknown) => showToast.error(getApiErrorMessage(error, 'Falha ao conectar')),
   });
 
   const disconnectMutation = useMutation({
@@ -117,7 +118,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
       queryClient.invalidateQueries({ queryKey: ['tenant-settings'] });
       showToast.success('WhatsApp desconectado');
     },
-    onError: (error: Error) => showToast.error(error.message || 'Falha ao desconectar'),
+    onError: (error: unknown) => showToast.error(getApiErrorMessage(error, 'Falha ao desconectar')),
   });
 
   const testMutation = useMutation({
@@ -131,7 +132,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
     onSuccess: (data) => {
       showToast.success(`Mensagem de teste enviada para ${data.sentTo}`);
     },
-    onError: (error: Error) => showToast.error(error.message || 'Falha ao enviar teste'),
+    onError: (error: unknown) => showToast.error(getApiErrorMessage(error, 'Falha ao enviar teste')),
   });
 
   return (

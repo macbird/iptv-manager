@@ -1,8 +1,8 @@
 import type { BillingScope, PaymentProviderType } from '@prisma/client';
+import { API_ERROR_CODES, isEnabledPaymentProvider } from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import { safeDecryptCredential } from '../../core/crypto/credential-crypto';
 import type { PaymentProvider } from './payment-provider.interface';
-import { AsaasPaymentProvider, resolveAsaasBaseUrl } from './asaas.provider';
 import { MercadoPagoPaymentProvider } from './mercadopago.provider';
 import { PaymentProviderError } from './payment-provider.errors';
 import { PaymentRouterService } from './payment-router.service';
@@ -31,7 +31,8 @@ export class PaymentProviderFactory {
       const config = await prisma.platformPaymentConfig.findUnique({
         where: { id: 'default' },
       });
-      return config?.provider ?? 'asaas';
+      const provider = config?.provider ?? 'mercadopago';
+      return isEnabledPaymentProvider(provider) ? provider : 'mercadopago';
     }
     return paymentRouter.resolveForTenant(accountId, amountCents);
   }
@@ -75,24 +76,26 @@ export class PaymentProviderFactory {
     accountId: string,
     provider: PaymentProviderType,
   ): Promise<PaymentProvider> {
-    const apiKey = await this.getApiKey(scope, accountId, provider);
-    if (!apiKey) {
+    if (!isEnabledPaymentProvider(provider)) {
       throw new PaymentProviderError(
-        `Credencial do PSP "${provider}" não configurada. Configure em Configurações.`,
+        `O provedor "${provider}" não está disponível. Use Mercado Pago.`,
         provider,
+        400,
+        API_ERROR_CODES.PAYMENT_PROVIDER_DISABLED,
       );
     }
 
-    switch (provider) {
-      case 'asaas':
-        return new AsaasPaymentProvider(apiKey, resolveAsaasBaseUrl());
-      case 'mercadopago':
-        return new MercadoPagoPaymentProvider(apiKey);
-      case 'efi':
-        throw new PaymentProviderError('Provider Efi ainda não implementado', 'efi');
-      default:
-        throw new PaymentProviderError(`Provider "${provider}" não suportado`, provider);
+    const apiKey = await this.getApiKey(scope, accountId, provider);
+    if (!apiKey) {
+      throw new PaymentProviderError(
+        `Credencial do Mercado Pago não configurada. Configure em Configurações.`,
+        provider,
+        400,
+        API_ERROR_CODES.PAYMENT_CREDENTIALS_MISSING,
+      );
     }
+
+    return new MercadoPagoPaymentProvider(apiKey);
   }
 }
 

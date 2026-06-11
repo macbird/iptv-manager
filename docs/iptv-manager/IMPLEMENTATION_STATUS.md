@@ -264,19 +264,16 @@ flowchart TD
 
 ---
 
-## 🚀 Próximo passo imediato
+## 🚀 Roadmap de features (pós Fase 2)
 
-**Feature 13 (próxima etapa):** [13-mercadopago-only-and-api-errors.md](./13-mercadopago-only-and-api-errors.md)
-
-1. Travar PSP **somente Mercado Pago** (UI + API); Asaas/Efi/futuros congelados.  
-2. Contrato de erro padronizado + `getApiErrorMessage` no front (toasts com motivo real).  
-
-**Backlog após Feature 13:**
-
-3. **WhatsApp — notificação de recebimento (tenant)** — código pronto; depende Evolution conectado.  
-4. Migration **`paymentDeliveryType`**, **`checkoutUrl`** + InfinitePay — **congelado** enquanto MP-only.  
-5. **`{{payment_block}}`** em templates D-N (Fase 4).  
-6. **Job mensal** faturas SaaS.
+| # | Feature | Doc | Status |
+|---|---------|-----|--------|
+| 13 | Mercado Pago único + erros API→UI | [13](./13-mercadopago-only-and-api-errors.md) | 🔄 Em andamento |
+| 14 | Overhaul painel admin | [14](./14-admin-panel-overhaul.md) | 📋 Próxima |
+| 15 | Automação: observabilidade | [15](./15-billing-automation-observability.md) | 📋 Backlog |
+| 16 | WhatsApp pós-pagamento + templates | [16](./16-whatsapp-payment-notification-and-templates.md) | 📋 Backlog |
+| 17 | Job mensal faturas SaaS | [17](./17-saas-monthly-invoice-job.md) | 📋 Backlog |
+| 18 | Pagamento híbrido (link) | [18](./18-payment-delivery-hybrid-frozen.md) | 🧊 Congelada |
 
 ### Plano: WhatsApp para o tenant (recebimentos)
 

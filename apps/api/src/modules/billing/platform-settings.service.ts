@@ -1,3 +1,4 @@
+import { assertEnabledPaymentProvider } from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import type { PaymentProviderType, WhatsAppProviderType } from '@prisma/client';
 
@@ -83,7 +84,10 @@ export class PlatformSettingsService {
     }
 
     const paymentUpdate: Record<string, unknown> = {};
-    if (data.paymentProvider !== undefined) paymentUpdate.provider = data.paymentProvider;
+    if (data.paymentProvider !== undefined) {
+      assertEnabledPaymentProvider(data.paymentProvider);
+      paymentUpdate.provider = data.paymentProvider;
+    }
     if (data.paymentApiKey !== undefined && data.paymentApiKey !== '')
       paymentUpdate.apiKey = data.paymentApiKey;
     if (data.paymentWebhookToken !== undefined && data.paymentWebhookToken !== '')

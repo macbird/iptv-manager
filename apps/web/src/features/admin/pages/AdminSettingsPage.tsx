@@ -7,6 +7,7 @@ import {
   PaymentProviderFields,
   WhatsAppProviderFields,
 } from '../../settings/components/PaymentProviderFields';
+import { getApiErrorMessage, isEnabledPaymentProvider } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 
 export const AdminSettingsPage: React.FC = () => {
@@ -18,7 +19,7 @@ export const AdminSettingsPage: React.FC = () => {
 
   const [planName, setPlanName] = React.useState('');
   const [priceCents, setPriceCents] = React.useState('');
-  const [paymentProvider, setPaymentProvider] = React.useState('asaas');
+  const [paymentProvider, setPaymentProvider] = React.useState('mercadopago');
   const [paymentApiKey, setPaymentApiKey] = React.useState('');
   const [paymentWebhookToken, setPaymentWebhookToken] = React.useState('');
   const [overdueDays, setOverdueDays] = React.useState('7');
@@ -30,7 +31,9 @@ export const AdminSettingsPage: React.FC = () => {
     if (!data) return;
     setPlanName(data.defaultPlan.name);
     setPriceCents(String(data.defaultPlan.priceCents / 100));
-    setPaymentProvider(data.payment.provider);
+    setPaymentProvider(
+      isEnabledPaymentProvider(data.payment.provider) ? data.payment.provider : 'mercadopago',
+    );
     setPaymentWebhookToken('');
     setPaymentApiKey('');
     setOverdueDays(String(data.payment.overdueDays));
@@ -59,7 +62,8 @@ export const AdminSettingsPage: React.FC = () => {
       setWhatsappApiKey('');
       showToast.success('Configurações salvas');
     },
-    onError: () => showToast.error('Erro ao salvar configurações'),
+    onError: (error) =>
+      showToast.error(getApiErrorMessage(error, 'Erro ao salvar configurações')),
   });
 
   if (isLoading) {

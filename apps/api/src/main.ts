@@ -17,6 +17,7 @@ import { registerActivationsModule } from './modules/activations';
 import { startBillingScheduler } from './modules/billing/billing-scheduler';
 import { tenantContextMiddleware } from './core/middleware/tenant-context';
 import { prisma } from './core/database';
+import { mapErrorToApiResponse } from './core/errors/api-error.mapper';
 
 const app = Fastify({
   logger: true,
@@ -94,6 +95,14 @@ const start = async () => {
     await registerBillingModule(app);
     await app.register(paymentWebhookRoutes, { prefix: '/api/webhooks' });
     await registerActivationsModule(app);
+
+    app.setErrorHandler((error, request, reply) => {
+      const mapped = mapErrorToApiResponse(error);
+      if (mapped.statusCode >= 500) {
+        request.log.error({ err: error, code: mapped.body.code }, mapped.body.message);
+      }
+      return reply.status(mapped.statusCode).send(mapped.body);
+    });
 
     // Serve static files (Frontend)
     const webDistPath = path.join(process.cwd(), 'apps/web/dist');

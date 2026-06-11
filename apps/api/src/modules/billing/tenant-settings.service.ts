@@ -1,3 +1,4 @@
+import { isEnabledPaymentProvider } from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import type { PaymentProviderType, WhatsAppProviderType } from '@prisma/client';
 import { safeDecryptCredential } from '../../core/crypto/credential-crypto';
@@ -52,12 +53,19 @@ export class TenantSettingsService {
       mercadoPagoCredential?.webhookTokenConfigured,
     );
 
+    const legacyProviderWarning =
+      paymentCredentials.some((item) => item.active && !isEnabledPaymentProvider(item.provider)) ||
+      paymentRouting.some(
+        (rule) => rule.active !== false && !isEnabledPaymentProvider(rule.provider),
+      );
+
     return {
       accountSlug: account?.slug ?? null,
+      legacyProviderWarning,
       mercadoPagoWebhookUrl: buildMercadoPagoWebhookUrl(tenantId),
       mercadoPagoWebhookRequiresToken: Boolean(mercadoPagoCredential?.webhookTokenConfigured),
       payment: {
-        provider: payment?.provider ?? 'asaas',
+        provider: payment?.provider ?? 'mercadopago',
         apiKeyConfigured: Boolean(payment?.apiKey),
         webhookTokenConfigured: Boolean(payment?.webhookToken),
       },
@@ -91,7 +99,14 @@ export class TenantSettingsService {
     },
   ) {
     const paymentUpdate: Record<string, unknown> = { accountId: tenantId };
-    if (data.paymentProvider !== undefined) paymentUpdate.provider = data.paymentProvider;
+    if (data.paymentProvider !== undefined) {
+      if (!isEnabledPaymentProvider(data.paymentProvider)) {
+        throw new Error(
+          `O provedor "${data.paymentProvider}" não está disponível. Use Mercado Pago.`,
+        );
+      }
+      paymentUpdate.provider = data.paymentProvider;
+    }
     if (data.paymentApiKey !== undefined && data.paymentApiKey !== '')
       paymentUpdate.apiKey = data.paymentApiKey;
     if (data.paymentWebhookToken !== undefined && data.paymentWebhookToken !== '')

@@ -1,6 +1,7 @@
 import type { PaymentProviderType } from '@prisma/client';
 import {
   DEFAULT_PAYMENT_ROUTING_RULES,
+  isEnabledPaymentProvider,
   resolvePaymentProvider,
   type PaymentRoutingRuleInput,
 } from '@client-manager/shared';
@@ -13,7 +14,8 @@ export class PaymentRouterService {
    */
   async resolveForTenant(accountId: string, amountCents: number): Promise<PaymentProviderType> {
     const rules = await this.getRulesForTenant(accountId);
-    return resolvePaymentProvider(rules, amountCents) as PaymentProviderType;
+    const resolved = resolvePaymentProvider(rules, amountCents);
+    return (isEnabledPaymentProvider(resolved) ? resolved : 'mercadopago') as PaymentProviderType;
   }
 
   /**

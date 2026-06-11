@@ -6,9 +6,8 @@ export interface PaymentRoutingRuleInput {
   active?: boolean;
 }
 
-/** Default routing: high amounts → Asaas (fixed fee); low → Mercado Pago (percentual). */
+/** Default routing while only Mercado Pago is enabled. */
 export const DEFAULT_PAYMENT_ROUTING_RULES: PaymentRoutingRuleInput[] = [
-  { minAmountCents: 15000, provider: 'asaas', active: true },
   { minAmountCents: 0, provider: 'mercadopago', active: true },
 ];
 
@@ -29,7 +28,7 @@ export function resolvePaymentProvider(
     }
   }
 
-  return 'asaas';
+  return 'mercadopago';
 }
 
 /** Reference fee models for UI preview (approximate, not contractual). */

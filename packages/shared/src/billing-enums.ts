@@ -1,6 +1,25 @@
 export const PAYMENT_PROVIDER_VALUES = ['asaas', 'efi', 'mercadopago'] as const;
 export type PaymentProviderValue = (typeof PAYMENT_PROVIDER_VALUES)[number];
 
+/** PSPs enabled in product UI and API (expand when product enables more). */
+export const ENABLED_PAYMENT_PROVIDER_VALUES = ['mercadopago'] as const;
+export type EnabledPaymentProviderValue = (typeof ENABLED_PAYMENT_PROVIDER_VALUES)[number];
+
+export function isEnabledPaymentProvider(value: string): value is EnabledPaymentProviderValue {
+  return (ENABLED_PAYMENT_PROVIDER_VALUES as readonly string[]).includes(value);
+}
+
+/**
+ * Throws when the provider is not enabled for new configuration or routing.
+ */
+export function assertEnabledPaymentProvider(value: string): asserts value is EnabledPaymentProviderValue {
+  if (!isEnabledPaymentProvider(value)) {
+    throw new Error(
+      `O provedor de pagamento "${value}" não está disponível. No momento, use apenas Mercado Pago.`,
+    );
+  }
+}
+
 export const PAYMENT_PROVIDER_LABELS: Record<PaymentProviderValue, string> = {
   asaas: 'Asaas',
   efi: 'Efi (Gerencianet)',

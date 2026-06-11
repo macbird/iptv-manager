@@ -1,6 +1,7 @@
 import { prisma } from '../../core/database';
 import type { PaymentProviderType } from '@prisma/client';
 import {
+  assertEnabledPaymentProvider,
   DEFAULT_PAYMENT_ROUTING_RULES,
   updateTenantPaymentCredentialsSchema,
   updateTenantPaymentRoutingSchema,
@@ -68,6 +69,7 @@ export class TenantPaymentSettingsService {
     const parsed = updateTenantPaymentCredentialsSchema.parse(payload);
 
     for (const item of parsed.credentials) {
+      assertEnabledPaymentProvider(item.provider);
       const update: Record<string, unknown> = {
         accountId: tenantId,
         provider: item.provider,
@@ -140,6 +142,7 @@ export class TenantPaymentSettingsService {
 
       for (let index = 0; index < sorted.length; index++) {
         const rule = sorted[index];
+        assertEnabledPaymentProvider(rule.provider);
         await tx.tenantPaymentRoutingRule.create({
           data: {
             accountId: tenantId,

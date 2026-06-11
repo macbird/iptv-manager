@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ENABLED_PAYMENT_PROVIDER_VALUES } from './billing-enums';
 import { CUSTOMER_STATUS_VALUES } from './customer-status';
 import { CustomerStatus } from './enums';
 
@@ -116,7 +117,7 @@ export const customerSchema = z.object({
 
 export type CustomerInput = z.infer<typeof customerSchema>;
 
-const paymentProviderEnum = z.enum(['asaas', 'efi', 'mercadopago']);
+const paymentProviderEnum = z.enum(ENABLED_PAYMENT_PROVIDER_VALUES);
 
 export const tenantPaymentCredentialSchema = z.object({
   provider: paymentProviderEnum,

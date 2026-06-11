@@ -60,6 +60,8 @@ export interface PaymentWebhookLogDto {
 
 export interface TenantSettingsDto {
   accountSlug: string | null;
+  /** True when active credentials or routing still reference a disabled PSP. */
+  legacyProviderWarning?: boolean;
   mercadoPagoWebhookUrl: string | null;
   mercadoPagoWebhookRequiresToken: boolean;
   payment: {

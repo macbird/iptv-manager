@@ -17,7 +17,12 @@ Documentação para implementar o sistema com **Cursor**, em **fases**, com **fr
 | [08-mobile-desktop-experience.md](./08-mobile-desktop-experience.md) | **UX celular + navegador desktop** |
 | [11-payment-and-activations.md](./11-payment-and-activations.md) | **Automação D-N, ativações pendentes, pagamento manual** |
 | [12-billing-automation-scheduler.md](./12-billing-automation-scheduler.md) | **Scheduler node-cron, env vars, macbird dev, auto-close** |
-| [13-mercadopago-only-and-api-errors.md](./13-mercadopago-only-and-api-errors.md) | **Próxima feature: MP único + erros mapeados API→UI** |
+| [13-mercadopago-only-and-api-errors.md](./13-mercadopago-only-and-api-errors.md) | **MP único + erros mapeados API→UI** (em andamento) |
+| [14-admin-panel-overhaul.md](./14-admin-panel-overhaul.md) | **Próxima: overhaul painel admin** |
+| [15-billing-automation-observability.md](./15-billing-automation-observability.md) | Automação: último run, minuto, erros na UI |
+| [16-whatsapp-payment-notification-and-templates.md](./16-whatsapp-payment-notification-and-templates.md) | WhatsApp pós-pagamento + `payment_block` |
+| [17-saas-monthly-invoice-job.md](./17-saas-monthly-invoice-job.md) | Job mensal faturas SaaS |
+| [18-payment-delivery-hybrid-frozen.md](./18-payment-delivery-hybrid-frozen.md) | Híbrido PIX+link (congelado) |
 | [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) | **Progresso real da implementação** |
 | [RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md) | **Checklist de release (staging/prod)** |
 | [../CLIENTE-MANAGER-SPEC-TEMP.md](../../CLIENTE-MANAGER-SPEC-TEMP.md) | Especificação funcional completa |

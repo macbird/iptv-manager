@@ -14,9 +14,10 @@ import {
   extractSelectedProvider,
   selectedProviderToPayload,
 } from '../components/PaymentRoutingSection';
-import type {
-  PaymentProviderValue,
-  WhatsAppConnectionStatusValue,
+import {
+  getApiErrorMessage,
+  type EnabledPaymentProviderValue,
+  type WhatsAppConnectionStatusValue,
   TenantChargeMessagesSettingsDto,
   BillingAutomationSettingsDto,
 } from '@client-manager/shared';
@@ -74,7 +75,8 @@ export const TenantSettingsPage: React.FC = () => {
   });
 
   const [credentials, setCredentials] = React.useState<PaymentCredentialFormState[]>([]);
-  const [paymentProvider, setPaymentProvider] = React.useState<PaymentProviderValue>('mercadopago');
+  const [paymentProvider, setPaymentProvider] =
+    React.useState<EnabledPaymentProviderValue>('mercadopago');
   const [whatsappProvider, setWhatsappProvider] = React.useState('evolution');
   const [whatsappInstanceUrl, setWhatsappInstanceUrl] = React.useState('');
   const [whatsappApiKey, setWhatsappApiKey] = React.useState('');
@@ -133,8 +135,8 @@ export const TenantSettingsPage: React.FC = () => {
       setWhatsappApiKey('');
       showToast.success('Configurações salvas');
     },
-    onError: (error: Error) => {
-      showToast.error(error.message || 'Erro ao salvar');
+    onError: (error: unknown) => {
+      showToast.error(getApiErrorMessage(error, 'Erro ao salvar configurações'));
     },
   });
 
@@ -210,6 +212,7 @@ export const TenantSettingsPage: React.FC = () => {
                   onChange={setCredentials}
                   mercadoPagoWebhookUrl={data?.mercadoPagoWebhookUrl}
                   mercadoPagoWebhookRequiresToken={data?.mercadoPagoWebhookRequiresToken}
+                  legacyProviderWarning={data?.legacyProviderWarning}
                 />
               </div>
             </section>

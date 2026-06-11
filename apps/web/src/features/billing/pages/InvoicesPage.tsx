@@ -21,6 +21,7 @@ import {
   type BillingInvoiceStatusValue,
   type InvoiceKindValue,
   type InvoiceListItem,
+  getApiErrorMessage,
 } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 
@@ -84,7 +85,7 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
       showToast.success('PIX gerado com sucesso');
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao gerar PIX');
+      showToast.error(getApiErrorMessage(err, 'Erro ao gerar PIX'));
     },
   });
 
@@ -95,7 +96,7 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
       showToast.success('Fatura marcada como paga');
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      showToast.error(err.response?.data?.message ?? 'Erro ao baixar fatura');
+      showToast.error(getApiErrorMessage(err, 'Erro ao baixar fatura'));
     },
   });
 
