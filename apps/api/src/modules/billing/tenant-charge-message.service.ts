@@ -3,6 +3,9 @@ import {
   DEFAULT_CHARGE_MESSAGE_DELAY_MS,
   DEFAULT_CHARGE_MESSAGE_TEMPLATES,
   DEFAULT_ONE_OFF_CHARGE_MESSAGE_TEMPLATES,
+  buildDefaultOverdueChargeMessages,
+  parseOverdueChargeMessages,
+  serializeOverdueChargeMessages,
   type ChargeMessageSettingsDto,
   type TenantChargeMessagesSettingsDto,
   type TenantChargeMessagesSettingsInput,
@@ -14,13 +17,13 @@ import {
  *
  * @author João Paulo da Silva
  * @since 4.9.0
- * @creationDate 10/06/2026
+ * @creationDate 12/06/2026
  * Copyright (c) 2026 NTT DATA Brasil Consultologia de Negócio e Tecnologia da Informação Ltda.
  * Todos os direitos reservados.
  */
 export class TenantChargeMessageService {
   /**
-   * Returns subscription and one-off charge message templates for the tenant.
+   * Returns subscription, one-off, and overdue charge message templates for the tenant.
    */
   async get(tenantId: string): Promise<TenantChargeMessagesSettingsDto> {
     const row = await this.ensureRow(tenantId);
@@ -39,7 +42,7 @@ export class TenantChargeMessageService {
   }
 
   /**
-   * Updates subscription and one-off charge message templates for the tenant.
+   * Updates subscription, one-off, and overdue charge message templates for the tenant.
    */
   async update(
     tenantId: string,
@@ -52,11 +55,13 @@ export class TenantChargeMessageService {
         chargeMessageTemplates: input.subscription.templates,
         oneOffMessageTemplates: input.oneOff.templates,
         chargeMessageDelayMs: input.subscription.delayMs,
+        overdueMessageTemplates: serializeOverdueChargeMessages(input.overdue),
       },
       update: {
         chargeMessageTemplates: input.subscription.templates,
         oneOffMessageTemplates: input.oneOff.templates,
         chargeMessageDelayMs: input.subscription.delayMs,
+        overdueMessageTemplates: serializeOverdueChargeMessages(input.overdue),
       },
     });
 
@@ -76,6 +81,7 @@ function mapTenantChargeMessages(row: {
   chargeMessageTemplates: unknown;
   oneOffMessageTemplates: unknown;
   chargeMessageDelayMs: number;
+  overdueMessageTemplates?: unknown;
 }): TenantChargeMessagesSettingsDto {
   const delayMs = row.chargeMessageDelayMs ?? DEFAULT_CHARGE_MESSAGE_DELAY_MS;
   return {
@@ -90,5 +96,6 @@ function mapTenantChargeMessages(row: {
       ),
       delayMs,
     },
+    overdue: parseOverdueChargeMessages(row.overdueMessageTemplates ?? buildDefaultOverdueChargeMessages()),
   };
 }

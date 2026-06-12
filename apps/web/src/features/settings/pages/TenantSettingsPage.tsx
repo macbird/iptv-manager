@@ -23,10 +23,12 @@ import {
   DEFAULT_CHARGE_MESSAGE_DELAY_MS,
   DEFAULT_CHARGE_MESSAGE_TEMPLATES,
   DEFAULT_ONE_OFF_CHARGE_MESSAGE_TEMPLATES,
+  buildDefaultOverdueChargeMessages,
 } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import { WebhookLogsSection } from '../components/WebhookLogsSection';
 import { ChargeMessageTemplatesSection } from '../components/ChargeMessageTemplatesSection';
+import { OverdueChargeMessageTemplatesSection } from '../components/OverdueChargeMessageTemplatesSection';
 import { BillingAutomationSection } from '../components/BillingAutomationSection';
 import { SettingsTabs, useSettingsTab } from '../components/SettingsTabs';
 
@@ -47,6 +49,7 @@ const DEFAULT_CHARGE_MESSAGES: TenantChargeMessagesSettingsDto = {
     templates: [...DEFAULT_ONE_OFF_CHARGE_MESSAGE_TEMPLATES],
     delayMs: DEFAULT_CHARGE_MESSAGE_DELAY_MS,
   },
+  overdue: buildDefaultOverdueChargeMessages(),
 };
 
 const DEFAULT_AUTOMATION: BillingAutomationSettingsDto = {
@@ -266,6 +269,14 @@ export const TenantSettingsPage: React.FC = () => {
                 title="Mensagens — avulsa (padrão)"
                 value={chargeMessages.oneOff}
                 onChange={(oneOff) => setChargeMessages({ ...chargeMessages, oneOff })}
+              />
+            </div>
+            <div className="border-t border-slate-200 pt-8">
+              <OverdueChargeMessageTemplatesSection
+                value={chargeMessages.overdue}
+                onChange={(overdue) => setChargeMessages({ ...chargeMessages, overdue })}
+                windowDays={billingAutomation.overdueReminders.daysAfterDue}
+                delayMs={chargeMessages.subscription.delayMs}
               />
             </div>
           </section>

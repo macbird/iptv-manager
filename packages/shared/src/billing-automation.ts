@@ -57,9 +57,26 @@ export const DEFAULT_OVERDUE_REMINDERS_SETTINGS: OverdueRemindersSettingsDto = {
   failureGraceDays: DEFAULT_OVERDUE_REMINDER_FAILURE_GRACE_DAYS,
 };
 
+export const chargeMessageTemplatesOnlySchema = z.object({
+  templates: z
+    .array(z.string().max(4000))
+    .min(1, 'Informe ao menos uma mensagem')
+    .max(20, 'Máximo de 20 mensagens por sequência'),
+});
+
+export const overdueChargeMessagesSchema = z.object({
+  generic: chargeMessageTemplatesOnlySchema,
+  byWindow: z.record(chargeMessageTemplatesOnlySchema),
+});
+
+export type OverdueChargeMessagesInput = z.infer<typeof overdueChargeMessagesSchema>;
+
+export interface OverdueChargeMessagesSettingsDto extends OverdueChargeMessagesInput {}
+
 export const tenantChargeMessagesSettingsSchema = z.object({
   subscription: chargeMessageSettingsSchema,
   oneOff: chargeMessageSettingsSchema,
+  overdue: overdueChargeMessagesSchema,
 });
 
 export type TenantChargeMessagesSettingsInput = z.infer<typeof tenantChargeMessagesSettingsSchema>;
@@ -67,6 +84,7 @@ export type TenantChargeMessagesSettingsInput = z.infer<typeof tenantChargeMessa
 export interface TenantChargeMessagesSettingsDto {
   subscription: { templates: string[]; delayMs: number };
   oneOff: { templates: string[]; delayMs: number };
+  overdue: OverdueChargeMessagesSettingsDto;
 }
 
 export const updateInvoiceChargeMessagesSchema = chargeMessageSettingsSchema;

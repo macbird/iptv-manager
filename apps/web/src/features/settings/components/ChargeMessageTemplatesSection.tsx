@@ -18,6 +18,8 @@ interface ChargeMessageTemplatesSectionProps {
   /** Starts in rendered preview mode; user toggles to edit templates. */
   previewFirst?: boolean;
   onEditModeChange?: (editing: boolean) => void;
+  /** When false, hides the delay field (e.g. overdue reminders inherit subscription delay). */
+  showDelay?: boolean;
 }
 
 export const ChargeMessageTemplatesSection: React.FC<ChargeMessageTemplatesSectionProps> = ({
@@ -27,6 +29,7 @@ export const ChargeMessageTemplatesSection: React.FC<ChargeMessageTemplatesSecti
   previewContext,
   previewFirst = false,
   onEditModeChange,
+  showDelay = true,
 }) => {
   const [editMode, setEditMode] = React.useState(!previewFirst || !previewContext);
 
@@ -200,6 +203,7 @@ export const ChargeMessageTemplatesSection: React.FC<ChargeMessageTemplatesSecti
         + Adicionar mensagem
       </button>
 
+      {showDelay ? (
       <div>
         <label className="block text-sm font-medium text-slate-700">
           Delay entre mensagens (segundos)
@@ -222,6 +226,7 @@ export const ChargeMessageTemplatesSection: React.FC<ChargeMessageTemplatesSecti
           Padrão: {DEFAULT_CHARGE_MESSAGE_DELAY_MS / 1000}s entre cada envio.
         </p>
       </div>
+      ) : null}
 
       <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
         <p className="text-sm font-medium text-slate-900">

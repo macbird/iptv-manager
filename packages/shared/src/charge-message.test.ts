@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   buildBillingChargeMessage,
   buildChargeMessagesFromTemplates,
+  buildDefaultOverdueChargeMessages,
   DEFAULT_CHARGE_MESSAGE_TEMPLATES,
+  parseOverdueChargeMessages,
   renderChargeMessageTemplate,
+  resolveOverdueReminderTemplates,
+  serializeOverdueChargeMessages,
 } from './charge-message';
 
 describe('renderChargeMessageTemplate', () => {
@@ -93,5 +97,48 @@ describe('buildBillingChargeMessage', () => {
     expect(message).toContain('Maria Silva');
     expect(message).toContain('000201PIX');
     expect(message).not.toContain('PIX copia e cola');
+  });
+});
+
+describe('parseOverdueChargeMessages', () => {
+  it('testParseOverdueChargeMessages_whenEmpty_shouldReturnDefaults', () => {
+    const parsed = parseOverdueChargeMessages(null);
+    expect(parsed.generic.templates.length).toBeGreaterThan(0);
+    expect(parsed.byWindow[1]?.templates.length).toBeGreaterThan(0);
+    expect(parsed.byWindow[7]?.templates.length).toBeGreaterThan(0);
+  });
+
+  it('testParseOverdueChargeMessages_whenCustomWindow_shouldOverrideDayTemplate', () => {
+    const parsed = parseOverdueChargeMessages({
+      subscriptionOverdueDay1: ['Custom D+1', '{{pix}}'],
+    });
+
+    expect(parsed.byWindow[1]?.templates[0]).toBe('Custom D+1');
+  });
+});
+
+describe('serializeOverdueChargeMessages', () => {
+  it('testSerializeOverdueChargeMessages_shouldUseExpectedKeys', () => {
+    const defaults = buildDefaultOverdueChargeMessages();
+    const serialized = serializeOverdueChargeMessages(defaults);
+
+    expect(serialized.subscriptionOverdue).toBeDefined();
+    expect(serialized.subscriptionOverdueDay1).toBeDefined();
+    expect(serialized.subscriptionOverdueDay7).toBeDefined();
+    expect(serialized.subscriptionOverdueDay15).toBeDefined();
+  });
+});
+
+describe('resolveOverdueReminderTemplates', () => {
+  it('testResolveOverdueReminderTemplates_whenWindowTemplateExists_shouldPreferWindow', () => {
+    const templates = resolveOverdueReminderTemplates({
+      windowDaysAfterDue: 7,
+      tenantOverdueTemplates: {
+        subscriptionOverdueDay7: ['Window 7 only', '{{pix}}'],
+        subscriptionOverdue: ['Generic', '{{pix}}'],
+      },
+    });
+
+    expect(templates[0]).toBe('Window 7 only');
   });
 });
