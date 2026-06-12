@@ -1,4 +1,5 @@
 import React from 'react';
+import { APP_NAME } from '@client-manager/shared';
 import { Download, X } from 'lucide-react';
 import { usePwaInstall } from './usePwaInstall';
 
@@ -27,7 +28,7 @@ export const PwaInstallBanner: React.FC = () => {
       >
         <X className="h-4 w-4" />
       </button>
-      <p className="pr-6 text-sm font-semibold text-slate-900">Instalar Cliente Manager</p>
+      <p className="pr-6 text-sm font-semibold text-slate-900">Instalar {APP_NAME}</p>
       <p className="mt-1 text-xs text-slate-600">
         Abra como app na tela inicial, sem barra do navegador.
       </p>

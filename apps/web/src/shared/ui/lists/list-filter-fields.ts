@@ -3,7 +3,7 @@ import {
   BILLING_INVOICE_STATUS_VALUES,
   CUSTOMER_SORT_OPTIONS,
   CUSTOMER_STATUS_LABELS,
-  CUSTOMER_STATUS_VALUES,
+  CUSTOMER_UI_STATUS_VALUES,
   ENTITY_LIFECYCLE_LABELS,
   PLAN_SORT_OPTIONS,
   SERVER_SORT_OPTIONS,
@@ -44,7 +44,7 @@ export const CUSTOMER_FILTER_FIELDS: ListFilterFieldDef[] = [
     key: 'status',
     label: 'Status',
     type: 'select',
-    options: CUSTOMER_STATUS_VALUES.map((value) => ({
+    options: CUSTOMER_UI_STATUS_VALUES.map((value) => ({
       value,
       label: CUSTOMER_STATUS_LABELS[value],
     })),

@@ -1,11 +1,52 @@
 import { prisma } from '../../core/database';
-import { CustomerInput, ENTITY_INACTIVE_STATUS } from '@client-manager/shared';
+import {
+  ApiValidationError,
+  buildCustomerConfigurationWarning,
+  CustomerInput,
+  ENTITY_INACTIVE_STATUS,
+} from '@client-manager/shared';
 import {
   assertCustomerSelectable,
   assertSelectablePlan,
   assertSelectableServers,
 } from '../../core/validators/selectable-entities';
 import { customerOrderBy } from '../../core/utils/list-order-by';
+
+/**
+ * Builds a single expiresAt filter; first matching filter wins to avoid conflicting spreads.
+ */
+export function buildExpiresAtFilter(listFilters: Record<string, string>) {
+  const now = new Date();
+
+  if (listFilters.expiredOnly === 'true') {
+    return { expiresAt: { lt: now } };
+  }
+  if (listFilters.upcomingOnly === 'true') {
+    return { expiresAt: { gte: now } };
+  }
+  if (listFilters.expiringWithinDays) {
+    const days = parseInt(listFilters.expiringWithinDays, 10);
+    const end = new Date();
+    if (Number.isFinite(days) && days >= 0) {
+      end.setDate(end.getDate() + days);
+    }
+    return { expiresAt: { gte: now, lte: end } };
+  }
+  if (listFilters.expiresFrom || listFilters.expiresTo) {
+    return {
+      expiresAt: {
+        ...(listFilters.expiresFrom
+          ? { gte: new Date(`${listFilters.expiresFrom}T00:00:00.000Z`) }
+          : {}),
+        ...(listFilters.expiresTo
+          ? { lte: new Date(`${listFilters.expiresTo}T23:59:59.999Z`) }
+          : {}),
+      },
+    };
+  }
+  return {};
+}
+
 type PrismaLike = {
   customer: {
     findMany: typeof prisma.customer.findMany;
@@ -44,18 +85,7 @@ export class CustomersService {
         : {}),
       ...(listFilters.status ? { status: listFilters.status as never } : {}),
       ...(listFilters.planId ? { planId: listFilters.planId } : {}),
-      ...(listFilters.expiresFrom || listFilters.expiresTo
-        ? {
-            expiresAt: {
-              ...(listFilters.expiresFrom
-                ? { gte: new Date(`${listFilters.expiresFrom}T00:00:00.000Z`) }
-                : {}),
-              ...(listFilters.expiresTo
-                ? { lte: new Date(`${listFilters.expiresTo}T23:59:59.999Z`) }
-                : {}),
-            },
-          }
-        : {}),
+      ...buildExpiresAtFilter(listFilters),
     };
 
     const [rows, total] = await Promise.all([
@@ -71,15 +101,16 @@ export class CustomersService {
           email: true,
           status: true,
           expiresAt: true,
-          plan: { select: { id: true, name: true, price: true } },
+          plan: { select: { id: true, name: true, price: true, status: true } },
           tags: { select: { id: true, name: true, color: true } },
+          connections: { select: { server: { select: { status: true } } } },
           _count: { select: { connections: true } },
         },
       }),
       this.db.customer.count({ where }),
     ]);
 
-    const data = rows.map(({ _count, expiresAt, plan, ...row }) => ({
+    const data = rows.map(({ _count, expiresAt, plan, connections, ...row }) => ({
       ...row,
       expiresAt: expiresAt?.toISOString() ?? null,
       plan: plan
@@ -87,9 +118,14 @@ export class CustomersService {
             id: plan.id,
             name: plan.name,
             price: Number(plan.price),
+            status: plan.status,
           }
         : null,
       connectionCount: _count.connections,
+      configurationWarning: buildCustomerConfigurationWarning({
+        planStatus: plan?.status,
+        serverStatuses: connections.map((connection) => connection.server.status),
+      }),
     }));
 
     return { data, total };
@@ -114,7 +150,7 @@ export class CustomersService {
     const { connections, planId, tagIds, email, notes, ...customerData } = input;
 
     if (!connections?.length) {
-      throw new Error('Adicione ao menos uma conexão');
+      throw new ApiValidationError('Adicione ao menos uma conexão');
     }
 
     await assertSelectablePlan(tenantId, planId);
@@ -145,7 +181,7 @@ export class CustomersService {
     const { connections, tagIds, email, notes, ...customerData } = input;
 
     if (!connections?.length) {
-      throw new Error('Adicione ao menos uma conexão');
+      throw new ApiValidationError('Adicione ao menos uma conexão');
     }
 
     await this.db.customer.findFirstOrThrow({

@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { API_ERROR_CODES, ApiBusinessError } from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import argon2 from 'argon2';
 import {
@@ -9,8 +10,6 @@ import {
   defaultNextDueDate,
 } from '../billing/account-billing.util';
 import { InvoicesService } from '../billing/invoices.service';
-import { InvoiceActionError } from '../billing/invoice-errors';
-
 const accountListInclude = {
   users: {
     select: {
@@ -202,7 +201,11 @@ export class TenantsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new Error('Este identificador da conta já está em uso. Escolha outro.');
+        throw new ApiBusinessError(
+          'Este identificador da conta já está em uso. Escolha outro.',
+          API_ERROR_CODES.CONFLICT,
+          409,
+        );
       }
       throw error;
     }
@@ -214,7 +217,7 @@ export class TenantsService {
   ) {
     const account = await prisma.account.findUnique({ where: { id } });
     if (!account) {
-      throw new Error('Account not found');
+      throw new ApiBusinessError('Conta não encontrada', API_ERROR_CODES.NOT_FOUND, 404);
     }
 
     if (input.status !== undefined) {
@@ -263,31 +266,27 @@ export class TenantsService {
     });
 
     if (!account) {
-      throw new Error('Account not found');
+      throw new ApiBusinessError('Conta não encontrada', API_ERROR_CODES.NOT_FOUND, 404);
     }
 
     if (!account.subscription) {
-      throw new Error('Conta sem assinatura SaaS configurada');
+      throw new ApiBusinessError(
+        'Conta sem assinatura SaaS configurada',
+        API_ERROR_CODES.NOT_ALLOWED,
+        400,
+      );
     }
 
     const { subscription } = account;
     const dueDate = subscription.nextDueDate;
     const billingCycleKey = billingCycleKeyFromDate(dueDate);
 
-    let invoice;
-    try {
-      invoice = await invoicesService.createPlatformFromSubscription({
-        accountId,
-        amountCents: subscription.platformPlan.priceCents,
-        dueDate,
-        billingCycleKey,
-      });
-    } catch (error) {
-      if (error instanceof InvoiceActionError) {
-        throw new Error(error.message);
-      }
-      throw error;
-    }
+    const invoice = await invoicesService.createPlatformFromSubscription({
+      accountId,
+      amountCents: subscription.platformPlan.priceCents,
+      dueDate,
+      billingCycleKey,
+    });
 
     const nextDueDate = advanceNextDueDate(dueDate);
     await prisma.accountSubscription.update({
@@ -310,7 +309,7 @@ export class TenantsService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new ApiBusinessError('Usuário não encontrado', API_ERROR_CODES.NOT_FOUND, 404);
     }
 
     return await prisma.accountUser.update({

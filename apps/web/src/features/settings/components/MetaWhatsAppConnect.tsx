@@ -148,7 +148,7 @@ export const MetaWhatsAppConnect: React.FC<MetaWhatsAppConnectProps> = ({ connec
       );
     } catch (error) {
       setIsLaunching(false);
-      showToast.error(error instanceof Error ? error.message : 'Erro ao iniciar Embedded Signup');
+      showToast.error(getApiErrorMessage(error, 'Erro ao iniciar Embedded Signup'));
     }
   };
 

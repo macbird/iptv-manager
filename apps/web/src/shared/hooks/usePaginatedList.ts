@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   countActiveListFilters,
@@ -52,18 +52,29 @@ export function usePaginatedList<T>({
   const total = data?.total ?? 0;
   const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
 
-  const setFilterAndResetPage = (value: string) => {
+  const setFilterAndResetPage = useCallback((value: string) => {
     setFilter(value);
     setPage(1);
-  };
+  }, []);
 
-  const setFiltersAndResetPage = (values: ListFilterValues) => {
+  const setFiltersAndResetPage = useCallback((values: ListFilterValues) => {
     setFilters(stripEmptyListFilters(values));
     setPage(1);
-  };
+  }, []);
 
-  const goToPreviousPage = () => setPage((p) => Math.max(1, p - 1));
-  const goToNextPage = () => setPage((p) => (totalPages > 0 ? Math.min(totalPages, p + 1) : p + 1));
+  const clearFiltersAndResetPage = useCallback(() => {
+    setFilters({});
+    setPage(1);
+  }, []);
+
+  const goToPreviousPage = useCallback(
+    () => setPage((p) => Math.max(1, p - 1)),
+    [],
+  );
+  const goToNextPage = useCallback(
+    () => setPage((p) => (totalPages > 0 ? Math.min(totalPages, p + 1) : p + 1)),
+    [totalPages],
+  );
 
   return {
     items: data?.data ?? [],
@@ -76,7 +87,7 @@ export function usePaginatedList<T>({
     activeFilterCount: countActiveListFilters(filters),
     setFilter: setFilterAndResetPage,
     setFilters: setFiltersAndResetPage,
-    clearFilters: () => setFiltersAndResetPage({}),
+    clearFilters: clearFiltersAndResetPage,
     setPage,
     goToPreviousPage,
     goToNextPage,

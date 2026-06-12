@@ -7,19 +7,16 @@ import { WhatsAppProviderFields } from '../components/PaymentProviderFields';
 import {
   PaymentCredentialsSection,
   buildCredentialFormState,
-  resolveInitialPaymentProvider,
   type PaymentCredentialFormState,
 } from '../components/PaymentCredentialsSection';
+import { selectedProviderToPayload } from '../components/PaymentRoutingSection';
 import {
-  extractSelectedProvider,
-  selectedProviderToPayload,
-} from '../components/PaymentRoutingSection';
-import {
+  APP_NAME,
   getApiErrorMessage,
   type EnabledPaymentProviderValue,
   type WhatsAppConnectionStatusValue,
-  TenantChargeMessagesSettingsDto,
-  BillingAutomationSettingsDto,
+  type TenantChargeMessagesSettingsDto,
+  type BillingAutomationSettingsDto,
 } from '@client-manager/shared';
 import {
   DEFAULT_CHARGE_MESSAGE_DELAY_MS,
@@ -164,7 +161,7 @@ export const TenantSettingsPage: React.FC = () => {
 
         {activeTab === 'geral' ? (
           <section className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-5">
-            <h2 className="text-base font-semibold text-slate-900">Minha assinatura (Cliente Manager)</h2>
+            <h2 className="text-base font-semibold text-slate-900">Minha assinatura ({APP_NAME})</h2>
             <p className="mt-1 text-sm text-slate-600">
               Valor definido pela plataforma — não editável aqui.
             </p>

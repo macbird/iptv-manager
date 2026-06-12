@@ -11,10 +11,8 @@ import { MetaWhatsAppConnect } from './MetaWhatsAppConnect';
 import { EvolutionWhatsAppConnect } from './EvolutionWhatsAppConnect';
 
 interface PaymentProviderFieldsProps {
-  paymentProvider: string;
   paymentApiKey: string;
   paymentWebhookToken: string;
-  onPaymentProviderChange: (v: string) => void;
   onPaymentApiKeyChange: (v: string) => void;
   onPaymentWebhookTokenChange: (v: string) => void;
   apiKeyConfigured?: boolean;
@@ -22,10 +20,8 @@ interface PaymentProviderFieldsProps {
 }
 
 export const PaymentProviderFields: React.FC<PaymentProviderFieldsProps> = ({
-  paymentProvider,
   paymentApiKey,
   paymentWebhookToken,
-  onPaymentProviderChange,
   onPaymentApiKeyChange,
   onPaymentWebhookTokenChange,
   apiKeyConfigured,

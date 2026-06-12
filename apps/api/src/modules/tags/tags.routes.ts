@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { TagsService } from './tags.service';
 import { tagSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
+import { sendApiError, sendValidationError } from '../../core/errors/send-api-error';
 
 const tagsService = new TagsService();
 
@@ -41,15 +42,26 @@ export async function tagsRoutes(app: FastifyInstance) {
     if (!tenantId) return;
 
     const { name } = request.body as { name: string };
-    return await tagsService.findOrCreate(tenantId, name);
+    try {
+      return await tagsService.findOrCreate(tenantId, name);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.post('/', async (request, reply) => {
     const tenantId = requireTenantId(request, reply);
     if (!tenantId) return;
 
-    const data = tagSchema.parse(request.body);
-    return await tagsService.create(tenantId, data);
+    const parsed = tagSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return sendValidationError(reply, parsed.error);
+    }
+    try {
+      return await tagsService.create(tenantId, parsed.data);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.put('/:id', async (request, reply) => {
@@ -57,8 +69,15 @@ export async function tagsRoutes(app: FastifyInstance) {
     if (!tenantId) return;
 
     const { id } = request.params as { id: string };
-    const data = tagSchema.parse(request.body);
-    return await tagsService.update(tenantId, id, data);
+    const parsed = tagSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return sendValidationError(reply, parsed.error);
+    }
+    try {
+      return await tagsService.update(tenantId, id, parsed.data);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.delete('/:id', async (request, reply) => {
@@ -66,6 +85,10 @@ export async function tagsRoutes(app: FastifyInstance) {
     if (!tenantId) return;
 
     const { id } = request.params as { id: string };
-    return await tagsService.delete(tenantId, id);
+    try {
+      return await tagsService.delete(tenantId, id);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 }

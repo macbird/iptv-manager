@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { mapErrorToApiResponse } from '../../core/errors/api-error.mapper';
 import { PaymentWebhookService } from './payment-webhook.service';
 import { PaymentWebhookLogService } from './payment-webhook-log.service';
 import {
@@ -73,13 +74,9 @@ async function handleWebhook(request: FastifyRequest, reply: FastifyReply) {
 
     return reply.status(200).send(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Webhook processing failed';
-    const status =
-      message.includes('not found') ||
-      message.includes('Invalid Mercado Pago webhook signature') ||
-      message.includes('Invalid webhook')
-        ? 401
-        : 400;
+    const mapped = mapErrorToApiResponse(error);
+    const message = mapped.body.message;
+    const status = mapped.statusCode;
 
     trace.add(`error:${message}`);
     const detail = trace.toDetail({
@@ -100,7 +97,11 @@ async function handleWebhook(request: FastifyRequest, reply: FastifyReply) {
       detail: JSON.stringify(detail),
     });
 
-    return reply.status(status).send({ ok: false, message });
+    return reply.status(status).send({
+      ok: false,
+      message,
+      code: mapped.body.code,
+    });
   }
 }
 

@@ -2,6 +2,7 @@ import path from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from '../../packages/shared/src/app-version'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -27,11 +28,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       devOptions: { enabled: true },
-      includeAssets: ['favicon.png', 'icons/apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'brand/pixflow-logo.png', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Cliente Manager',
-        short_name: 'Cliente Mgr',
-        description: 'Gestão de clientes e assinaturas IPTV',
+        name: APP_NAME,
+        short_name: APP_SHORT_NAME,
+        description: APP_DESCRIPTION,
         theme_color: '#111827',
         background_color: '#ffffff',
         display: 'standalone',

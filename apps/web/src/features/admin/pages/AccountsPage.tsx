@@ -10,7 +10,11 @@ import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { AccountFormModal } from '../components/AccountFormModal';
 import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
-import { getApiErrorMessage } from '@client-manager/shared';
+import {
+  getApiErrorMessage,
+  isPastCalendarDate,
+  resolveAccountListRowAccent,
+} from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import type { AccountListItem } from '@client-manager/shared';
 
@@ -70,8 +74,14 @@ export const AccountsPage: React.FC = () => {
     },
   });
 
-  const formatDueDate = (value?: string | null) =>
-    value ? new Date(value).toLocaleDateString('pt-BR') : '—';
+  const formatDueDate = (value?: string | null, emphasizeOverdue = false) => {
+    if (!value) return '—';
+    const formatted = new Date(value).toLocaleDateString('pt-BR');
+    if (emphasizeOverdue && isPastCalendarDate(value)) {
+      return <span className="font-semibold text-red-600">{formatted}</span>;
+    }
+    return formatted;
+  };
 
   const columns = [
     { header: 'Nome', accessor: (a: AccountListItem) => a.name, width: '28%' },
@@ -81,7 +91,7 @@ export const AccountsPage: React.FC = () => {
       align: 'center' as const,
       accessor: (a: AccountListItem) => (
         <span className="text-sm text-slate-700">
-          {formatDueDate(a.subscription?.nextDueDate)}
+          {formatDueDate(a.subscription?.nextDueDate, a.status === 'active')}
         </span>
       ),
     },
@@ -165,7 +175,7 @@ export const AccountsPage: React.FC = () => {
       <div className="flex w-[55%] shrink-0 items-center gap-2">
         <div className="min-w-0 flex-1 text-center">
           <div className="text-xs font-medium text-slate-700">
-            {formatDueDate(a.subscription?.nextDueDate)}
+            {formatDueDate(a.subscription?.nextDueDate, a.status === 'active')}
           </div>
         </div>
 
@@ -241,6 +251,12 @@ export const AccountsPage: React.FC = () => {
         renderMobileCard={renderMobileCard}
         mobileHeaderTitles={['Nome', 'Venc.', 'Status']}
         isLoading={isLoading}
+        getRowAccent={(a) =>
+          resolveAccountListRowAccent({
+            status: a.status,
+            nextDueDate: a.subscription?.nextDueDate,
+          })
+        }
       />
 
       <AccountFormModal isOpen={formModal.isOpen} editId={formModal.editId} onClose={formModal.close} />

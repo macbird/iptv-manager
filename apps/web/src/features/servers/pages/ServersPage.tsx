@@ -14,7 +14,13 @@ import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { SERVER_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
 import { EntityLifecycleActions } from '../../../shared/ui/buttons/EntityLifecycleActions';
-import { ENTITY_INACTIVE_STATUS, ENTITY_LIFECYCLE_LABELS } from '@client-manager/shared';
+import {
+  getApiErrorMessage,
+  getServerListStatusBadgeClass,
+  getServerListStatusLabel,
+  resolveServerListRowAccent,
+} from '@client-manager/shared';
+import { ListEntityStatusBadge } from '../../../shared/ui/lists/ListEntityStatusBadge';
 import { showToast } from '../../../shared/utils/toast';
 
 type ServerRow = {
@@ -67,7 +73,8 @@ export const ServersPage: React.FC = () => {
         variables.action === 'deactivate' ? 'Servidor desativado' : 'Servidor reativado',
       );
     },
-    onError: () => showToast.error('Não foi possível alterar o status do servidor'),
+    onError: (err: unknown) =>
+      showToast.error(getApiErrorMessage(err, 'Não foi possível alterar o status do servidor')),
   });
 
   const renderActions = (row: ServerRow) => (
@@ -97,21 +104,13 @@ export const ServersPage: React.FC = () => {
     {
       header: 'Status',
       accessor: (s: ServerRow) => (
-        <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-            s.status === ENTITY_INACTIVE_STATUS
-              ? 'bg-slate-100 text-slate-500'
-              : 'bg-green-100 text-green-700'
-          }`}
-        >
-          {s.status === ENTITY_INACTIVE_STATUS
-            ? ENTITY_LIFECYCLE_LABELS.inactive
-            : s.status === 'active'
-              ? ENTITY_LIFECYCLE_LABELS.active
-              : s.status}
-        </span>
+        <ListEntityStatusBadge
+          label={getServerListStatusLabel(s.status)}
+          badgeClassName={getServerListStatusBadgeClass(s.status)}
+        />
       ),
       width: '14%',
+      align: 'center' as const,
     },
     {
       header: 'Painel',
@@ -136,20 +135,33 @@ export const ServersPage: React.FC = () => {
   ];
 
   const renderMobileCard = (s: ServerRow) => (
-    <div className="flex items-center justify-between group h-12">
+    <div className="flex items-center justify-between group py-1">
       <div className="flex items-center space-x-3 overflow-hidden flex-1">
-        <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-          <Server className="w-5 h-5 text-slate-400" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-100 bg-slate-50">
+          <Server className="h-5 w-5 text-slate-400" />
         </div>
         <div className="overflow-hidden">
-          <div className="text-sm font-bold text-slate-900 truncate leading-tight">{s.name}</div>
-          <div className="text-[10px] text-slate-400 truncate leading-tight">{s.panelUrl}</div>
+          <div className="mb-0.5 truncate text-sm font-bold leading-tight text-slate-900">
+            {s.name}
+          </div>
+          <div className="truncate text-[10px] leading-none text-slate-400">{s.panelUrl}</div>
         </div>
       </div>
 
-      <div className="flex items-center shrink-0 gap-2">
-        <div className="text-sm font-medium text-slate-900">{s.maxConnections ?? 0}</div>
-        {renderActions(s)}
+      <div className="flex w-[55%] shrink-0 items-center gap-2">
+        <div className="min-w-0 flex-1 text-center">
+          <div className="truncate text-[10px] text-slate-400">Conexões</div>
+          <div className="truncate text-[11px] font-bold text-slate-900">
+            {s.maxConnections ?? 0}
+          </div>
+        </div>
+        <div className="flex min-w-[4.5rem] shrink-0 flex-col items-end gap-1">
+          <ListEntityStatusBadge
+            label={getServerListStatusLabel(s.status)}
+            badgeClassName={getServerListStatusBadgeClass(s.status)}
+          />
+          <div className="flex items-center justify-end">{renderActions(s)}</div>
+        </div>
       </div>
     </div>
   );
@@ -185,8 +197,9 @@ export const ServersPage: React.FC = () => {
         data={items}
         columns={columns}
         renderMobileCard={renderMobileCard}
-        mobileHeaderTitles={['Nome', 'Conex.']}
+        mobileHeaderTitles={['Nome', 'Conexões']}
         isLoading={isLoading}
+        getRowAccent={(s) => resolveServerListRowAccent(s.status)}
       />
 
       <ServerFormModal isOpen={formModal.isOpen} editId={formModal.editId} onClose={formModal.close} />

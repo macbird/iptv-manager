@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, type LoginInput } from '@client-manager/shared';
+import { getApiErrorMessage, loginSchema, type LoginInput } from '@client-manager/shared';
 import { authApi } from '../api/auth.api';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Loader2 } from 'lucide-react';
@@ -45,8 +45,7 @@ export const LoginPage: React.FC = () => {
         navigate('/dashboard');
       }
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      showToast.error(error.response?.data?.message || 'Credenciais inválidas');
+      showToast.error(getApiErrorMessage(err, 'Credenciais inválidas'));
     }
   };
 

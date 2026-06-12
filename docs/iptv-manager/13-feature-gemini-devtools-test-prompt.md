@@ -13,7 +13,10 @@ Você é um QA sênior testando a Feature 13 do PixFlow (Cliente Manager) em amb
 - API: http://localhost:3001
 - Web: http://localhost:5173
 - Branch: feature/13-mercadopago-only-api-errors
-- Admin seed: admin@clientemanager.com / AdminPassword123!
+
+## Credenciais
+- **Tenant** (login em /login): jpaulo_silva2005@yahoo.com.br / Y478vk92k39!@
+- **Admin** (login em /admin/login): admin@clientemanager.com / AdminPassword123!
 
 ## Objetivo da feature
 1. Travar pagamentos somente em Mercado Pago (sem Asaas/Efi na UI)
@@ -31,16 +34,16 @@ Para CADA cenário:
 ## Cenários obrigatórios
 
 ### A — MP único (tenant)
-- Login tenant → Configurações → aba Pagamentos
+- Login em /login com jpaulo_silva2005@yahoo.com.br / Y478vk92k39!@ → Configurações → aba Pagamentos
 - ESPERADO: texto fixo "Mercado Pago", SEM combobox Asaas/Efi
 - ESPERADO: copy sobre "versões futuras"
 
 ### B — MP único (admin)
-- Login /admin/login → Configurações
+- Login em /admin/login com admin@clientemanager.com / AdminPassword123! → Configurações
 - ESPERADO: Provider PIX = Mercado Pago (read-only)
 
 ### C — API bloqueia Asaas
-- Com token tenant no DevTools Console:
+- Login tenant (jpaulo_silva2005@yahoo.com.br) e, com token no DevTools Console:
   fetch('http://localhost:3001/api/settings/payment-credentials', {
     method: 'PUT',
     headers: {
@@ -52,7 +55,7 @@ Para CADA cenário:
 - ESPERADO: status 400, code PAYMENT_PROVIDER_DISABLED
 
 ### D — PIX sem credencial
-- Tenant → Faturas → fatura aberta → Gerar PIX (sem token MP salvo)
+- Login tenant → Faturas → fatura aberta → Gerar PIX (sem token MP salvo)
 - ESPERADO: toast com "Credencial do Mercado Pago..." 
 - ESPERADO: code PAYMENT_CREDENTIALS_MISSING ou PAYMENT_PROVIDER_ERROR na Network
 
@@ -70,7 +73,7 @@ Para CADA cenário:
 - ESPERADO: { message, code: "NOT_FOUND" }
 
 ### H — useCrud / admin
-- Admin → Contas → criar conta com e-mail duplicado
+- Login admin → Contas → criar conta com e-mail duplicado
 - ESPERADO: toast com mensagem da API (ex. duplicado), não só "Erro ao criar conta"
 
 ### I — Banner legado (se aplicável)

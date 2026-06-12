@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, CreditCard, Server, LogOut, Menu, X, UserCog, Settings, FileText, Wallet, CheckCircle2 } from 'lucide-react';
 import { APP_VERSION } from '@client-manager/shared';
+import { AppLogo } from '../../shared/ui/brand/AppLogo';
 import { PwaInstallBanner } from '../pwa/PwaInstallBanner';
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -62,9 +63,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <aside className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
           <div className="flex flex-col h-full bg-gray-800">
-            <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900 text-white font-bold text-xl">
-              Cliente Manager
-              <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-indigo-600 rounded text-white font-normal uppercase tracking-wider">
+            <div className="flex h-16 flex-shrink-0 items-center justify-between gap-2 bg-gray-900 px-3">
+              <AppLogo size="sm" />
+              <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-normal uppercase tracking-wider text-white bg-indigo-600 rounded">
                 v{APP_VERSION}
               </span>
             </div>
@@ -88,9 +89,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               </button>
             </div>
             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-              <div className="flex-shrink-0 flex items-center px-4 text-white font-bold text-xl">
-                Cliente Manager
-                <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-indigo-600 rounded text-white font-normal uppercase tracking-wider">
+              <div className="flex shrink-0 items-center justify-between gap-2 px-3">
+                <AppLogo size="sm" />
+                <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-normal uppercase tracking-wider text-white bg-indigo-600 rounded">
                   v{APP_VERSION}
                 </span>
               </div>

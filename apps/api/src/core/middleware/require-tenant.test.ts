@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { API_ERROR_CODES } from '@client-manager/shared';
 import { requireTenantId } from './require-tenant';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
@@ -28,7 +29,10 @@ describe('requireTenantId', () => {
     expect(result).toBeNull();
     expect(status).toHaveBeenCalledWith(403);
     expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('Tenant context') }),
+      expect.objectContaining({
+        message: expect.stringContaining('Contexto de tenant'),
+        code: API_ERROR_CODES.NOT_ALLOWED,
+      }),
     );
   });
 });

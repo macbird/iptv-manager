@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, UserCog, LogOut, Menu, X, Settings, FileText, Wallet } from 'lucide-react';
+import { AppLogo } from '../../shared/ui/brand/AppLogo';
 
 export const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -57,8 +58,9 @@ export const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }
       <aside className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
           <div className="flex flex-col h-full bg-slate-800">
-            <div className="flex items-center h-16 flex-shrink-0 px-4 bg-slate-900 text-white font-bold text-xl">
-              Admin Panel
+            <div className="flex h-16 flex-shrink-0 items-center justify-between gap-2 bg-slate-900 px-3">
+              <AppLogo size="sm" />
+              <span className="shrink-0 text-xs font-medium text-slate-300">Admin</span>
             </div>
             <NavContent />
           </div>
@@ -84,8 +86,9 @@ export const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }
               </button>
             </div>
             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-              <div className="flex-shrink-0 flex items-center px-4 text-white font-bold text-xl">
-                Admin Panel
+              <div className="flex shrink-0 items-center justify-between gap-2 px-3">
+                <AppLogo size="sm" />
+                <span className="shrink-0 text-xs font-medium text-slate-300">Admin</span>
               </div>
               <NavContent />
             </div>

@@ -9,6 +9,7 @@ import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
+import { useListFiltersFromRouteState } from '../../../shared/hooks/useListFiltersFromRouteState';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { PAYMENT_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 import type { PaymentListItem, RegisterPaymentInput } from '@client-manager/shared';
@@ -53,6 +54,7 @@ export const PaymentsPage: React.FC<PaymentsPageProps> = ({ variant }) => {
       queryFn: (params) => api.listPayments(params),
     });
 
+  useListFiltersFromRouteState(setFilters);
   const filterModal = useListFilterModal(filters, setFilters, clearFilters);
 
   const columns = [

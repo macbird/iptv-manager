@@ -11,6 +11,7 @@ import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
 import { useOpenCreateModalFromRoute } from '../../../shared/hooks/useEntityFormModal';
+import { useListFiltersFromRouteState } from '../../../shared/hooks/useListFiltersFromRouteState';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { INVOICE_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 import {
@@ -22,6 +23,8 @@ import {
   type InvoiceKindValue,
   type InvoiceListItem,
   getApiErrorMessage,
+  isPastCalendarDate,
+  resolveInvoiceListRowAccent,
 } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 
@@ -61,6 +64,7 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
   });
 
   const [invoiceModalOpen, setInvoiceModalOpen] = React.useState(false);
+  useListFiltersFromRouteState(setFilters);
   const filterModal = useListFilterModal(filters, setFilters, clearFilters);
   useOpenCreateModalFromRoute(setInvoiceModalOpen);
 
@@ -136,7 +140,17 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
     },
     {
       header: 'Vencimento',
-      accessor: (i: InvoiceListItem) => new Date(i.dueDate).toLocaleDateString('pt-BR'),
+      accessor: (i: InvoiceListItem) => (
+        <span
+          className={
+            i.status !== 'paid' && i.status !== 'canceled' && isPastCalendarDate(i.dueDate)
+              ? 'font-semibold text-red-600'
+              : undefined
+          }
+        >
+          {new Date(i.dueDate).toLocaleDateString('pt-BR')}
+        </span>
+      ),
       width: '14%',
     },
     {
@@ -271,6 +285,7 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
         mobileHeaderTitles={variant === 'admin' ? ['Conta', 'Status'] : ['Cliente', 'Status']}
         isLoading={isLoading}
         onRowClick={(i) => navigate(`${basePath}/invoices/${i.id}`)}
+        getRowAccent={(i) => resolveInvoiceListRowAccent({ status: i.status, dueDate: i.dueDate })}
       />
 
       {variant === 'tenant' ? (

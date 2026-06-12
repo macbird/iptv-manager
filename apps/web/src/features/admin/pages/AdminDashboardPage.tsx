@@ -20,6 +20,10 @@ import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 import { BillingMonthlyBars } from '../../../shared/ui/billing/BillingMonthlyBars';
 import { RecentPaymentsList } from '../../../shared/ui/billing/RecentPaymentsList';
 import { formatCents } from '../../../shared/ui/billing/format-billing';
+import {
+  dashboardInvoiceListFilters,
+  dashboardPaymentListFilters,
+} from '../../../shared/utils/dashboard-list-filters';
 
 export const AdminDashboardPage: React.FC = () => {
   const { data: stats, isLoading } = useQuery({
@@ -93,6 +97,7 @@ export const AdminDashboardPage: React.FC = () => {
       iconColor: 'text-emerald-600',
       iconBg: 'bg-emerald-100',
       href: '/admin/payments',
+      linkState: { listFilters: dashboardPaymentListFilters.currentMonth },
     },
     {
       title: 'Faturas em aberto',
@@ -102,6 +107,7 @@ export const AdminDashboardPage: React.FC = () => {
       iconColor: 'text-blue-600',
       iconBg: 'bg-blue-100',
       href: '/admin/invoices',
+      linkState: { listFilters: dashboardInvoiceListFilters.open },
     },
     {
       title: 'Faturas vencidas',
@@ -111,6 +117,7 @@ export const AdminDashboardPage: React.FC = () => {
       iconColor: 'text-red-600',
       iconBg: 'bg-red-100',
       href: '/admin/invoices',
+      linkState: { listFilters: dashboardInvoiceListFilters.overdue },
     },
     {
       title: 'Taxa de cobrança',
@@ -120,6 +127,7 @@ export const AdminDashboardPage: React.FC = () => {
       iconColor: 'text-violet-600',
       iconBg: 'bg-violet-100',
       href: '/admin/invoices',
+      linkState: { listFilters: dashboardInvoiceListFilters.currentCycle },
     },
   ];
 
@@ -165,6 +173,7 @@ export const AdminDashboardPage: React.FC = () => {
           <RecentPaymentsList
             payments={stats.recentPayments}
             paymentsHref="/admin/payments"
+            paymentsLinkState={{ listFilters: dashboardPaymentListFilters.currentMonth }}
             emptyLabel="Nenhum pagamento SaaS registrado. Execute npm run seed:billing em apps/api."
           />
         )}

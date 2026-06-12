@@ -14,8 +14,23 @@ import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/h
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { PLAN_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 import { EntityLifecycleActions } from '../../../shared/ui/buttons/EntityLifecycleActions';
-import { ENTITY_LIFECYCLE_LABELS, ENTITY_INACTIVE_STATUS } from '@client-manager/shared';
+import {
+  getApiErrorMessage,
+  getPlanListStatusBadgeClass,
+  getPlanListStatusLabel,
+  resolveEntityLifecycleAccent,
+} from '@client-manager/shared';
+import { ListEntityStatusBadge } from '../../../shared/ui/lists/ListEntityStatusBadge';
 import { showToast } from '../../../shared/utils/toast';
+
+function planInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+}
 
 type PlanRow = {
   id: string;
@@ -67,7 +82,8 @@ export const PlansPage: React.FC = () => {
         variables.action === 'deactivate' ? 'Plano desativado' : 'Plano reativado',
       );
     },
-    onError: () => showToast.error('Não foi possível alterar o status do plano'),
+    onError: (err: unknown) =>
+      showToast.error(getApiErrorMessage(err, 'Não foi possível alterar o status do plano')),
   });
 
   const renderActions = (row: PlanRow) => (
@@ -97,19 +113,13 @@ export const PlansPage: React.FC = () => {
     {
       header: 'Status',
       accessor: (p: PlanRow) => (
-        <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-            p.status === ENTITY_INACTIVE_STATUS
-              ? 'bg-slate-100 text-slate-500'
-              : 'bg-green-100 text-green-700'
-          }`}
-        >
-          {p.status === ENTITY_INACTIVE_STATUS
-            ? ENTITY_LIFECYCLE_LABELS.inactive
-            : ENTITY_LIFECYCLE_LABELS.active}
-        </span>
+        <ListEntityStatusBadge
+          label={getPlanListStatusLabel(p.status)}
+          badgeClassName={getPlanListStatusBadgeClass(p.status)}
+        />
       ),
       width: '16%',
+      align: 'center' as const,
     },
     {
       header: 'Conexões',
@@ -131,19 +141,35 @@ export const PlansPage: React.FC = () => {
   ];
 
   const renderMobileCard = (p: PlanRow) => (
-    <div className="flex items-center justify-between group h-12">
+    <div className="flex items-center justify-between group py-1">
       <div className="flex items-center space-x-3 overflow-hidden flex-1">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-100 bg-slate-50">
+          <span className="text-[11px] font-bold text-slate-500">{planInitials(p.name)}</span>
+        </div>
         <div className="overflow-hidden">
-          <div className="text-sm font-bold text-slate-900 truncate leading-tight">{p.name}</div>
-          <div className="text-[10px] text-slate-400 truncate leading-tight">
+          <div className="mb-0.5 truncate text-sm font-bold leading-tight text-slate-900">
+            {p.name}
+          </div>
+          <div className="text-[9px] font-medium uppercase leading-none tracking-tighter text-indigo-500/70">
             {p.maxConnections} conexões
           </div>
         </div>
       </div>
 
-      <div className="flex items-center shrink-0 gap-2">
-        <div className="text-sm font-medium text-slate-900">R$ {Number(p.price).toFixed(2)}</div>
-        {renderActions(p)}
+      <div className="flex w-[55%] shrink-0 items-center gap-2">
+        <div className="min-w-0 flex-1 text-center">
+          <div className="truncate text-[10px] text-slate-400">Preço</div>
+          <div className="truncate text-[11px] font-bold text-slate-900">
+            R$ {Number(p.price).toFixed(2)}
+          </div>
+        </div>
+        <div className="flex min-w-[4.5rem] shrink-0 flex-col items-end gap-1">
+          <ListEntityStatusBadge
+            label={getPlanListStatusLabel(p.status)}
+            badgeClassName={getPlanListStatusBadgeClass(p.status)}
+          />
+          <div className="flex items-center justify-end">{renderActions(p)}</div>
+        </div>
       </div>
     </div>
   );
@@ -181,6 +207,7 @@ export const PlansPage: React.FC = () => {
         renderMobileCard={renderMobileCard}
         mobileHeaderTitles={['Nome', 'Preço']}
         isLoading={isLoading}
+        getRowAccent={(p) => resolveEntityLifecycleAccent(p.status)}
       />
 
       <PlanFormModal isOpen={formModal.isOpen} editId={formModal.editId} onClose={formModal.close} />

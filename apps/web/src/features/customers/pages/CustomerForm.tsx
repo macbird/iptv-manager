@@ -7,7 +7,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
   customerSchema,
   CUSTOMER_STATUS_LABELS,
-  CUSTOMER_STATUS_VALUES,
+  CUSTOMER_UI_STATUS_VALUES,
+  CustomerStatus,
   type CustomerInput,
 } from '@client-manager/shared';
 import { plansApi } from '../../plans/api/plans.api';
@@ -32,8 +33,12 @@ import { MacAddressInput } from '../../../shared/ui/forms/MacAddressInput';
 import { FormField } from '../../../shared/ui/forms/FormField';
 import { FormInput } from '../../../shared/ui/forms/FormInput';
 import { FormSelect } from '../../../shared/ui/forms/FormSelect';
-import { InlineFormSelect } from '../../../shared/ui/forms/InlineFormSelect';
+import {
+  FormEntitySelect,
+  InlineFormEntitySelect,
+} from '../../../shared/ui/forms/FormEntitySelect';
 import type { TagDto } from '../../tags/api/tags.api';
+import { CustomerConfigurationWarningBanner } from '../components/CustomerConfigurationWarningBanner';
 import { showToast } from '../../../shared/utils/toast';
 import {
   formInputClass,
@@ -77,7 +82,14 @@ type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
 export type CustomerFormPayload = CustomerInput & { tagIds?: string[] };
 
-type CustomerDetail = Partial<CustomerFormValues & { tags?: TagDto[]; id?: string; plan?: { id: string } }>;
+type CustomerDetail = Partial<
+  CustomerFormValues & {
+    tags?: TagDto[];
+    id?: string;
+    plan?: { id: string; name: string; status?: string };
+    connections?: Array<{ server?: { id: string; name: string; status?: string } }>;
+  }
+>;
 
 interface CustomerFormProps {
   formId: string;
@@ -112,7 +124,10 @@ function sanitizeCustomerForForm(customer: CustomerDetail): CustomerFormValues {
     name: customer.name ?? '',
     email: customer.email ?? '',
     phone: customer.phone ?? '',
-    status: customer.status ?? 'active',
+    status:
+      customer.status === CustomerStatus.TRIAL || customer.status === CustomerStatus.OVERDUE
+        ? CustomerStatus.ACTIVE
+        : (customer.status ?? CustomerStatus.ACTIVE),
     planId: customer.plan?.id ?? customer.planId ?? undefined,
     notes: customer.notes ?? '',
     expiresAt: formatDateForInput(customer.expiresAt as string | Date | null | undefined),
@@ -175,13 +190,13 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
     });
 
     const { data: plans } = useQuery({
-      queryKey: ['plans'],
+      queryKey: ['plans', 'selectable'],
       queryFn: () =>
         plansApi.list({ page: 1, pageSize: 100, filter: '', selectableOnly: true }),
     });
 
     const { data: servers } = useQuery({
-      queryKey: ['servers'],
+      queryKey: ['servers', 'selectable'],
       queryFn: () =>
         serversApi.list({ page: 1, pageSize: 100, filter: '', selectableOnly: true }),
     });
@@ -220,6 +235,20 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
         onSubmit={handleSubmit(onSubmitWrapper, onInvalid)}
         className={`${formSectionClass} ${formRootClass}`}
       >
+        {initialData ? (
+          <CustomerConfigurationWarningBanner
+            plan={
+              initialData.plan
+                ? {
+                    name: initialData.plan.name,
+                    status: initialData.plan.status ?? 'active',
+                  }
+                : null
+            }
+            connections={initialData.connections}
+          />
+        ) : null}
+
         <div className={formGridClass}>
           <FormInput
             label="Nome"
@@ -256,17 +285,19 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
             />
           </FormField>
 
-          <FormSelect label="Plano" prefixIcon={CreditCard} error={errors.planId?.message} {...register('planId')}>
-            <option value="">Selecione um plano</option>
-            {plans?.data?.map((plan: { id: string; name: string }) => (
-              <option key={plan.id} value={plan.id}>
-                {plan.name}
-              </option>
-            ))}
-          </FormSelect>
+          <FormEntitySelect
+            name="planId"
+            control={control}
+            label="Plano"
+            prefixIcon={CreditCard}
+            error={errors.planId?.message}
+            options={plans?.data ?? []}
+            ensureSelected={[initialData?.plan]}
+            placeholderOption="Selecione um plano"
+          />
 
           <FormSelect label="Status" prefixIcon={Activity} {...register('status')}>
-            {CUSTOMER_STATUS_VALUES.map((value) => (
+            {CUSTOMER_UI_STATUS_VALUES.map((value) => (
               <option key={value} value={value}>
                 {CUSTOMER_STATUS_LABELS[value]}
               </option>
@@ -301,18 +332,19 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
                 >
                   <div className="flex items-start gap-2">
                     <div className="w-full md:w-1/3">
-                      <InlineFormSelect
+                      <InlineFormEntitySelect
+                        name={`connections.${index}.serverId`}
+                        control={control}
                         prefixIcon={Server}
-                        error={errors.connections?.[index]?.serverId?.message as string | undefined}
-                        {...register(`connections.${index}.serverId`)}
-                      >
-                        <option value="">Servidor</option>
-                        {servers?.data?.map((server: { id: string; name: string }) => (
-                          <option key={server.id} value={server.id}>
-                            {server.name}
-                          </option>
-                        ))}
-                      </InlineFormSelect>
+                        error={
+                          errors.connections?.[index]?.serverId?.message as string | undefined
+                        }
+                        options={servers?.data ?? []}
+                        ensureSelected={initialData?.connections?.map(
+                          (connection) => connection.server,
+                        )}
+                        placeholderOption="Servidor"
+                      />
                     </div>
                     <button
                       type="button"

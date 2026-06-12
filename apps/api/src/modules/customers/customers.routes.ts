@@ -4,12 +4,16 @@ import { customerSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
 import { isSelectableOnlyQuery } from '../../core/utils/parse-selectable-only';
+import { sendApiError, sendNotFound, sendValidationError } from '../../core/errors/send-api-error';
 
 const CUSTOMER_LIST_FILTER_KEYS = [
   'status',
   'planId',
   'expiresFrom',
   'expiresTo',
+  'expiredOnly',
+  'upcomingOnly',
+  'expiringWithinDays',
   'sortBy',
 ] as const;
 
@@ -57,7 +61,7 @@ export async function customersRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const customer = await customersService.findById(tenantId, id);
     if (!customer) {
-      return reply.status(404).send({ message: 'Customer not found' });
+      return sendNotFound(reply, 'Cliente não encontrado');
     }
     return customer;
   });
@@ -72,9 +76,7 @@ export async function customersRoutes(app: FastifyInstance) {
       connections: extractConnections(body),
     });
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Dados do cliente inválidos',
-      });
+      return sendValidationError(reply, parsed.error);
     }
     try {
       return await customersService.create(tenantId, {
@@ -82,8 +84,7 @@ export async function customersRoutes(app: FastifyInstance) {
         tagIds: extractTagIds(body),
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao criar cliente';
-      return reply.status(400).send({ message });
+      return sendApiError(reply, error);
     }
   });
 
@@ -98,9 +99,7 @@ export async function customersRoutes(app: FastifyInstance) {
       connections: extractConnections(body),
     });
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Dados do cliente inválidos',
-      });
+      return sendValidationError(reply, parsed.error);
     }
     try {
       return await customersService.update(tenantId, id, {
@@ -108,8 +107,7 @@ export async function customersRoutes(app: FastifyInstance) {
         tagIds: extractTagIds(body),
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao atualizar cliente';
-      return reply.status(400).send({ message });
+      return sendApiError(reply, error);
     }
   });
 
@@ -121,8 +119,7 @@ export async function customersRoutes(app: FastifyInstance) {
     try {
       return await customersService.deactivate(tenantId, id);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao desativar cliente';
-      return reply.status(404).send({ message });
+      return sendApiError(reply, error);
     }
   });
 
@@ -134,8 +131,7 @@ export async function customersRoutes(app: FastifyInstance) {
     try {
       return await customersService.activate(tenantId, id);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao reativar cliente';
-      return reply.status(404).send({ message });
+      return sendApiError(reply, error);
     }
   });
 }

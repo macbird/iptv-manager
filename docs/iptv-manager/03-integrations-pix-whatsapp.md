@@ -1,5 +1,7 @@
 # Integrações — PIX, pagamento híbrido e WhatsApp
 
+> **MVP (produto atual):** apenas **Mercado Pago** está habilitado na UI e na API. Asaas, Efi, PushinPay e InfinitePay permanecem no código/doc como referência futura, mas estão **desabilitados** até nova decisão de produto. Ver [13-mercadopago-only-and-api-errors.md](./13-mercadopago-only-and-api-errors.md).
+
 ## Posso criar meu “próprio” PIX?
 
 ### O que a lei/marketplace exige

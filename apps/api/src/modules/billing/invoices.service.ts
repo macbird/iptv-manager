@@ -615,23 +615,19 @@ export class InvoicesService {
     });
 
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new InvoiceActionError('Fatura não encontrada', 'NOT_FOUND');
     }
 
-    try {
-      return await paymentConfirmation.confirm({
-        invoiceId,
-        tenantId,
-        scope: invoice.scope,
-        amountCents: invoice.amountCents,
-        method: options?.method ?? 'manual',
-        source: 'manual',
-        notes: options?.notes,
-        paidAt: options?.paidAt ? new Date(options.paidAt) : undefined,
-      });
-    } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Payment confirmation failed');
-    }
+    return paymentConfirmation.confirm({
+      invoiceId,
+      tenantId,
+      scope: invoice.scope,
+      amountCents: invoice.amountCents,
+      method: options?.method ?? 'manual',
+      source: 'manual',
+      notes: options?.notes,
+      paidAt: options?.paidAt ? new Date(options.paidAt) : undefined,
+    });
   }
 }
 

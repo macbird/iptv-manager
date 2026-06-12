@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { authApi } from '../api/auth.api';
 import { showToast } from '../../../shared/utils/toast';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
@@ -23,8 +24,8 @@ export const UserProfilePage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
       showToast.success('Perfil atualizado com sucesso!');
     },
-    onError: () => {
-      showToast.error('Erro ao atualizar perfil');
+    onError: (err: unknown) => {
+      showToast.error(getApiErrorMessage(err, 'Erro ao atualizar perfil'));
     },
   });
 

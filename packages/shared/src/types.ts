@@ -1,3 +1,4 @@
+import type { CustomerConfigurationWarning } from './customer-configuration-warning';
 import type { CustomerStatusValue } from './customer-status';
 import type { ChargeMessageSettingsDto } from './charge-message';
 import type { BillingAutomationSettingsDto, InvoiceChargeDeliveryDto, TenantChargeMessagesSettingsDto } from './billing-automation';
@@ -10,9 +11,10 @@ export interface CustomerListItem {
   email: string | null;
   status: CustomerStatusValue;
   expiresAt: string | null;
-  plan: { id: string; name: string; price: number } | null;
+  plan: { id: string; name: string; price: number; status: string } | null;
   tags: { id: string; name: string; color: string | null }[];
   connectionCount: number;
+  configurationWarning: CustomerConfigurationWarning;
 }
 
 export interface PaginatedResponse<T> {

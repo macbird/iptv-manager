@@ -1,7 +1,6 @@
 import { prisma } from '../../core/database';
 import argon2 from 'argon2';
-import { RegisterInput } from '@client-manager/shared';
-import slugify from 'slugify';
+import { API_ERROR_CODES, ApiBusinessError } from '@client-manager/shared';
 
 export class AuthService {
   async login(email: string, password: string) {
@@ -11,23 +10,22 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new ApiBusinessError('Credenciais inválidas', API_ERROR_CODES.UNAUTHORIZED, 401);
     }
 
     const isValid = await argon2.verify(user.passwordHash, password);
     if (!isValid) {
-      throw new Error('Invalid credentials');
+      throw new ApiBusinessError('Credenciais inválidas', API_ERROR_CODES.UNAUTHORIZED, 401);
     }
 
     if (user.account.status === 'inactive') {
-      throw new Error('Conta desativada');
+      throw new ApiBusinessError('Conta desativada', API_ERROR_CODES.NOT_ALLOWED, 403);
     }
 
     return user;
   }
 
   async changePassword(userId: string, newPassword: string) {
-    console.log('DEBUG: Attempting to change password for user ID:', userId);
     const passwordHash = await argon2.hash(newPassword);
 
     const user = await prisma.accountUser.findUnique({
@@ -35,8 +33,7 @@ export class AuthService {
     });
 
     if (!user) {
-      console.error('DEBUG: User NOT found in DB for ID:', userId);
-      throw new Error('User not found');
+      throw new ApiBusinessError('Usuário não encontrado', API_ERROR_CODES.NOT_FOUND, 404);
     }
 
     return await prisma.accountUser.update({

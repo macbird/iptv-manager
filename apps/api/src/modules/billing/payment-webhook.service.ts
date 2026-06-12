@@ -1,4 +1,5 @@
 import type { BillingScope } from '@prisma/client';
+import { API_ERROR_CODES, ApiBusinessError } from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import { safeDecryptCredential } from '../../core/crypto/credential-crypto';
 import {
@@ -113,7 +114,11 @@ export class PaymentWebhookService {
     if (tenantRef === 'platform') {
       const config = await prisma.platformPaymentConfig.findUnique({ where: { id: 'default' } });
       if (!config?.apiKey) {
-        throw new Error('Platform payment credentials not configured');
+        throw new ApiBusinessError(
+          'Credenciais de pagamento da plataforma não configuradas',
+          API_ERROR_CODES.PAYMENT_CREDENTIALS_MISSING,
+          400,
+        );
       }
       trace.add('context:platform');
       return {
@@ -135,7 +140,7 @@ export class PaymentWebhookService {
     });
     if (!account) {
       trace.add('context:tenant_not_found');
-      throw new Error('Tenant not found');
+      throw new ApiBusinessError('Conta não encontrada', API_ERROR_CODES.NOT_FOUND, 404);
     }
 
     const credential = await prisma.tenantPaymentCredential.findUnique({
@@ -146,7 +151,11 @@ export class PaymentWebhookService {
 
     if (!credential?.active || !credential.apiKey) {
       trace.add('context:mercadopago_not_configured');
-      throw new Error('Mercado Pago credentials not configured for tenant');
+      throw new ApiBusinessError(
+        'Credencial do Mercado Pago não configurada para o tenant',
+        API_ERROR_CODES.PAYMENT_CREDENTIALS_MISSING,
+        400,
+      );
     }
 
     trace.add(`context:tenant:${account.id}`);
@@ -190,7 +199,11 @@ export class PaymentWebhookService {
 
     if (!signatureResult.valid) {
       params.trace.add(`signature:invalid:${signatureResult.reason ?? 'unknown'}`);
-      throw new Error(`Invalid Mercado Pago webhook signature (${signatureResult.reason})`);
+      throw new ApiBusinessError(
+        `Assinatura do webhook Mercado Pago inválida (${signatureResult.reason ?? 'desconhecida'})`,
+        API_ERROR_CODES.UNAUTHORIZED,
+        401,
+      );
     }
 
     params.trace.add('signature:valid');

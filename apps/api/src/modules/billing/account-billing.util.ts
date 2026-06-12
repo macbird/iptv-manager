@@ -1,3 +1,5 @@
+import { ApiValidationError } from '@client-manager/shared';
+
 /**
  * Utilities for SaaS account subscription billing dates.
  */
@@ -17,7 +19,7 @@ export function parseDueDateInput(value: string): Date {
   const normalized = value.includes('T') ? value : `${value}T12:00:00`;
   const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) {
-    throw new Error('Invalid due date');
+    throw new ApiValidationError('Data de vencimento inválida');
   }
   return date;
 }

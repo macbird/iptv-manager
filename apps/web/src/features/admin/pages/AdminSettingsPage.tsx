@@ -7,7 +7,7 @@ import {
   PaymentProviderFields,
   WhatsAppProviderFields,
 } from '../../settings/components/PaymentProviderFields';
-import { getApiErrorMessage, isEnabledPaymentProvider } from '@client-manager/shared';
+import { APP_NAME, getApiErrorMessage, isEnabledPaymentProvider } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 
 export const AdminSettingsPage: React.FC = () => {
@@ -94,7 +94,7 @@ export const AdminSettingsPage: React.FC = () => {
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-semibold text-slate-900">Preço do aplicativo (SaaS)</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Valor mensal cobrado de cada revenda pelo uso do Cliente Manager.
+            Valor mensal cobrado de cada revenda pelo uso do {APP_NAME}.
           </p>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -139,10 +139,8 @@ export const AdminSettingsPage: React.FC = () => {
           </p>
           <div className="mt-4">
             <PaymentProviderFields
-              paymentProvider={paymentProvider}
               paymentApiKey={paymentApiKey}
               paymentWebhookToken={paymentWebhookToken}
-              onPaymentProviderChange={setPaymentProvider}
               onPaymentApiKeyChange={setPaymentApiKey}
               onPaymentWebhookTokenChange={setPaymentWebhookToken}
               apiKeyConfigured={data?.payment.apiKeyConfigured}

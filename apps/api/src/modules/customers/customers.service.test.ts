@@ -1,5 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CustomersService } from './customers.service';
+import { buildExpiresAtFilter, CustomersService } from './customers.service';
+
+describe('buildExpiresAtFilter', () => {
+  it('testBuildExpiresAtFilter_whenExpiredOnly_shouldTakePriorityOverUpcoming', () => {
+    const filter = buildExpiresAtFilter({ expiredOnly: 'true', upcomingOnly: 'true' });
+    expect(filter.expiresAt).toHaveProperty('lt');
+    expect(filter.expiresAt).not.toHaveProperty('gte');
+  });
+
+  it('testBuildExpiresAtFilter_whenExpiringWithinDays_shouldSetRange', () => {
+    const filter = buildExpiresAtFilter({ expiringWithinDays: '7' });
+    expect(filter.expiresAt).toMatchObject({
+      gte: expect.any(Date),
+      lte: expect.any(Date),
+    });
+  });
+});
 
 describe('CustomersService tenant isolation', () => {
   it('list scopes query by tenantId', async () => {

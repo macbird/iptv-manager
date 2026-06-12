@@ -19,6 +19,7 @@ import { tenantContextMiddleware } from './core/middleware/tenant-context';
 import { prisma } from './core/database';
 import { API_ERROR_CODES } from '@client-manager/shared';
 import { mapErrorToApiResponse } from './core/errors/api-error.mapper';
+import { sendUnauthorized } from './core/errors/send-api-error';
 
 const app = Fastify({
   logger: true,
@@ -45,7 +46,7 @@ const start = async () => {
           await tenantContextMiddleware(request, reply);
         }
       } catch (err) {
-        reply.status(401).send({ message: 'Unauthorized' });
+        sendUnauthorized(reply);
       }
     });
 
@@ -57,7 +58,7 @@ const start = async () => {
           throw new Error('Unauthorized');
         }
       } catch (err) {
-        reply.status(401).send({ message: 'Unauthorized' });
+        sendUnauthorized(reply);
       }
     });
 

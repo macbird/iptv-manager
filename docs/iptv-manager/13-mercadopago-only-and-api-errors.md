@@ -1,8 +1,8 @@
 # Feature 13 — Mercado Pago único + erros mapeados (API → UI)
 
-**Status:** 🔄 Em implementação (branch `feature/13-mercadopago-only-api-errors`)  
+**Status:** ✅ Implementada (branch `feature/13-mercadopago-only-api-errors`)  
 **Prioridade:** Alta (operação + suporte)  
-**Última revisão:** 11/06/2026  
+**Última revisão:** 12/06/2026  
 
 Relacionado: [03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md) · [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md)
 
@@ -110,10 +110,10 @@ export function isEnabledPaymentProvider(value: string): value is EnabledPayment
 
 ### A.4 Critérios de aceite (PSP)
 
-- [ ] Não é possível selecionar Asaas/Efi em Configurações (tenant e admin).
-- [ ] API retorna `400` com code `PAYMENT_PROVIDER_DISABLED` se payload trouxer outro provider.
-- [ ] Gerar PIX e webhook continuam funcionando com credencial MP.
-- [ ] Faturas antigas com `paymentProvider: 'asaas'` ainda exibem badge legível.
+- [x] Não é possível selecionar Asaas/Efi em Configurações (tenant e admin).
+- [x] API retorna `400` com code `PAYMENT_PROVIDER_DISABLED` se payload trouxer outro provider.
+- [x] Gerar PIX e webhook continuam funcionando com credencial MP.
+- [x] Faturas antigas com `paymentProvider: 'asaas'` ainda exibem badge legível.
 
 ---
 
@@ -193,11 +193,11 @@ showToast.error(getApiErrorMessage(err, 'Erro ao gerar PIX'));
 
 ### B.4 Critérios de aceite (erros)
 
-- [ ] Gerar PIX sem credencial MP → toast com mensagem da API (*"Credencial do PSP…"*), não só *"Erro ao gerar PIX"*.
-- [ ] WhatsApp desconectado ao enviar cobrança → toast *"WhatsApp não conectado…"* (code `WHATSAPP_NOT_CONNECTED`).
-- [ ] Payload inválido no admin (slug com espaço) → mensagem Zod no toast ou no campo.
-- [ ] Erro 500 → *"Erro interno. Tente novamente."* sem stack trace.
-- [ ] Pelo menos 1 teste unitário API (mapper) + 1 teste web (`getApiErrorMessage`).
+- [x] Gerar PIX sem credencial MP → toast com mensagem da API (*"Credencial do PSP…"*), não só *"Erro ao gerar PIX"*.
+- [x] WhatsApp desconectado ao enviar cobrança → toast *"WhatsApp não conectado…"* (code `WHATSAPP_NOT_CONNECTED`).
+- [x] Payload inválido no admin (slug com espaço) → mensagem Zod no toast ou no campo.
+- [x] Erro 500 → *"Erro interno. Tente novamente."* sem stack trace.
+- [x] Pelo menos 1 teste unitário API (mapper) + 1 teste web (`getApiErrorMessage`).
 
 ---
 
@@ -248,9 +248,9 @@ flowchart LR
 
 Após implementar:
 
-- [ ] `IMPLEMENTATION_STATUS.md` — Fase 3.1 e Asaas webhook marcados como *congelados*.
-- [ ] `03-integrations-pix-whatsapp.md` — nota *"MVP: apenas Mercado Pago"*.
-- [ ] `RELEASE_CHECKLIST.md` — item smoke de erro legível + MP-only.
+- [x] `IMPLEMENTATION_STATUS.md` — Fase 3.1 e Asaas webhook marcados como *congelados*.
+- [x] `03-integrations-pix-whatsapp.md` — nota *"MVP: apenas Mercado Pago"*.
+- [x] `RELEASE_CHECKLIST.md` — item smoke de erro legível + MP-only.
 
 ---
 

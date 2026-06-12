@@ -24,3 +24,37 @@ export function isSelectablePlanStatus(status: string): boolean {
 export function isSelectableServerStatus(status: string): boolean {
   return status === ENTITY_ACTIVE_STATUS;
 }
+
+export function getPlanListStatusLabel(status: string): string {
+  return status === ENTITY_INACTIVE_STATUS
+    ? ENTITY_LIFECYCLE_LABELS.inactive
+    : ENTITY_LIFECYCLE_LABELS.active;
+}
+
+export function getPlanListStatusBadgeClass(status: string): string {
+  return status === ENTITY_INACTIVE_STATUS
+    ? 'bg-slate-100 text-slate-500'
+    : 'bg-green-100 text-green-700';
+}
+
+const SERVER_LIST_STATUS_LABELS: Record<string, string> = {
+  active: ENTITY_LIFECYCLE_LABELS.active,
+  maintenance: 'Manutenção',
+  full: 'Lotado',
+  inactive: ENTITY_LIFECYCLE_LABELS.inactive,
+};
+
+const SERVER_LIST_STATUS_BADGE_CLASSES: Record<string, string> = {
+  active: 'bg-green-100 text-green-700',
+  maintenance: 'bg-amber-100 text-amber-700',
+  full: 'bg-orange-100 text-orange-700',
+  inactive: 'bg-slate-100 text-slate-500',
+};
+
+export function getServerListStatusLabel(status: string): string {
+  return SERVER_LIST_STATUS_LABELS[status] ?? status;
+}
+
+export function getServerListStatusBadgeClass(status: string): string {
+  return SERVER_LIST_STATUS_BADGE_CLASSES[status] ?? 'bg-slate-100 text-slate-700';
+}

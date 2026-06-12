@@ -1,5 +1,5 @@
 import { prisma } from '../../core/database';
-import { TagInput } from '@client-manager/shared';
+import { ApiValidationError, TagInput } from '@client-manager/shared';
 
 export type TagScope = 'customer' | 'server';
 
@@ -45,7 +45,7 @@ export class TagsService {
   async findOrCreate(tenantId: string, name: string) {
     const trimmed = name.trim();
     if (!trimmed) {
-      throw new Error('Tag name is required');
+      throw new ApiValidationError('Nome da tag é obrigatório');
     }
 
     const existing = await prisma.tag.findFirst({

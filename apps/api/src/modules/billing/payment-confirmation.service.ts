@@ -1,6 +1,7 @@
 import { prisma } from '../../core/database';
 import type { BillingScope } from '@prisma/client';
 import { ActivationsService } from '../activations/activations.service';
+import { InvoiceActionError } from './invoice-errors';
 import { PaymentReceivedNotificationService } from './payment-received-notification.service';
 
 const activationsService = new ActivationsService();
@@ -37,15 +38,15 @@ export class PaymentConfirmationService {
     });
 
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new InvoiceActionError('Fatura não encontrada', 'NOT_FOUND');
     }
 
     if (invoice.status === 'canceled') {
-      throw new Error('Invoice canceled');
+      throw new InvoiceActionError('Fatura cancelada', 'NOT_ALLOWED');
     }
 
     if (input.amountCents !== invoice.amountCents) {
-      throw new Error('Partial payments are not supported');
+      throw new InvoiceActionError('Pagamentos parciais não são suportados', 'NOT_ALLOWED');
     }
 
     const paidAt = input.paidAt ?? new Date();
@@ -55,7 +56,7 @@ export class PaymentConfirmationService {
         (a, b) => b.paidAt.getTime() - a.paidAt.getTime(),
       )[0];
       if (!existingPayment) {
-        throw new Error('Invoice already paid');
+        throw new InvoiceActionError('Fatura já está paga', 'NOT_ALLOWED');
       }
 
       if (invoice.scope === 'tenant' && invoice.customerId && invoice.kind === 'subscription') {
@@ -78,7 +79,7 @@ export class PaymentConfirmationService {
         };
       }
 
-      throw new Error('Invoice already paid');
+      throw new InvoiceActionError('Fatura já está paga', 'NOT_ALLOWED');
     }
 
     return prisma.$transaction(async (tx) => {

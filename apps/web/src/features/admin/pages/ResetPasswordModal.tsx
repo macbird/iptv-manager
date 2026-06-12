@@ -1,4 +1,5 @@
 import React from 'react';
+import { APP_NAME, getApiErrorMessage } from '@client-manager/shared';
 import { useForm } from 'react-hook-form';
 import { tenantsApi } from '../api/admin.api';
 import { showToast } from '../../../shared/utils/toast';
@@ -44,13 +45,13 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
       setSavedPassword(data.password);
       setStep('success');
       onSuccess();
-    } catch {
-      showToast.error('Erro ao resetar senha');
+    } catch (err: unknown) {
+      showToast.error(getApiErrorMessage(err, 'Erro ao resetar senha'));
     }
   };
 
   const handleCopy = () => {
-    const text = `Olá ${userName}, sua senha no Cliente Manager foi resetada.\n\nAcesso: http://localhost:5173/login\nE-mail: ${userEmail}\nSenha Provisória: ${savedPassword}\n\n(Você deverá alterar esta senha no primeiro acesso).`;
+    const text = `Olá ${userName}, sua senha no ${APP_NAME} foi resetada.\n\nAcesso: http://localhost:5173/login\nE-mail: ${userEmail}\nSenha Provisória: ${savedPassword}\n\n(Você deverá alterar esta senha no primeiro acesso).`;
     navigator.clipboard.writeText(text);
     showToast.success('Instruções copiadas!');
   };

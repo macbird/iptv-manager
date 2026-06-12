@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import type { AppRouteState } from '../../hooks/useListFiltersFromRouteState';
 import { formatCents, formatPaymentMethod } from './format-billing';
 
 export interface RecentPaymentItem {
@@ -16,12 +17,14 @@ export interface RecentPaymentItem {
 interface RecentPaymentsListProps {
   payments: RecentPaymentItem[];
   paymentsHref: string;
+  paymentsLinkState?: AppRouteState;
   emptyLabel?: string;
 }
 
 export const RecentPaymentsList: React.FC<RecentPaymentsListProps> = ({
   payments,
   paymentsHref,
+  paymentsLinkState,
   emptyLabel = 'Nenhum pagamento registrado.',
 }) => {
   return (
@@ -30,6 +33,7 @@ export const RecentPaymentsList: React.FC<RecentPaymentsListProps> = ({
         <h2 className="text-base font-semibold text-slate-900">Pagamentos recentes</h2>
         <Link
           to={paymentsHref}
+          state={paymentsLinkState}
           className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
         >
           Ver todos <ArrowRight className="w-4 h-4" />

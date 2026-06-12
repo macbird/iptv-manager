@@ -80,6 +80,9 @@ Executar com um usuário tenant real ou de staging.
 | 5.9 | Busca por nome na listagem filtra e volta para página 1 | ☐ |
 | 5.10 | Logout limpa `token` e bloqueia rotas protegidas | ☐ |
 | 5.11 | Mobile: listas em cards + footer de paginação utilizável | ☐ |
+| 5.12 | Configurações → somente **Mercado Pago** visível; salvar access token MP | ☐ |
+| 5.13 | Gerar PIX sem credencial MP → toast com mensagem real da API (não genérico) | ☐ |
+| 5.14 | Enviar cobrança WhatsApp sem conectar → toast *"WhatsApp não conectado…"* | ☐ |
 
 ---
 
@@ -93,6 +96,8 @@ Executar com um usuário tenant real ou de staging.
 | 6.4 | Suspender/reativar conta | ☐ |
 | 6.5 | Reset de senha do owner (instruções exibidas) | ☐ |
 | 6.6 | Token admin **não** acessa rotas tenant (`/api/customers`, etc.) | ☐ |
+| 6.7 | Criar conta com identificador inválido → toast/mensagem de validação legível | ☐ |
+| 6.8 | Settings admin → default **Mercado Pago**; outros PSPs indisponíveis | ☐ |
 
 ---
 
@@ -170,4 +175,4 @@ npm run build
 
 ---
 
-*Última revisão: alinhado ao estado do repositório pós-rebrand Cliente Manager (Fases 1–2 concluídas).*
+*Última revisão: 12/06/2026 — inclui smoke Mercado Pago único e erros API legíveis (feature 13).*

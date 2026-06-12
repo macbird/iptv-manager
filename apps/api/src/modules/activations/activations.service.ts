@@ -1,5 +1,6 @@
 import { prisma } from '../../core/database';
 import { safeDecryptCredential } from '../../core/crypto/credential-crypto';
+import { API_ERROR_CODES, ApiBusinessError } from '@client-manager/shared';
 import type { BillingCycle, ConnectionRenewalStatus, Prisma } from '@prisma/client';
 import { extendExpiryFromDate, resolveRenewalBaseDate } from './activation-expiry.util';
 
@@ -212,8 +213,10 @@ export class ActivationsService {
     });
 
     if (connectionCount === 0) {
-      throw new Error(
+      throw new ApiBusinessError(
         'Cliente não possui conexões cadastradas. Cadastre um MAC antes de registrar o pagamento.',
+        API_ERROR_CODES.NOT_ALLOWED,
+        400,
       );
     }
 
@@ -246,11 +249,15 @@ export class ActivationsService {
     });
 
     if (!task) {
-      throw new Error('Activation not found');
+      throw new ApiBusinessError('Ativação não encontrada', API_ERROR_CODES.NOT_FOUND, 404);
     }
 
     if (task.status !== 'pending') {
-      throw new Error('Activation is not pending');
+      throw new ApiBusinessError(
+        'A ativação não está pendente',
+        API_ERROR_CODES.NOT_ALLOWED,
+        400,
+      );
     }
 
     const completedAt = new Date();
@@ -275,7 +282,7 @@ export class ActivationsService {
 
     const detail = await this.findById(tenantId, taskId);
     if (!detail) {
-      throw new Error('Activation not found after update');
+      throw new ApiBusinessError('Ativação não encontrada', API_ERROR_CODES.NOT_FOUND, 404);
     }
 
     return {
@@ -299,23 +306,31 @@ export class ActivationsService {
     });
 
     if (!task) {
-      throw new Error('Activation not found');
+      throw new ApiBusinessError('Ativação não encontrada', API_ERROR_CODES.NOT_FOUND, 404);
     }
 
     if (task.status === status) {
-      throw new Error('Status unchanged');
+      throw new ApiBusinessError('Status já está definido', API_ERROR_CODES.NOT_ALLOWED, 400);
     }
 
     if (status === 'completed') {
       if (task.status !== 'pending') {
-        throw new Error('Only pending activations can be completed');
+        throw new ApiBusinessError(
+          'Somente ativações pendentes podem ser concluídas',
+          API_ERROR_CODES.NOT_ALLOWED,
+          400,
+        );
       }
       return this.complete(taskId, tenantId, notes);
     }
 
     if (status === 'cancelled') {
       if (task.status !== 'pending') {
-        throw new Error('Only pending activations can be cancelled');
+        throw new ApiBusinessError(
+          'Somente ativações pendentes podem ser canceladas',
+          API_ERROR_CODES.NOT_ALLOWED,
+          400,
+        );
       }
 
       const updated = await prisma.connectionRenewalTask.update({
@@ -333,7 +348,11 @@ export class ActivationsService {
 
     if (status === 'pending') {
       if (task.status !== 'cancelled') {
-        throw new Error('Only cancelled activations can be reopened');
+        throw new ApiBusinessError(
+          'Somente ativações canceladas podem ser reabertas',
+          API_ERROR_CODES.NOT_ALLOWED,
+          400,
+        );
       }
 
       const updated = await prisma.connectionRenewalTask.update({
@@ -349,6 +368,10 @@ export class ActivationsService {
       return mapListItem(updated);
     }
 
-    throw new Error('Invalid status transition');
+    throw new ApiBusinessError(
+      'Transição de status inválida',
+      API_ERROR_CODES.NOT_ALLOWED,
+      400,
+    );
   }
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { authApi } from '../api/auth.api';
 import { showToast } from '../../../shared/utils/toast';
 import { PasswordInput } from '../../../shared/ui/forms/PasswordInput';
@@ -26,8 +27,8 @@ export const ChangePasswordPage: React.FC = () => {
       localStorage.setItem('user', JSON.stringify(user));
       
       navigate('/dashboard');
-    } catch (err) {
-      showToast.error('Erro ao alterar senha');
+    } catch (err: unknown) {
+      showToast.error(getApiErrorMessage(err, 'Erro ao alterar senha'));
     }
   };
 

@@ -1,5 +1,7 @@
 import React from 'react';
+import type { ListRowAccent } from '@client-manager/shared';
 import { LoadingSpinner } from './LoadingSpinner';
+import { getListRowAccentClasses } from './list-row-accent-styles';
 import { pageCanvasClass, surfaceCardClass } from './surface-styles';
 
 export interface DataGridColumn<T> {
@@ -22,6 +24,8 @@ export interface ResponsiveDataGridProps<T extends { id: string | number }> {
   mobileRightWidth?: string;
   /** When set, rows/cards are clickable (use stopPropagation on action buttons). */
   onRowClick?: (item: T) => void;
+  /** Left border + fade for inactive (muted) or overdue (danger) rows. */
+  getRowAccent?: (item: T) => ListRowAccent;
 }
 
 function alignClass(align: DataGridColumn<unknown>['align'], isLast: boolean): string {
@@ -39,6 +43,7 @@ export const ResponsiveDataGrid = <T extends { id: string | number }>({
   isLoading,
   mobileRightWidth = '55%',
   onRowClick,
+  getRowAccent,
 }: ResponsiveDataGridProps<T>) => {
   if (isLoading) {
     return (
@@ -87,14 +92,19 @@ export const ResponsiveDataGrid = <T extends { id: string | number }>({
                   </td>
                 </tr>
               ) : (
-                data.map((item) => (
+                data.map((item) => {
+                  const accentClass = getRowAccent
+                    ? getListRowAccentClasses(getRowAccent(item))
+                    : '';
+                  return (
                   <tr
                     key={item.id}
-                    className={
-                      onRowClick
-                        ? 'cursor-pointer hover:bg-slate-50'
-                        : 'hover:bg-slate-50'
-                    }
+                    className={[
+                      accentClass,
+                      onRowClick ? 'cursor-pointer hover:bg-slate-50' : 'hover:bg-slate-50',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
                     onClick={onRowClick ? () => onRowClick(item) : undefined}
                   >
                     {columns.map((col, idx) => (
@@ -106,7 +116,8 @@ export const ResponsiveDataGrid = <T extends { id: string | number }>({
                       </td>
                     ))}
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -145,10 +156,21 @@ export const ResponsiveDataGrid = <T extends { id: string | number }>({
               Nenhum registro encontrado.
             </p>
           ) : (
-            data.map((item) => (
+            data.map((item) => {
+              const accentClass = getRowAccent
+                ? getListRowAccentClasses(getRowAccent(item))
+                : '';
+              return (
               <div
                 key={item.id}
-                className={`${surfaceCardClass} px-3 py-3 transition-shadow ${onRowClick ? 'cursor-pointer hover:shadow-md active:shadow' : ''}`}
+                className={[
+                  surfaceCardClass,
+                  'px-3 py-3 transition-shadow',
+                  accentClass,
+                  onRowClick ? 'cursor-pointer hover:shadow-md active:shadow' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 onClick={onRowClick ? () => onRowClick(item) : undefined}
                 onKeyDown={
                   onRowClick
@@ -165,7 +187,8 @@ export const ResponsiveDataGrid = <T extends { id: string | number }>({
               >
                 {renderMobileCard(item)}
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

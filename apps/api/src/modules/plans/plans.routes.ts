@@ -4,6 +4,7 @@ import { planSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
 import { isSelectableOnlyQuery } from '../../core/utils/parse-selectable-only';
+import { sendApiError, sendNotFound, sendValidationError } from '../../core/errors/send-api-error';
 
 const PLAN_LIST_FILTER_KEYS = [
   'status',
@@ -47,7 +48,7 @@ export async function plansRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const plan = await plansService.findById(tenantId, id);
     if (!plan) {
-      return reply.status(404).send({ message: 'Plan not found' });
+      return sendNotFound(reply, 'Plano não encontrado');
     }
     return plan;
   });
@@ -58,11 +59,13 @@ export async function plansRoutes(app: FastifyInstance) {
 
     const parsed = planSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Dados do plano inválidos',
-      });
+      return sendValidationError(reply, parsed.error);
     }
-    return await plansService.create(tenantId, parsed.data);
+    try {
+      return await plansService.create(tenantId, parsed.data);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.put('/:id', async (request, reply) => {
@@ -72,12 +75,14 @@ export async function plansRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const parsed = planSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Dados do plano inválidos',
-      });
+      return sendValidationError(reply, parsed.error);
     }
-    await plansService.update(tenantId, id, parsed.data);
-    return reply.status(204).send();
+    try {
+      await plansService.update(tenantId, id, parsed.data);
+      return reply.status(204).send();
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.patch('/:id/deactivate', async (request, reply) => {
@@ -85,7 +90,11 @@ export async function plansRoutes(app: FastifyInstance) {
     if (!tenantId) return;
 
     const { id } = request.params as { id: string };
-    return await plansService.deactivate(tenantId, id);
+    try {
+      return await plansService.deactivate(tenantId, id);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.patch('/:id/activate', async (request, reply) => {
@@ -93,6 +102,10 @@ export async function plansRoutes(app: FastifyInstance) {
     if (!tenantId) return;
 
     const { id } = request.params as { id: string };
-    return await plansService.activate(tenantId, id);
+    try {
+      return await plansService.activate(tenantId, id);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 }

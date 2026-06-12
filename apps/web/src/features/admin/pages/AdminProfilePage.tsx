@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getApiErrorMessage } from '@client-manager/shared';
 import { adminAuthApi } from '../api/admin.api';
 import { showToast } from '../../../shared/utils/toast';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
@@ -23,8 +24,8 @@ export const AdminProfilePage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-me'] });
       showToast.success('Perfil administrativo atualizado!');
     },
-    onError: () => {
-      showToast.error('Erro ao atualizar perfil admin');
+    onError: (err: unknown) => {
+      showToast.error(getApiErrorMessage(err, 'Erro ao atualizar perfil admin'));
     },
   });
 

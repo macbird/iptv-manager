@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
+import { ZodError } from 'zod';
+import { loginSchema } from '@client-manager/shared';
+import { sendApiError, sendValidationError } from '../../core/errors/send-api-error';
 import { AuthService } from './auth.service';
-import { loginSchema, registerSchema } from '@client-manager/shared';
 
 const authService = new AuthService();
 
@@ -33,10 +35,10 @@ export async function authRoutes(app: FastifyInstance) {
         token
       };
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'name' in err && err.name === 'ZodError') {
-        return reply.status(400).send({ message: 'Dados de login inválidos' });
+      if (err instanceof ZodError) {
+        return sendValidationError(reply, err);
       }
-      return reply.status(401).send({ message: 'Invalid credentials' });
+      return sendApiError(reply, err);
     }
   });
 
@@ -45,9 +47,9 @@ export async function authRoutes(app: FastifyInstance) {
       const { newPassword } = request.body as { newPassword: string };
       const userId = (request.user as any).sub;
       await authService.changePassword(userId, newPassword);
-      return { message: 'Password updated successfully' };
-    } catch (err: any) {
-      return reply.status(400).send({ message: err.message });
+      return { message: 'Senha atualizada com sucesso' };
+    } catch (err: unknown) {
+      return sendApiError(reply, err);
     }
   });
 
@@ -57,9 +59,13 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.patch('/me', { preHandler: [app.authenticate] }, async (request, reply) => {
-    const userId = (request.user as any).sub;
-    const data = request.body as { name?: string, email?: string, password?: string };
-    return await authService.updateProfile(userId, data);
+    const userId = (request.user as { sub: string }).sub;
+    const data = request.body as { name?: string; email?: string; password?: string };
+    try {
+      return await authService.updateProfile(userId, data);
+    } catch (err: unknown) {
+      return sendApiError(reply, err);
+    }
   });
 }
 

@@ -4,6 +4,7 @@ import { serverSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
 import { isSelectableOnlyQuery } from '../../core/utils/parse-selectable-only';
+import { sendApiError, sendNotFound, sendValidationError } from '../../core/errors/send-api-error';
 
 const SERVER_LIST_FILTER_KEYS = ['status', 'sortBy'] as const;
 
@@ -69,7 +70,7 @@ export async function serversRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const server = await serversService.findById(tenantId, id);
     if (!server) {
-      return reply.status(404).send({ message: 'Server not found' });
+      return sendNotFound(reply, 'Servidor não encontrado');
     }
     return server;
   });
@@ -81,15 +82,17 @@ export async function serversRoutes(app: FastifyInstance) {
     const body = request.body as Record<string, unknown>;
     const parsed = serverSchema.safeParse(body);
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Dados do servidor inválidos',
-      });
+      return sendValidationError(reply, parsed.error);
     }
-    return await serversService.create(tenantId, {
-      ...parsed.data,
-      ...extractServerCredentials(body),
-      tagIds: extractTagIds(body),
-    });
+    try {
+      return await serversService.create(tenantId, {
+        ...parsed.data,
+        ...extractServerCredentials(body),
+        tagIds: extractTagIds(body),
+      });
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.put('/:id', async (request, reply) => {
@@ -100,16 +103,17 @@ export async function serversRoutes(app: FastifyInstance) {
     const body = request.body as Record<string, unknown>;
     const parsed = serverSchema.safeParse(body);
     if (!parsed.success) {
-      return reply.status(400).send({
-        message: parsed.error.errors[0]?.message ?? 'Dados do servidor inválidos',
-      });
+      return sendValidationError(reply, parsed.error);
     }
-    const updated = await serversService.update(tenantId, id, {
-      ...parsed.data,
-      ...extractServerCredentials(body),
-      tagIds: extractTagIds(body),
-    });
-    return updated;
+    try {
+      return await serversService.update(tenantId, id, {
+        ...parsed.data,
+        ...extractServerCredentials(body),
+        tagIds: extractTagIds(body),
+      });
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.patch('/:id/deactivate', async (request, reply) => {
@@ -117,7 +121,11 @@ export async function serversRoutes(app: FastifyInstance) {
     if (!tenantId) return;
 
     const { id } = request.params as { id: string };
-    return await serversService.deactivate(tenantId, id);
+    try {
+      return await serversService.deactivate(tenantId, id);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.patch('/:id/activate', async (request, reply) => {
@@ -125,6 +133,10 @@ export async function serversRoutes(app: FastifyInstance) {
     if (!tenantId) return;
 
     const { id } = request.params as { id: string };
-    return await serversService.activate(tenantId, id);
+    try {
+      return await serversService.activate(tenantId, id);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 }

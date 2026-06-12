@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { metaEmbeddedSignupSchema } from '@client-manager/shared';
+import { API_ERROR_CODES, metaEmbeddedSignupSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
 import { sendApiError, sendValidationError } from '../../core/errors/send-api-error';
 import { MetaEmbeddedSignupService } from '../../integrations/whatsapp/meta/meta-embedded-signup.service';
@@ -70,7 +70,10 @@ export async function metaWhatsappWebhookRoutes(app: FastifyInstance) {
       return reply.status(200).send(challenge);
     }
 
-    return reply.status(403).send({ message: 'Webhook verification failed' });
+    return reply.status(403).send({
+      message: 'Falha na verificação do webhook',
+      code: API_ERROR_CODES.NOT_ALLOWED,
+    });
   });
 
   app.post('/webhooks/whatsapp/meta', async (request, reply) => {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
+import type { AppRouteState } from '../../hooks/useListFiltersFromRouteState';
 import { surfaceCardClass } from './surface-styles';
 
 interface StatCardProps {
@@ -11,6 +12,7 @@ interface StatCardProps {
   iconColor?: string;
   iconBg?: string;
   href?: string;
+  linkState?: AppRouteState;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -21,6 +23,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   iconColor = 'text-indigo-600',
   iconBg = 'bg-indigo-100',
   href,
+  linkState,
 }) => {
   const content = (
     <div className={`${surfaceCardClass} h-full w-full min-w-0 p-3 transition-shadow hover:shadow-md lg:p-4`}>
@@ -43,7 +46,11 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   if (href) {
     return (
-      <Link to={href} className="block h-full w-full min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg">
+      <Link
+        to={href}
+        state={linkState}
+        className="block h-full w-full min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg"
+      >
         {content}
       </Link>
     );

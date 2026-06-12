@@ -28,6 +28,12 @@ import { BillingMonthlyBars } from '../../../shared/ui/billing/BillingMonthlyBar
 import { RecentPaymentsList } from '../../../shared/ui/billing/RecentPaymentsList';
 import { PendingActivationsList } from '../../../shared/ui/billing/PendingActivationsList';
 import { formatCents } from '../../../shared/ui/billing/format-billing';
+import {
+  dashboardActivationListFilters,
+  dashboardCustomerListFilters,
+  dashboardInvoiceListFilters,
+  dashboardPaymentListFilters,
+} from '../../../shared/utils/dashboard-list-filters';
 
 function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -137,6 +143,7 @@ export const DashboardPage: React.FC = () => {
       iconColor: 'text-green-600',
       iconBg: 'bg-green-100',
       href: '/customers',
+      linkState: { listFilters: dashboardCustomerListFilters.active },
     },
     {
       title: 'Vencendo em 7 dias',
@@ -146,6 +153,7 @@ export const DashboardPage: React.FC = () => {
       iconColor: 'text-amber-600',
       iconBg: 'bg-amber-100',
       href: '/customers',
+      linkState: { listFilters: dashboardCustomerListFilters.expiringSoon },
     },
     {
       title: 'Vencidos',
@@ -155,6 +163,7 @@ export const DashboardPage: React.FC = () => {
       iconColor: 'text-red-600',
       iconBg: 'bg-red-100',
       href: '/customers',
+      linkState: { listFilters: dashboardCustomerListFilters.expired },
     },
   ];
 
@@ -168,6 +177,7 @@ export const DashboardPage: React.FC = () => {
     iconColor: 'text-amber-600',
     iconBg: 'bg-amber-100',
     href: '/activations',
+    linkState: { listFilters: dashboardActivationListFilters.pending },
   };
 
   const billingCards = [
@@ -179,6 +189,7 @@ export const DashboardPage: React.FC = () => {
       iconColor: 'text-emerald-600',
       iconBg: 'bg-emerald-100',
       href: '/payments',
+      linkState: { listFilters: dashboardPaymentListFilters.currentMonth },
     },
     {
       title: 'Faturas em aberto',
@@ -188,6 +199,7 @@ export const DashboardPage: React.FC = () => {
       iconColor: 'text-blue-600',
       iconBg: 'bg-blue-100',
       href: '/invoices',
+      linkState: { listFilters: dashboardInvoiceListFilters.open },
     },
     {
       title: 'Faturas vencidas',
@@ -197,6 +209,7 @@ export const DashboardPage: React.FC = () => {
       iconColor: 'text-red-600',
       iconBg: 'bg-red-100',
       href: '/invoices',
+      linkState: { listFilters: dashboardInvoiceListFilters.overdue },
     },
     {
       title: 'Taxa de cobrança',
@@ -206,6 +219,7 @@ export const DashboardPage: React.FC = () => {
       iconColor: 'text-violet-600',
       iconBg: 'bg-violet-100',
       href: '/invoices',
+      linkState: { listFilters: dashboardInvoiceListFilters.currentCycle },
     },
   ];
 
@@ -364,6 +378,7 @@ export const DashboardPage: React.FC = () => {
             <RecentPaymentsList
               payments={stats.recentPayments}
               paymentsHref="/payments"
+              paymentsLinkState={{ listFilters: dashboardPaymentListFilters.currentMonth }}
             />
           </div>
         )}
@@ -372,6 +387,7 @@ export const DashboardPage: React.FC = () => {
             <h2 className="text-base font-semibold text-slate-900">Próximos vencimentos</h2>
             <Link
               to="/customers"
+              state={{ listFilters: dashboardCustomerListFilters.upcomingExpirations }}
               className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
             >
               Ver todos <ArrowRight className="w-4 h-4" />
@@ -452,6 +468,7 @@ export const DashboardPage: React.FC = () => {
             </Link>
             <Link
               to="/activations"
+              state={{ listFilters: dashboardActivationListFilters.pending }}
               className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
             >
               <CheckCircle2 className="w-4 h-4" />
@@ -480,8 +497,8 @@ export const DashboardPage: React.FC = () => {
 
           <div className="mt-6 pt-4 border-t border-slate-100">
             <p className="text-xs text-slate-500 leading-relaxed">
-              Cards clicáveis levam às listas correspondentes. A receita estimada soma o
-              preço mensal dos planos dos clientes com status ativo.
+              Cards clicáveis levam às listas com o mesmo filtro do indicador. A receita estimada
+              soma o preço mensal dos planos dos clientes com status ativo.
             </p>
           </div>
         </section>

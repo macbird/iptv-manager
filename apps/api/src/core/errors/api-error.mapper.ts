@@ -2,6 +2,8 @@ import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import {
   API_ERROR_CODES,
+  ApiBusinessError,
+  ApiValidationError,
   PaymentProviderDisabledError,
   type ApiErrorBody,
   resolveApiErrorMessage,
@@ -29,6 +31,20 @@ export function mapErrorToApiResponse(error: unknown): MappedApiError {
         code: API_ERROR_CODES.VALIDATION_ERROR,
         details: { issues: error.issues },
       },
+    };
+  }
+
+  if (error instanceof ApiValidationError) {
+    return {
+      statusCode: 400,
+      body: { message: error.message, code: error.code },
+    };
+  }
+
+  if (error instanceof ApiBusinessError) {
+    return {
+      statusCode: error.statusCode,
+      body: { message: error.message, code: error.code },
     };
   }
 

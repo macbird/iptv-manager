@@ -14,3 +14,11 @@ apps/web/dev-dist
 .idea
 *.log
 package-lock.json
+
+# Local ops / debug scripts (keep out of version control)
+remote_*.sh
+tmp_*
+wsl_*.sh
+add_legacy_asaas.ts
+clear_creds.ts
+apps/api/src/scripts/seed-dashboard-ytd.ts

@@ -1,6 +1,7 @@
 import { prisma } from '../../core/database';
 import type { PaymentProviderType } from '@prisma/client';
 import {
+  ApiValidationError,
   assertEnabledPaymentProvider,
   DEFAULT_PAYMENT_ROUTING_RULES,
   updateTenantPaymentCredentialsSchema,
@@ -134,7 +135,9 @@ export class TenantPaymentSettingsService {
     const sorted = [...parsed.rules].sort((a, b) => b.minAmountCents - a.minAmountCents);
     const hasFallback = sorted.some((rule) => rule.minAmountCents === 0);
     if (!hasFallback) {
-      throw new Error('At least one routing rule with minAmountCents = 0 is required');
+      throw new ApiValidationError(
+        'É necessária ao menos uma regra de roteamento com minAmountCents = 0',
+      );
     }
 
     await prisma.$transaction(async (tx) => {
@@ -163,11 +166,10 @@ export class TenantPaymentSettingsService {
    */
   async previewRouting(tenantId: string, amountCents: number) {
     if (!Number.isInteger(amountCents) || amountCents <= 0) {
-      throw new Error('amountCents must be a positive integer');
+      throw new ApiValidationError('amountCents deve ser um inteiro positivo');
     }
 
-    const rules = await paymentRouter.getRulesForTenant(tenantId);
-    const provider = paymentRouter.resolveProvider(rules, amountCents);
+    const provider = await paymentRouter.resolveForTenant(tenantId, amountCents);
 
     return { amountCents, provider };
   }

@@ -3,6 +3,7 @@ import {
   createTenantAccountSchema,
   updateTenantAccountSchema,
 } from '@client-manager/shared';
+import { sendApiError, sendNotFound, sendValidationError } from '../../core/errors/send-api-error';
 import { TenantsService } from './tenants.service';
 
 const tenantsService = new TenantsService();
@@ -26,19 +27,22 @@ export async function tenantsRoutes(app: FastifyInstance) {
   app.post('/', async (request, reply) => {
     const parsed = createTenantAccountSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return reply.status(400).send({ message: parsed.error.errors[0]?.message ?? 'Invalid payload' });
+      return sendValidationError(reply, parsed.error);
     }
     try {
       return await tenantsService.create(parsed.data);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao criar conta';
-      return reply.status(400).send({ message });
+      return sendApiError(reply, error);
     }
   });
 
-  app.post('/reset-password', async (request) => {
+  app.post('/reset-password', async (request, reply) => {
     const { email, newPassword } = request.body as { email: string; newPassword?: string };
-    return await tenantsService.resetPassword(email, newPassword);
+    try {
+      return await tenantsService.resetPassword(email, newPassword);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
   });
 
   app.post('/:id/invoices', async (request, reply) => {
@@ -46,9 +50,7 @@ export async function tenantsRoutes(app: FastifyInstance) {
     try {
       return await tenantsService.generatePlatformInvoice(id);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao gerar fatura';
-      const status = message.includes('Já existe') ? 409 : message.includes('not found') ? 404 : 400;
-      return reply.status(status).send({ message });
+      return sendApiError(reply, error);
     }
   });
 
@@ -56,7 +58,7 @@ export async function tenantsRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const account = await tenantsService.findById(id);
     if (!account) {
-      return reply.status(404).send({ message: 'Account not found' });
+      return sendNotFound(reply, 'Conta não encontrada');
     }
     return account;
   });
@@ -65,15 +67,12 @@ export async function tenantsRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const parsed = updateTenantAccountSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return reply.status(400).send({ message: parsed.error.errors[0]?.message ?? 'Invalid payload' });
+      return sendValidationError(reply, parsed.error);
     }
     try {
       return await tenantsService.update(id, parsed.data);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao atualizar conta';
-      return reply.status(error instanceof Error && error.message === 'Account not found' ? 404 : 400).send({
-        message,
-      });
+      return sendApiError(reply, error);
     }
   });
 

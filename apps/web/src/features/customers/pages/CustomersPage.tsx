@@ -7,6 +7,7 @@ import { Modal } from '../../../shared/ui/modals/Modal';
 import { EntityLifecycleActions } from '../../../shared/ui/buttons/EntityLifecycleActions';
 import { showToast } from '../../../shared/utils/toast';
 import { CustomerFormModal } from '../components/CustomerFormModal';
+import { CustomerListAvatar } from '../components/CustomerListAvatar';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
@@ -14,15 +15,19 @@ import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
 import { useEntityFormModal, useOpenFormFromRouteState } from '../../../shared/hooks/useEntityFormModal';
+import { useListFiltersFromRouteState } from '../../../shared/hooks/useListFiltersFromRouteState';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
+import { ListEntityStatusBadge } from '../../../shared/ui/lists/ListEntityStatusBadge';
 import {
   CUSTOMER_FILTER_FIELDS,
   withPlanOptions,
 } from '../../../shared/ui/lists/list-filter-fields';
 import {
-  CustomerStatus,
-  getCustomerStatusBadgeClass,
-  getCustomerStatusLabel,
+  getApiErrorMessage,
+  getCustomerListStatusBadgeClass,
+  getCustomerListStatusLabel,
+  isCustomerExpiryOverdue,
+  resolveCustomerListRowAccent,
   type CustomerListItem,
 } from '@client-manager/shared';
 
@@ -34,7 +39,6 @@ export const CustomersPage: React.FC = () => {
     action: 'deactivate' | 'activate';
   } | null>(null);
   const formModal = useEntityFormModal();
-  useOpenFormFromRouteState(formModal);
 
   const {
     items,
@@ -55,6 +59,9 @@ export const CustomersPage: React.FC = () => {
     queryKey: ['customers'],
     queryFn: customersApi.list,
   });
+
+  useListFiltersFromRouteState(setFilters);
+  useOpenFormFromRouteState(formModal);
 
   const filterModal = useListFilterModal(filters, setFilters, clearFilters);
 
@@ -78,11 +85,19 @@ export const CustomersPage: React.FC = () => {
         variables.action === 'deactivate' ? 'Cliente desativado' : 'Cliente reativado',
       );
     },
-    onError: () => showToast.error('Não foi possível alterar o status do cliente'),
+    onError: (err: unknown) =>
+      showToast.error(getApiErrorMessage(err, 'Não foi possível alterar o status do cliente')),
   });
 
+  const renderCustomerName = (c: CustomerListItem) => (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <CustomerListAvatar name={c.name} warning={c.configurationWarning} size="sm" />
+      <span className="truncate">{c.name}</span>
+    </div>
+  );
+
   const columns = [
-    { header: 'Nome', accessor: (c: CustomerListItem) => c.name, width: '22%' },
+    { header: 'Nome', accessor: (c: CustomerListItem) => renderCustomerName(c), width: '22%' },
     { header: 'Plano', accessor: (c: CustomerListItem) => c.plan?.name || '-', width: '16%' },
     {
       header: 'Conexões',
@@ -93,8 +108,15 @@ export const CustomersPage: React.FC = () => {
     { header: 'Telefone', accessor: (c: CustomerListItem) => c.phone || '-', width: '16%' },
     {
       header: 'Vencimento',
-      accessor: (c: CustomerListItem) =>
-        c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-',
+      accessor: (c: CustomerListItem) => (
+        <span
+          className={
+            isCustomerExpiryOverdue(c.expiresAt) ? 'font-semibold text-red-600' : undefined
+          }
+        >
+          {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-'}
+        </span>
+      ),
       width: '14%',
     },
     {
@@ -126,21 +148,12 @@ export const CustomersPage: React.FC = () => {
   ];
 
   const renderMobileCard = (c: CustomerListItem) => {
-    const initials = c.name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
-
     return (
       <div className="flex items-center justify-between group py-1">
         <div className="flex items-center space-x-3 overflow-hidden flex-1">
-          <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-            <span className="text-[11px] font-bold text-slate-500">{initials}</span>
-          </div>
+          <CustomerListAvatar name={c.name} warning={c.configurationWarning} />
           <div className="overflow-hidden">
-            <div className="text-sm font-bold text-slate-900 truncate leading-tight mb-0.5">
+            <div className="mb-0.5 truncate text-sm font-bold leading-tight text-slate-900">
               {c.name}
             </div>
             <div className="flex flex-col">
@@ -159,18 +172,17 @@ export const CustomersPage: React.FC = () => {
             <div className="text-[10px] text-slate-400 truncate">{c.plan?.name || '-'}</div>
             <div
               className={`text-[11px] font-bold truncate ${
-                c.status === CustomerStatus.OVERDUE ? 'text-red-500' : 'text-slate-900'
+                isCustomerExpiryOverdue(c.expiresAt) ? 'text-red-500' : 'text-slate-900'
               }`}
             >
               {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-'}
             </div>
           </div>
           <div className="shrink-0 flex flex-col items-end gap-1 min-w-[4.5rem]">
-            <span
-              className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${getCustomerStatusBadgeClass(c.status)}`}
-            >
-              {getCustomerStatusLabel(c.status)}
-            </span>
+            <ListEntityStatusBadge
+              label={getCustomerListStatusLabel(c.status)}
+              badgeClassName={getCustomerListStatusBadgeClass(c.status)}
+            />
             <div className="flex items-center justify-end">
               <button
                 type="button"
@@ -231,6 +243,9 @@ export const CustomersPage: React.FC = () => {
         renderMobileCard={renderMobileCard}
         mobileHeaderTitles={['Nome', 'Plano', 'Venc']}
         isLoading={isLoading}
+        getRowAccent={(c) =>
+          resolveCustomerListRowAccent({ status: c.status, expiresAt: c.expiresAt })
+        }
       />
 
       <CustomerFormModal

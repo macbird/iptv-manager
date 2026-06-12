@@ -2,7 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, Link } from 'react-router-dom';
-import { loginSchema, type LoginInput } from '@client-manager/shared';
+import { getApiErrorMessage, loginSchema, type LoginInput } from '@client-manager/shared';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { adminAuthApi } from '../api/admin.api';
 import { showToast } from '../../../shared/utils/toast';
@@ -38,8 +38,8 @@ export const AdminLoginPage: React.FC = () => {
 
       localStorage.setItem('adminToken', token);
       navigate('/admin/dashboard');
-    } catch {
-      showToast.error('Credenciais inválidas');
+    } catch (err: unknown) {
+      showToast.error(getApiErrorMessage(err, 'Credenciais inválidas'));
     }
   };
 

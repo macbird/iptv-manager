@@ -1,5 +1,6 @@
 import React from 'react';
-import { LayoutDashboard, Shield } from 'lucide-react';
+import { APP_NAME } from '@client-manager/shared';
+import { AppLogo } from '../brand/AppLogo';
 
 type AuthVariant = 'tenant' | 'admin';
 
@@ -14,27 +15,21 @@ interface AuthShellProps {
 const branding: Record<
   AuthVariant,
   {
-    productName: string;
     tagline: string;
     panelClass: string;
     accentClass: string;
-    Icon: typeof LayoutDashboard;
   }
 > = {
   tenant: {
-    productName: 'Cliente Manager',
     tagline: 'Gestão de clientes, planos e servidores em um só lugar.',
     panelClass:
       'bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 text-white',
     accentClass: 'text-indigo-100',
-    Icon: LayoutDashboard,
   },
   admin: {
-    productName: 'Painel da Plataforma',
     tagline: 'Administração de contas e acesso dos revendedores.',
     panelClass: 'bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 text-white',
     accentClass: 'text-slate-300',
-    Icon: Shield,
   },
 };
 
@@ -46,7 +41,6 @@ export const AuthShell: React.FC<AuthShellProps> = ({
   footer,
 }) => {
   const brand = branding[variant];
-  const Icon = brand.Icon;
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
@@ -63,12 +57,7 @@ export const AuthShell: React.FC<AuthShellProps> = ({
         />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm ring-1 ring-white/20">
-              <Icon className="h-6 w-6" strokeWidth={2} />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">{brand.productName}</span>
-          </div>
+          <AppLogo size="lg" />
         </div>
 
         <div className="relative z-10 max-w-md">
@@ -81,21 +70,14 @@ export const AuthShell: React.FC<AuthShellProps> = ({
         </div>
 
         <p className={`relative z-10 text-xs ${brand.accentClass}`}>
-          © {new Date().getFullYear()} Cliente Manager
+          © {new Date().getFullYear()} {APP_NAME}
         </p>
       </aside>
 
       <main className="flex flex-1 flex-col justify-center bg-form-field px-4 py-10 sm:px-8 lg:px-12 xl:px-16">
         <div className="mx-auto w-full max-w-md">
-          <div className="mb-8 lg:hidden flex items-center gap-3">
-            <div
-              className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                variant === 'admin' ? 'bg-slate-800 text-white' : 'bg-indigo-600 text-white'
-              }`}
-            >
-              <Icon className="h-5 w-5" />
-            </div>
-            <span className="text-base font-semibold text-slate-900">{brand.productName}</span>
+          <div className="mb-8 lg:hidden">
+            <AppLogo size="md" />
           </div>
 
           <div className="mb-8">

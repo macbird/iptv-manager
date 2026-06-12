@@ -1,13 +1,16 @@
 import { prisma } from '../../core/database';
 import argon2 from 'argon2';
+import { API_ERROR_CODES, ApiBusinessError } from '@client-manager/shared';
 
 export class AdminAuthService {
   async login(email: string, password: string) {
     const admin = await prisma.platformAdmin.findUnique({ where: { email } });
-    if (!admin) throw new Error('Invalid credentials');
-    
+    if (!admin) {
+      throw new ApiBusinessError('Credenciais inválidas', API_ERROR_CODES.UNAUTHORIZED, 401);
+    }
+
     if (!(await argon2.verify(admin.password, password))) {
-        throw new Error('Invalid credentials');
+      throw new ApiBusinessError('Credenciais inválidas', API_ERROR_CODES.UNAUTHORIZED, 401);
     }
     return admin;
   }

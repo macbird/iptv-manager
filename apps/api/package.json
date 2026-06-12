@@ -11,6 +11,7 @@
     "test": "vitest run",
     "seed:billing": "ts-node src/scripts/seed-billing.ts",
     "seed:activations": "ts-node src/scripts/seed-activations.ts",
+    "seed:config-warnings": "ts-node src/scripts/seed-customer-configuration-warnings.ts",
     "simulate:mp-webhook": "ts-node src/scripts/simulate-mercadopago-webhook.ts",
     "setup:evolution": "ts-node -r dotenv/config src/scripts/setup-evolution-whatsapp.ts",
     "link:evolution": "ts-node -r dotenv/config src/scripts/link-evolution-instance.ts"

@@ -10,6 +10,8 @@ import { ListPagination } from '../../../shared/ui/lists/ListPagination';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList';
 import { useListFilterModal } from '../../../shared/hooks/useListFilterModal';
+import { useListFiltersFromRouteState } from '../../../shared/hooks/useListFiltersFromRouteState';
+import { dashboardActivationListFilters } from '../../../shared/utils/dashboard-list-filters';
 import { ListFiltersModal } from '../../../shared/ui/lists/ListFiltersModal';
 import { ACTIVATION_FILTER_FIELDS } from '../../../shared/ui/lists/list-filter-fields';
 import {
@@ -24,7 +26,6 @@ import { formatCents } from '../../../shared/ui/billing/format-billing';
 
 export const ActivationsPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const defaultFiltersApplied = React.useRef(false);
 
   const {
     items,
@@ -46,12 +47,9 @@ export const ActivationsPage: React.FC = () => {
     queryFn: (params) => activationsApi.list(params),
   });
 
-  React.useEffect(() => {
-    if (!defaultFiltersApplied.current) {
-      setFilters({ status: 'pending' });
-      defaultFiltersApplied.current = true;
-    }
-  }, [setFilters]);
+  useListFiltersFromRouteState(setFilters, {
+    defaultFilters: dashboardActivationListFilters.pending,
+  });
 
   const filterModal = useListFilterModal(filters, setFilters, clearFilters);
   const [statusModalOpen, setStatusModalOpen] = React.useState(false);
@@ -79,7 +77,8 @@ export const ActivationsPage: React.FC = () => {
         showToast.success('Ativação concluída no servidor.');
       }
     },
-    onError: () => showToast.error('Erro ao concluir ativação'),
+    onError: (err: unknown) =>
+      showToast.error(getApiErrorMessage(err, 'Erro ao concluir ativação')),
   });
 
   const statusMutation = useMutation({
@@ -92,7 +91,7 @@ export const ActivationsPage: React.FC = () => {
       setSelectedActivation(null);
       showToast.success('Status atualizado');
     },
-    onError: (err: { response?: { data?: { message?: string } } }) => {
+    onError: (err: unknown) => {
       showToast.error(getApiErrorMessage(err, 'Erro ao alterar status'));
     },
   });

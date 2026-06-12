@@ -30,11 +30,11 @@ Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [03-integ
 | **2** | Painel admin plataforma | ✅ Concluída |
 | **2.5** | **Cobrança plataforma → tenant** (SaaS mensal) | ⚠️ **Parcial (MVP UI + API stub)** |
 | **3** | Cobrança tenant → cliente final (pagamento, faturas) | ⚠️ **Parcial (mesmo motor, scope tenant)** |
-| **3.1** | **Pagamento híbrido** (EMV + checkout link) | 📋 **Doc pronta; código pendente** |
+| **3.1** | **Pagamento híbrido** (EMV + checkout link) | 🧊 **Congelada** (doc pronta; MVP usa só MP EMV) |
 | **4** | Automação D-N + WhatsApp | ⚠️ **Parcial (scheduler + UI + avulsas)** |
 | **5** | Renovações pós-pagamento + relatórios | 📋 Planejada |
 
-**Próximo foco recomendado:** adapters EMV reais (Asaas + Mercado Pago), webhooks idempotentes, depois campos híbridos (`paymentDeliveryType`, `checkoutUrl`) + InfinitePay.
+**Próximo foco recomendado:** operação com **Mercado Pago único** (feature 13), observabilidade da automação e overhaul admin. Asaas/Efi/webhook Asaas e pagamento híbrido (Fase 3.1) **congelados** até nova decisão de produto.
 
 ---
 
@@ -112,7 +112,7 @@ Relacionado: [10-billing-dual-layer.md](./10-billing-dual-layer.md) · [03-integ
 | Item | Status |
 |------|--------|
 | Adapter EMV real (Asaas + Mercado Pago) na conta plataforma | ✅ |
-| Webhook Mercado Pago idempotente (`/api/webhooks/payment/:slug/mercadopago`) | ✅ (MP; Asaas webhook pendente) |
+| Webhook Mercado Pago idempotente (`/api/webhooks/payment/:slug/mercadopago`) | ✅ (MP; webhook Asaas 🧊 congelado) |
 | Job mensal automático (`billing_cycle_key`) | ❌ |
 | Suspensão automática por inadimplência | ❌ |
 | Tenant: copiar PIX da fatura SaaS em Configurações | ⚠️ parcial (via listagem/detalhe) |
@@ -135,7 +135,7 @@ Reutiliza o **mesmo motor** com `scope = tenant`.
 | **Credenciais multi-PSP** (`tenant_payment_credentials`; UI: **um PSP ativo** por vez) | ✅ |
 | **`PaymentRouter`** — regra única (`minAmountCents: 0` → provider selecionado) | ✅ |
 | Migration + `Invoice.paymentProvider` | ✅ |
-| **Settings:** um PSP via combobox + credenciais só do meio escolhido | ✅ |
+| **Settings:** Mercado Pago único (combobox travado; demais PSPs desabilitados) | ✅ |
 | **Fatura manual** + baixa manual / ativação pendente | ✅ |
 | **Sync** faturas `open` → `overdue` por `dueDate` | ✅ |
 | `generate-pix` via PSP real (factory + router) | ✅ |
@@ -160,7 +160,9 @@ Reutiliza o **mesmo motor** com `scope = tenant`.
 
 ---
 
-## 📋 Fase 3.1 — Pagamento híbrido (EMV + link)
+## 🧊 Fase 3.1 — Pagamento híbrido (EMV + link) — congelada
+
+**Decisão de produto (feature 13):** MVP opera só com Mercado Pago EMV. Checkout link, PushinPay e InfinitePay ficam congelados até reabertura explícita.
 
 **Documentação:** [03-integrations-pix-whatsapp.md](./03-integrations-pix-whatsapp.md) · [10-billing-dual-layer.md](./10-billing-dual-layer.md#fase-31--pagamento-híbrido-emv--link)
 
@@ -188,7 +190,7 @@ Reutiliza o **mesmo motor** com `scope = tenant`.
 | P0.6 Telefone E.164 | ❌ Pendente |
 | P1.3 Busca global clientes (nome/tel/MAC) | ⚠️ Parcial (nome + tel; MAC pendente) |
 | P1.1–P1.2, P1.4–P1.6 | ❌ Pendente |
-| P0.3 webhook idempotente (Mercado Pago) | ✅ Parcial (Asaas webhook pendente) |
+| P0.3 webhook idempotente (Mercado Pago) | ✅ (Asaas webhook 🧊 congelado) |
 | Demais P0 (seed unificado, audit, backup) | ❌ Pendente |
 
 Ver checklist completo em [09-improvements-p0-p1.md](./09-improvements-p0-p1.md).
@@ -210,7 +212,7 @@ Ver checklist completo em [09-improvements-p0-p1.md](./09-improvements-p0-p1.md)
 | Template `{{payment_block}}` híbrido EMV+link | ❌ |
 | BullMQ / fila Redis (opcional) | ❌ |
 
-Pendente Fase 4: `{{payment_block}}` unificado, adapters webhook Asaas, hardening produção Square Cloud.
+Pendente Fase 4: `{{payment_block}}` unificado, hardening produção Square Cloud. Webhook/adapters Asaas 🧊 congelados (MVP Mercado Pago).
 
 ---
 
@@ -268,7 +270,7 @@ flowchart TD
 
 | # | Feature | Doc | Status |
 |---|---------|-----|--------|
-| 13 | Mercado Pago único + erros API→UI | [13](./13-mercadopago-only-and-api-errors.md) | 🔄 Em andamento |
+| 13 | Mercado Pago único + erros API→UI | [13](./13-mercadopago-only-and-api-errors.md) | ✅ Concluída |
 | 14 | Overhaul painel admin | [14](./14-admin-panel-overhaul.md) | 📋 Próxima |
 | 15 | Automação: observabilidade | [15](./15-billing-automation-observability.md) | 📋 Backlog |
 | 16 | WhatsApp pós-pagamento + templates | [16](./16-whatsapp-payment-notification-and-templates.md) | 📋 Backlog |
