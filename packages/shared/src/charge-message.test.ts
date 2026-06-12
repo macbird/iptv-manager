@@ -7,6 +7,7 @@ import {
   parseOverdueChargeMessages,
   renderChargeMessageTemplate,
   resolveOverdueReminderTemplates,
+  resolveOverdueReminderWindowDays,
   serializeOverdueChargeMessages,
 } from './charge-message';
 
@@ -104,8 +105,9 @@ describe('parseOverdueChargeMessages', () => {
   it('testParseOverdueChargeMessages_whenEmpty_shouldReturnDefaults', () => {
     const parsed = parseOverdueChargeMessages(null);
     expect(parsed.generic.templates.length).toBeGreaterThan(0);
-    expect(parsed.byWindow[1]?.templates.length).toBeGreaterThan(0);
-    expect(parsed.byWindow[7]?.templates.length).toBeGreaterThan(0);
+    expect(parsed.windows.length).toBeGreaterThan(0);
+    expect(parsed.windows.find((w) => w.daysAfterDue === 1)?.templates.length).toBeGreaterThan(0);
+    expect(parsed.windows.find((w) => w.daysAfterDue === 7)?.templates.length).toBeGreaterThan(0);
   });
 
   it('testParseOverdueChargeMessages_whenCustomWindow_shouldOverrideDayTemplate', () => {
@@ -113,7 +115,17 @@ describe('parseOverdueChargeMessages', () => {
       subscriptionOverdueDay1: ['Custom D+1', '{{pix}}'],
     });
 
-    expect(parsed.byWindow[1]?.templates[0]).toBe('Custom D+1');
+    expect(parsed.windows.find((w) => w.daysAfterDue === 1)?.templates[0]).toBe('Custom D+1');
+  });
+
+  it('testParseOverdueChargeMessages_whenWindowsArray_shouldUseWindows', () => {
+    const parsed = parseOverdueChargeMessages({
+      windows: [{ daysAfterDue: 20, templates: ['D+20 msg', '{{pix}}'] }],
+    });
+
+    expect(parsed.windows).toHaveLength(1);
+    expect(parsed.windows[0].daysAfterDue).toBe(20);
+    expect(parsed.windows[0].templates[0]).toBe('D+20 msg');
   });
 });
 
@@ -126,6 +138,23 @@ describe('serializeOverdueChargeMessages', () => {
     expect(serialized.subscriptionOverdueDay1).toBeDefined();
     expect(serialized.subscriptionOverdueDay7).toBeDefined();
     expect(serialized.subscriptionOverdueDay15).toBeDefined();
+  });
+});
+
+describe('resolveOverdueReminderWindowDays', () => {
+  it('testResolveOverdueReminderWindowDays_whenWindowsPresent_shouldPreferTemplates', () => {
+    const days = resolveOverdueReminderWindowDays(
+      { windows: [{ daysAfterDue: 20, templates: ['D+20'] }] },
+      [1, 7, 15],
+    );
+
+    expect(days).toEqual([20]);
+  });
+
+  it('testResolveOverdueReminderWindowDays_whenNoWindows_shouldFallbackToAutomationDays', () => {
+    const days = resolveOverdueReminderWindowDays(null, [15, 1, 7]);
+
+    expect(days).toEqual([1, 7, 15]);
   });
 });
 

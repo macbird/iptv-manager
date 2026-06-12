@@ -1,6 +1,7 @@
 import {
   DEFAULT_OVERDUE_REMINDERS_SETTINGS,
   normalizeOverdueReminderDays,
+  resolveOverdueReminderWindowDays,
   type OverdueRemindersSettingsDto,
 } from '@client-manager/shared';
 import { prisma } from '../../core/database';
@@ -91,11 +92,14 @@ function mapBillingAutomationSettings(row: {
   overdueRemindersEnabled: boolean;
   overdueReminderDays: number[];
   overdueReminderFailureGraceDays: number;
+  overdueMessageTemplates?: unknown;
 }): BillingAutomationSettingsDto {
-  const daysAfterDue =
+  const daysAfterDue = resolveOverdueReminderWindowDays(
+    row.overdueMessageTemplates,
     row.overdueReminderDays.length > 0
-      ? normalizeOverdueReminderDays(row.overdueReminderDays)
-      : [...DEFAULT_OVERDUE_REMINDERS_SETTINGS.daysAfterDue];
+      ? row.overdueReminderDays
+      : [...DEFAULT_OVERDUE_REMINDERS_SETTINGS.daysAfterDue],
+  );
 
   const overdueReminders: OverdueRemindersSettingsDto = {
     enabled: row.overdueRemindersEnabled,

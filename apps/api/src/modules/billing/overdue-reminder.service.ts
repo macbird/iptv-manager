@@ -1,17 +1,23 @@
 import {
   calendarDaysSinceDue,
   DEFAULT_BILLING_TIMEZONE,
+  getDueDateBoundsForOverdueWindow,
   isOverdueWindowEligible,
-  normalizeOverdueReminderDays,
+  resolveOverdueReminderWindowDays,
   type OverdueReminderRunSummary,
 } from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import { InvoiceChargeService } from './invoice-charge.service';
 
-const invoiceChargeService = new InvoiceChargeService();
+const defaultInvoiceChargeService = new InvoiceChargeService();
 
 export interface OverdueReminderTenantRunResult extends OverdueReminderRunSummary {
   errors: string[];
+}
+
+export interface OverdueReminderServiceDeps {
+  prisma?: typeof prisma;
+  invoiceChargeService?: InvoiceChargeService;
 }
 
 /**
@@ -24,6 +30,14 @@ export interface OverdueReminderTenantRunResult extends OverdueReminderRunSummar
  * Todos os direitos reservados.
  */
 export class OverdueReminderService {
+  private readonly db: typeof prisma;
+  private readonly invoiceChargeService: InvoiceChargeService;
+
+  constructor(deps: OverdueReminderServiceDeps = {}) {
+    this.db = deps.prisma ?? prisma;
+    this.invoiceChargeService = deps.invoiceChargeService ?? defaultInvoiceChargeService;
+  }
+
   /**
    * Sends overdue reminders for all configured windows on eligible tenant invoices.
    */
@@ -42,7 +56,7 @@ export class OverdueReminderService {
       errors: [],
     };
 
-    const config = await prisma.tenantBillingAutomationConfig.findUnique({
+    const config = await this.db.tenantBillingAutomationConfig.findUnique({
       where: { accountId },
     });
 
@@ -50,7 +64,10 @@ export class OverdueReminderService {
       return result;
     }
 
-    const windows = normalizeOverdueReminderDays(config.overdueReminderDays);
+    const windows = resolveOverdueReminderWindowDays(
+      config.overdueMessageTemplates,
+      config.overdueReminderDays,
+    );
     if (windows.length === 0) {
       return result;
     }
@@ -76,13 +93,21 @@ export class OverdueReminderService {
       result: OverdueReminderTenantRunResult;
     },
   ): Promise<void> {
-    const invoices = await prisma.invoice.findMany({
+    const dueDateBounds = getDueDateBoundsForOverdueWindow({
+      referenceDate: ctx.referenceDate,
+      windowDaysAfterDue,
+      failureGraceDays,
+      timeZone: ctx.timeZone,
+    });
+
+    const invoices = await this.db.invoice.findMany({
       where: {
         scope: 'tenant',
         accountId,
         kind: 'subscription',
         status: { in: ['open', 'overdue'] },
-        customer: { status: 'active' },
+        dueDate: { gte: dueDateBounds.gte, lte: dueDateBounds.lte },
+        customer: { isNot: null },
       },
       include: {
         customer: { select: { id: true, name: true, phone: true, status: true } },
@@ -98,12 +123,16 @@ export class OverdueReminderService {
     });
 
     for (const invoice of invoices) {
-      if (!invoice.customer || invoice.customer.status !== 'active') {
-        ctx.result.skippedBlocked += 1;
+      if (invoice.chargeDeliveries.length > 0) {
         continue;
       }
 
-      if (invoice.chargeDeliveries.length > 0) {
+      if (!invoice.customer) {
+        continue;
+      }
+
+      if (invoice.customer.status !== 'active') {
+        ctx.result.skippedBlocked += 1;
         continue;
       }
 
@@ -130,7 +159,7 @@ export class OverdueReminderService {
       );
 
       try {
-        const delivery = await invoiceChargeService.sendOverdueReminderViaWhatsApp(
+        const delivery = await this.invoiceChargeService.sendOverdueReminderViaWhatsApp(
           invoice.id,
           accountId,
           windowDaysAfterDue,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calendarDaysSinceDue,
+  getDueDateBoundsForOverdueWindow,
   isOverdueWindowEligible,
   normalizeOverdueReminderDays,
 } from './overdue-reminder.util';
@@ -10,8 +11,8 @@ describe('normalizeOverdueReminderDays', () => {
     expect(normalizeOverdueReminderDays([15, 1, 7, 1, 0, -2])).toEqual([1, 7, 15]);
   });
 
-  it('testNormalizeOverdueReminderDays_whenMoreThanFive_shouldCapAtFive', () => {
-    expect(normalizeOverdueReminderDays([1, 2, 3, 4, 5, 6, 7])).toEqual([1, 2, 3, 4, 5]);
+  it('testNormalizeOverdueReminderDays_whenManyValues_shouldKeepAllUniqueSorted', () => {
+    expect(normalizeOverdueReminderDays([1, 2, 3, 4, 5, 6, 7])).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 });
 
@@ -74,5 +75,29 @@ describe('isOverdueWindowEligible', () => {
         referenceDate: new Date('2026-06-11T12:00:00.000Z'),
       }),
     ).toBe(false);
+  });
+});
+
+describe('getDueDateBoundsForOverdueWindow', () => {
+  it('testGetDueDateBoundsForOverdueWindow_whenD7Grace1_shouldReturnSevenToEightDaysAgo', () => {
+    const referenceDate = new Date('2026-06-12T12:00:00.000Z');
+    const bounds = getDueDateBoundsForOverdueWindow({
+      referenceDate,
+      windowDaysAfterDue: 7,
+      failureGraceDays: 1,
+      timeZone: 'America/Sao_Paulo',
+    });
+
+    const dueOnIdealDay = new Date('2026-06-05T12:00:00.000Z');
+    const dueOnGraceDay = new Date('2026-06-04T12:00:00.000Z');
+    const dueTooEarly = new Date('2026-06-03T12:00:00.000Z');
+    const dueTooLate = new Date('2026-06-06T12:00:00.000Z');
+
+    expect(bounds.gte.getTime()).toBeLessThanOrEqual(dueOnGraceDay.getTime());
+    expect(bounds.lte.getTime()).toBeGreaterThanOrEqual(dueOnIdealDay.getTime());
+    expect(bounds.gte.getTime()).toBeLessThanOrEqual(dueOnIdealDay.getTime());
+    expect(bounds.lte.getTime()).toBeGreaterThanOrEqual(dueOnGraceDay.getTime());
+    expect(bounds.gte.getTime()).toBeLessThanOrEqual(dueTooEarly.getTime() + 86400000);
+    expect(bounds.lte.getTime()).toBeLessThan(dueTooLate.getTime() + 86400000);
   });
 });

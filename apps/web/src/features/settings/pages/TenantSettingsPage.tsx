@@ -24,13 +24,14 @@ import {
   DEFAULT_CHARGE_MESSAGE_TEMPLATES,
   DEFAULT_ONE_OFF_CHARGE_MESSAGE_TEMPLATES,
   buildDefaultOverdueChargeMessages,
+  extractOverdueReminderDays,
 } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import { WebhookLogsSection } from '../components/WebhookLogsSection';
 import { ChargeMessageTemplatesSection } from '../components/ChargeMessageTemplatesSection';
 import { OverdueChargeMessageTemplatesSection } from '../components/OverdueChargeMessageTemplatesSection';
 import { BillingAutomationSection } from '../components/BillingAutomationSection';
-import { SettingsTabs, useSettingsTab } from '../components/SettingsTabs';
+import { SettingsTabs, useChargeSettingsSubTab, useSettingsTab } from '../components/SettingsTabs';
 
 const SETTINGS_TABS = [
   { id: 'geral', label: 'Geral' },
@@ -38,6 +39,11 @@ const SETTINGS_TABS = [
   { id: 'whatsapp', label: 'WhatsApp' },
   { id: 'cobranca', label: 'Cobrança' },
   { id: 'automacao', label: 'Automação' },
+] as const;
+
+const CHARGE_SETTINGS_SUB_TABS = [
+  { id: 'inicial', label: 'Cobrança inicial (D-N)', shortLabel: 'Inicial · D-N' },
+  { id: 'pos-vencimento', label: 'Pós-vencimento (D+N)', shortLabel: 'Pós-venc. · D+N' },
 ] as const;
 
 const DEFAULT_CHARGE_MESSAGES: TenantChargeMessagesSettingsDto = {
@@ -71,6 +77,8 @@ function formatBrl(cents: number) {
 export const TenantSettingsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { activeTab, setActiveTab } = useSettingsTab('geral');
+  const { activeSubTab: chargeSubTab, setActiveSubTab: setChargeSubTab } =
+    useChargeSettingsSubTab('inicial');
   const { data, isLoading } = useQuery({
     queryKey: ['tenant-settings'],
     queryFn: tenantBillingApi.getSettings,
@@ -95,7 +103,17 @@ export const TenantSettingsPage: React.FC = () => {
       setChargeMessages(data.chargeMessages);
     }
     if (data.billingAutomation) {
-      setBillingAutomation(data.billingAutomation);
+      const daysFromWindows = data.chargeMessages?.overdue?.windows?.length
+        ? extractOverdueReminderDays(data.chargeMessages.overdue)
+        : data.billingAutomation.overdueReminders.daysAfterDue;
+
+      setBillingAutomation({
+        ...data.billingAutomation,
+        overdueReminders: {
+          ...data.billingAutomation.overdueReminders,
+          daysAfterDue: daysFromWindows,
+        },
+      });
     }
   }, [data]);
 
@@ -123,10 +141,23 @@ export const TenantSettingsPage: React.FC = () => {
       });
 
       await tenantBillingApi.updateChargeMessages(chargeMessages);
-      await tenantBillingApi.updateBillingAutomation(billingAutomation);
+
+      const overdueDays = extractOverdueReminderDays(chargeMessages.overdue);
+      await tenantBillingApi.updateBillingAutomation({
+        ...billingAutomation,
+        overdueReminders: {
+          ...billingAutomation.overdueReminders,
+          daysAfterDue:
+            overdueDays.length > 0
+              ? overdueDays
+              : billingAutomation.overdueReminders.daysAfterDue,
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['billing-automation-last-run'] });
+      queryClient.invalidateQueries({ queryKey: ['billing-automation-preview'] });
       setWhatsappApiKey('');
       showToast.success('Configurações salvas');
     },
@@ -258,26 +289,59 @@ export const TenantSettingsPage: React.FC = () => {
         ) : null}
 
         {activeTab === 'cobranca' ? (
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm space-y-8">
-            <ChargeMessageTemplatesSection
-              title="Mensagens — assinatura"
-              value={chargeMessages.subscription}
-              onChange={(subscription) => setChargeMessages({ ...chargeMessages, subscription })}
-            />
-            <div className="border-t border-slate-200 pt-8">
-              <ChargeMessageTemplatesSection
-                title="Mensagens — avulsa (padrão)"
-                value={chargeMessages.oneOff}
-                onChange={(oneOff) => setChargeMessages({ ...chargeMessages, oneOff })}
-              />
+          <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-100 px-5 pt-4">
+              <h2 className="text-base font-semibold text-slate-900">Mensagens de cobrança</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Templates WhatsApp por tipo de automação — cobrança antes do vencimento (D-N) ou
+                lembretes após vencer (D+N).
+              </p>
+              <div className="mt-4">
+                <SettingsTabs
+                  tabs={[...CHARGE_SETTINGS_SUB_TABS]}
+                  activeTab={chargeSubTab}
+                  onChange={setChargeSubTab}
+                  variant="segmented"
+                />
+              </div>
             </div>
-            <div className="border-t border-slate-200 pt-8">
-              <OverdueChargeMessageTemplatesSection
-                value={chargeMessages.overdue}
-                onChange={(overdue) => setChargeMessages({ ...chargeMessages, overdue })}
-                windowDays={billingAutomation.overdueReminders.daysAfterDue}
-                delayMs={chargeMessages.subscription.delayMs}
-              />
+
+            <div className="p-5">
+              {chargeSubTab === 'inicial' ? (
+                <div className="space-y-8">
+                  <ChargeMessageTemplatesSection
+                    title="Mensagens — assinatura"
+                    value={chargeMessages.subscription}
+                    onChange={(subscription) =>
+                      setChargeMessages({ ...chargeMessages, subscription })
+                    }
+                  />
+                  <div className="border-t border-slate-200 pt-8">
+                    <ChargeMessageTemplatesSection
+                      title="Mensagens — avulsa (padrão)"
+                      value={chargeMessages.oneOff}
+                      onChange={(oneOff) => setChargeMessages({ ...chargeMessages, oneOff })}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              {chargeSubTab === 'pos-vencimento' ? (
+                <OverdueChargeMessageTemplatesSection
+                  value={chargeMessages.overdue}
+                  onChange={(overdue) => {
+                    setChargeMessages({ ...chargeMessages, overdue });
+                    setBillingAutomation((current) => ({
+                      ...current,
+                      overdueReminders: {
+                        ...current.overdueReminders,
+                        daysAfterDue: extractOverdueReminderDays(overdue),
+                      },
+                    }));
+                  }}
+                  delayMs={chargeMessages.subscription.delayMs}
+                />
+              ) : null}
             </div>
           </section>
         ) : null}

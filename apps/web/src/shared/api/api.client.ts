@@ -9,7 +9,8 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const url = config.url ?? '';
-  const isAdminRoute = url.startsWith('/admin');
+  const isAdminRoute =
+    url.startsWith('/admin') || window.location.pathname.startsWith('/admin');
   const token = isAdminRoute
     ? localStorage.getItem('adminToken')
     : localStorage.getItem('token');
@@ -34,7 +35,8 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const isAdminRoute = url.startsWith('/admin');
+    const isAdminRoute =
+      url.startsWith('/admin') || window.location.pathname.startsWith('/admin');
     const loginPath = isAdminRoute ? '/admin/login' : '/login';
     const storageKey = isAdminRoute ? 'adminToken' : 'token';
 

@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { chargeMessageSettingsSchema } from './charge-message';
+import {
+  chargeMessageSettingsSchema,
+  overdueChargeMessagesSchema,
+  type OverdueChargeMessagesDto,
+} from './charge-message';
 import {
   DEFAULT_OVERDUE_REMINDER_DAYS,
   DEFAULT_OVERDUE_REMINDER_FAILURE_GRACE_DAYS,
@@ -51,27 +55,65 @@ export type BillingAutomationSettingsInput = z.infer<typeof billingAutomationSet
 
 export interface BillingAutomationSettingsDto extends BillingAutomationSettingsInput {}
 
+export interface BillingAutomationLastRunDto {
+  runAt: string | null;
+  customersScanned: number;
+  invoicesCreated: number;
+  invoicesAutoClosed: number;
+  chargesSent: number;
+  chargesSkipped: number;
+  overdueRemindersSent: number;
+  overdueRemindersFailed: number;
+  overdueRemindersSkippedBlocked: number;
+  overdueRemindersSkippedNoPix: number;
+  tenantReportSent: boolean;
+  errorsCount: number;
+  errors: string[];
+}
+
+export type BillingAutomationPreviewAction =
+  | 'send_charge'
+  | 'create_invoice_and_send'
+  | 'create_invoice_only'
+  | 'skip_already_sent'
+  | 'skip_whatsapp_disabled'
+  | 'skip_inactive';
+
+export interface BillingAutomationPreviewCustomerDto {
+  customerId: string;
+  customerName: string;
+  expiresAt: string;
+  billingCycleKey: string;
+  amountCents: number | null;
+  hasInvoice: boolean;
+  alreadyCharged: boolean;
+  action: BillingAutomationPreviewAction;
+}
+
+export interface BillingAutomationPreviewDto {
+  scenario: 'current' | 'next_scheduled_run';
+  referenceAt: string;
+  nextScheduledRunAt: string | null;
+  windowDaysBeforeDue: number;
+  automationActive: boolean;
+  sendWhatsapp: boolean;
+  customers: BillingAutomationPreviewCustomerDto[];
+  totals: {
+    inWindow: number;
+    willSendCharge: number;
+    willCreateInvoice: number;
+    willSkipAlreadySent: number;
+    willSkipWhatsappDisabled: number;
+  };
+}
+
 export const DEFAULT_OVERDUE_REMINDERS_SETTINGS: OverdueRemindersSettingsDto = {
   enabled: false,
   daysAfterDue: [...DEFAULT_OVERDUE_REMINDER_DAYS],
   failureGraceDays: DEFAULT_OVERDUE_REMINDER_FAILURE_GRACE_DAYS,
 };
 
-export const chargeMessageTemplatesOnlySchema = z.object({
-  templates: z
-    .array(z.string().max(4000))
-    .min(1, 'Informe ao menos uma mensagem')
-    .max(20, 'Máximo de 20 mensagens por sequência'),
-});
-
-export const overdueChargeMessagesSchema = z.object({
-  generic: chargeMessageTemplatesOnlySchema,
-  byWindow: z.record(chargeMessageTemplatesOnlySchema),
-});
-
-export type OverdueChargeMessagesInput = z.infer<typeof overdueChargeMessagesSchema>;
-
-export interface OverdueChargeMessagesSettingsDto extends OverdueChargeMessagesInput {}
+export type OverdueChargeMessagesSettingsDto = OverdueChargeMessagesDto;
 
 export const tenantChargeMessagesSettingsSchema = z.object({
   subscription: chargeMessageSettingsSchema,

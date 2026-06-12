@@ -1,14 +1,15 @@
 export const DEFAULT_OVERDUE_REMINDER_DAYS = [1, 7, 15] as const;
 export const DEFAULT_OVERDUE_REMINDER_FAILURE_GRACE_DAYS = 1;
-export const MAX_OVERDUE_REMINDER_WINDOWS = 5;
+/** Soft upper bound for API validation; UI allows adding windows freely up to this limit. */
+export const MAX_OVERDUE_REMINDER_WINDOWS = 100;
 export const DEFAULT_BILLING_TIMEZONE = 'America/Sao_Paulo';
 
 /**
- * Normalizes overdue reminder window days: unique integers >= 1, sorted, max 5 entries.
+ * Normalizes overdue reminder window days: unique integers >= 1, sorted ascending.
  */
 export function normalizeOverdueReminderDays(days: number[]): number[] {
   const unique = [...new Set(days.filter((day) => Number.isInteger(day) && day >= 1))];
-  return unique.sort((a, b) => a - b).slice(0, MAX_OVERDUE_REMINDER_WINDOWS);
+  return unique.sort((a, b) => a - b);
 }
 
 /**
@@ -65,4 +66,40 @@ export function isOverdueWindowEligible(params: OverdueWindowEligibilityParams):
   const windowStart = params.windowDaysAfterDue;
   const windowEnd = params.windowDaysAfterDue + params.failureGraceDays;
   return daysSinceDue >= windowStart && daysSinceDue <= windowEnd;
+}
+
+export interface DueDateBounds {
+  gte: Date;
+  lte: Date;
+}
+
+export interface DueDateBoundsParams {
+  referenceDate: Date;
+  windowDaysAfterDue: number;
+  failureGraceDays: number;
+  timeZone?: string;
+}
+
+/**
+ * Returns dueDate bounds that may contain invoices eligible for the overdue window on referenceDate.
+ * Callers must still apply {@link isOverdueWindowEligible} per invoice.
+ */
+export function getDueDateBoundsForOverdueWindow(params: DueDateBoundsParams): DueDateBounds {
+  const timeZone = params.timeZone ?? DEFAULT_BILLING_TIMEZONE;
+  const todayKey = getCalendarDateKey(params.referenceDate, timeZone);
+  const todayUtc = parseCalendarDateKey(todayKey);
+
+  const maxDaysSinceDue = params.windowDaysAfterDue + params.failureGraceDays;
+  const minDaysSinceDue = params.windowDaysAfterDue;
+
+  const earliestDueUtc = new Date(todayUtc);
+  earliestDueUtc.setUTCDate(earliestDueUtc.getUTCDate() - maxDaysSinceDue);
+
+  const latestDueUtc = new Date(todayUtc);
+  latestDueUtc.setUTCDate(latestDueUtc.getUTCDate() - minDaysSinceDue);
+
+  return {
+    gte: earliestDueUtc,
+    lte: new Date(latestDueUtc.getTime() + 24 * 60 * 60 * 1000 - 1),
+  };
 }

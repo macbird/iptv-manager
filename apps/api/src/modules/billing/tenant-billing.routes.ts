@@ -6,6 +6,7 @@ import { TenantSettingsService } from './tenant-settings.service';
 import { TenantPaymentSettingsService } from './tenant-payment-settings.service';
 import { TenantChargeMessageService } from './tenant-charge-message.service';
 import { TenantBillingAutomationService } from './tenant-billing-automation.service';
+import { BillingAutomationPreviewService } from './billing-automation-preview.service';
 import { InvoicesService } from './invoices.service';
 import { InvoiceChargeService } from './invoice-charge.service';
 import { PaymentsService } from './payments.service';
@@ -27,6 +28,7 @@ const tenantSettings = new TenantSettingsService();
 const tenantPaymentSettings = new TenantPaymentSettingsService();
 const tenantChargeMessageService = new TenantChargeMessageService();
 const tenantBillingAutomationService = new TenantBillingAutomationService();
+const billingAutomationPreviewService = new BillingAutomationPreviewService();
 const invoicesService = new InvoicesService();
 const invoiceChargeService = new InvoiceChargeService();
 const paymentsService = new PaymentsService();
@@ -99,6 +101,20 @@ export async function tenantBillingRoutes(app: FastifyInstance) {
     }
 
     return tenantBillingAutomationService.update(tenantId, parsed.data);
+  });
+
+  app.get('/settings/billing-automation/last-run', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+    return billingAutomationPreviewService.getLastRun(tenantId);
+  });
+
+  app.get('/settings/billing-automation/preview', async (request, reply) => {
+    const tenantId = requireTenantId(request, reply);
+    if (!tenantId) return;
+
+    const { scenario } = request.query as { scenario?: 'current' | 'next_scheduled_run' };
+    return billingAutomationPreviewService.getPreview(tenantId, { scenario });
   });
 
   app.get('/settings/subscription', async (request, reply) => {

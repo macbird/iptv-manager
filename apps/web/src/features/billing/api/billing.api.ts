@@ -18,6 +18,8 @@ import type {
   WhatsAppMetaConnectionDto,
   ChargeMessageSettingsDto,
   TenantChargeMessagesSettingsDto,
+  BillingAutomationLastRunDto,
+  BillingAutomationPreviewDto,
   BillingAutomationSettingsDto,
   EvolutionConnectInput,
   EvolutionConnectResponseDto,
@@ -146,6 +148,16 @@ export const tenantBillingApi = {
     payload: BillingAutomationSettingsDto,
   ): Promise<BillingAutomationSettingsDto> => {
     const { data } = await api.patch('/settings/billing-automation', payload);
+    return data;
+  },
+  getBillingAutomationLastRun: async (): Promise<BillingAutomationLastRunDto> => {
+    const { data } = await api.get('/settings/billing-automation/last-run');
+    return data;
+  },
+  getBillingAutomationPreview: async (params?: {
+    scenario?: 'current' | 'next_scheduled_run';
+  }): Promise<BillingAutomationPreviewDto> => {
+    const { data } = await api.get('/settings/billing-automation/preview', { params });
     return data;
   },
   updateInvoiceChargeMessages: async (

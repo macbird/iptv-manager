@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import type { PaymentMessageInvoice } from './payment-message';
 import { buildPaymentWhatsAppBlock } from './payment-message';
+import {
+  DEFAULT_OVERDUE_REMINDER_DAYS,
+  normalizeOverdueReminderDays,
+} from './overdue-reminder.util';
 
 export const CHARGE_MESSAGE_PLACEHOLDERS = [
   { key: '{{nome}}', label: 'Nome do cliente' },
@@ -74,27 +78,83 @@ export function overdueWindowTemplateKey(windowDaysAfterDue: number): string {
   return `subscriptionOverdueDay${windowDaysAfterDue}`;
 }
 
+export interface OverdueReminderWindowDto {
+  daysAfterDue: number;
+  templates: string[];
+}
+
 export interface OverdueWindowChargeMessagesDto {
   templates: string[];
 }
 
 export interface OverdueChargeMessagesDto {
   generic: OverdueWindowChargeMessagesDto;
-  byWindow: Record<number, OverdueWindowChargeMessagesDto>;
+  windows: OverdueReminderWindowDto[];
+}
+
+function defaultTemplatesForWindowDay(day: number): string[] {
+  const byWindow = DEFAULT_OVERDUE_REMINDER_TEMPLATES_BY_WINDOW[day];
+  if (byWindow) {
+    return [...byWindow];
+  }
+  return [...DEFAULT_OVERDUE_REMINDER_MESSAGE_TEMPLATES];
+}
+
+function buildDefaultOverdueWindows(): OverdueReminderWindowDto[] {
+  return DEFAULT_OVERDUE_REMINDER_DAYS.map((day) => ({
+    daysAfterDue: day,
+    templates: defaultTemplatesForWindowDay(day),
+  }));
 }
 
 /**
  * Builds default overdue charge message templates for settings UI and API fallbacks.
  */
 export function buildDefaultOverdueChargeMessages(): OverdueChargeMessagesDto {
-  const byWindow: Record<number, OverdueWindowChargeMessagesDto> = {};
-  for (const [day, templates] of Object.entries(DEFAULT_OVERDUE_REMINDER_TEMPLATES_BY_WINDOW)) {
-    byWindow[Number(day)] = { templates: [...templates] };
+  return {
+    generic: { templates: [...DEFAULT_OVERDUE_REMINDER_MESSAGE_TEMPLATES] },
+    windows: buildDefaultOverdueWindows(),
+  };
+}
+
+/**
+ * Extracts sorted unique window days from the overdue windows configuration.
+ */
+export function extractOverdueReminderDays(overdue: OverdueChargeMessagesDto): number[] {
+  return normalizeOverdueReminderDays(overdue.windows.map((window) => window.daysAfterDue));
+}
+
+/**
+ * Resolves overdue reminder window days from charge message templates, with automation config fallback.
+ */
+export function resolveOverdueReminderWindowDays(
+  overdueMessageTemplates: unknown,
+  fallbackReminderDays: number[] = [],
+): number[] {
+  const fromWindows = extractOverdueReminderDays(parseOverdueChargeMessages(overdueMessageTemplates));
+  if (fromWindows.length > 0) {
+    return fromWindows;
+  }
+  return normalizeOverdueReminderDays(fallbackReminderDays);
+}
+
+function parseOverdueWindowEntry(value: unknown, fallbackDay: number): OverdueReminderWindowDto | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const daysAfterDue = Number(record.daysAfterDue);
+  if (!Number.isInteger(daysAfterDue) || daysAfterDue < 1) {
+    return null;
   }
 
   return {
-    generic: { templates: [...DEFAULT_OVERDUE_REMINDER_MESSAGE_TEMPLATES] },
-    byWindow,
+    daysAfterDue,
+    templates: parseChargeMessageTemplates(
+      record.templates,
+      defaultTemplatesForWindowDay(fallbackDay),
+    ),
   };
 }
 
@@ -103,13 +163,17 @@ export function buildDefaultOverdueChargeMessages(): OverdueChargeMessagesDto {
  */
 export function serializeOverdueChargeMessages(
   overdue: OverdueChargeMessagesDto,
-): Record<string, string[]> {
-  const result: Record<string, string[]> = {
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {
     [OVERDUE_GENERIC_TEMPLATE_KEY]: overdue.generic.templates,
+    windows: overdue.windows.map((window) => ({
+      daysAfterDue: window.daysAfterDue,
+      templates: window.templates,
+    })),
   };
 
-  for (const [day, config] of Object.entries(overdue.byWindow)) {
-    result[overdueWindowTemplateKey(Number(day))] = config.templates;
+  for (const window of overdue.windows) {
+    result[overdueWindowTemplateKey(window.daysAfterDue)] = window.templates;
   }
 
   return result;
@@ -133,35 +197,38 @@ export function parseOverdueChargeMessages(value: unknown): OverdueChargeMessage
     ),
   };
 
-  const byWindow: Record<number, OverdueWindowChargeMessagesDto> = { ...defaults.byWindow };
-  for (const day of Object.keys(defaults.byWindow).map(Number)) {
-    const key = overdueWindowTemplateKey(day);
-    if (record[key] !== undefined) {
-      byWindow[day] = {
-        templates: parseChargeMessageTemplates(
-          record[key],
-          defaults.byWindow[day]?.templates ?? defaults.generic.templates,
-        ),
-      };
+  if (Array.isArray(record.windows)) {
+    const windows = record.windows
+      .map((entry, index) =>
+        parseOverdueWindowEntry(entry, defaults.windows[index]?.daysAfterDue ?? index + 1),
+      )
+      .filter((entry): entry is OverdueReminderWindowDto => entry !== null);
+
+    if (windows.length > 0) {
+      return { generic, windows };
     }
   }
 
+  const byWindow: Record<number, OverdueReminderWindowDto> = {};
   for (const [key, rawTemplates] of Object.entries(record)) {
     const match = /^subscriptionOverdueDay(\d+)$/.exec(key);
     if (!match) continue;
     const day = Number(match[1]);
     if (!Number.isInteger(day) || day < 1) continue;
     byWindow[day] = {
-      templates: parseChargeMessageTemplates(
-        rawTemplates,
-        defaults.byWindow[day]?.templates ??
-          DEFAULT_OVERDUE_REMINDER_TEMPLATES_BY_WINDOW[day] ??
-          defaults.generic.templates,
-      ),
+      daysAfterDue: day,
+      templates: parseChargeMessageTemplates(rawTemplates, defaultTemplatesForWindowDay(day)),
     };
   }
 
-  return { generic, byWindow };
+  const windows =
+    Object.keys(byWindow).length > 0
+      ? normalizeOverdueReminderDays(Object.keys(byWindow).map(Number)).map(
+          (day) => byWindow[day] ?? { daysAfterDue: day, templates: defaultTemplatesForWindowDay(day) },
+        )
+      : defaults.windows;
+
+  return { generic, windows };
 }
 
 export const DEFAULT_CHARGE_MESSAGE_DELAY_MS = 1500;
@@ -177,6 +244,22 @@ export const chargeMessageSettingsSchema = z.object({
     .min(0, 'Delay mínimo é 0 ms')
     .max(30000, 'Delay máximo é 30 segundos'),
 });
+
+export const chargeMessageTemplatesOnlySchema = z.object({
+  templates: chargeMessageSettingsSchema.shape.templates,
+});
+
+export const overdueReminderWindowSchema = z.object({
+  daysAfterDue: z.number().int().min(1).max(365),
+  templates: chargeMessageSettingsSchema.shape.templates,
+});
+
+export const overdueChargeMessagesSchema = z.object({
+  generic: chargeMessageTemplatesOnlySchema,
+  windows: z.array(overdueReminderWindowSchema),
+});
+
+export type OverdueChargeMessagesInput = z.infer<typeof overdueChargeMessagesSchema>;
 
 export type ChargeMessageSettingsInput = z.infer<typeof chargeMessageSettingsSchema>;
 
@@ -337,8 +420,19 @@ export function resolveOverdueReminderTemplates(params: {
 
   if (params.tenantOverdueTemplates && typeof params.tenantOverdueTemplates === 'object') {
     const record = params.tenantOverdueTemplates as Record<string, unknown>;
-    const windowKey = `subscriptionOverdueDay${params.windowDaysAfterDue}`;
-    const genericKey = 'subscriptionOverdue';
+
+    if (Array.isArray(record.windows)) {
+      for (const entry of record.windows) {
+        if (!entry || typeof entry !== 'object') continue;
+        const window = entry as { daysAfterDue?: unknown; templates?: unknown };
+        if (Number(window.daysAfterDue) === params.windowDaysAfterDue) {
+          return parseChargeMessageTemplates(window.templates, windowFallback);
+        }
+      }
+    }
+
+    const windowKey = overdueWindowTemplateKey(params.windowDaysAfterDue);
+    const genericKey = OVERDUE_GENERIC_TEMPLATE_KEY;
 
     if (record[windowKey] !== undefined) {
       return parseChargeMessageTemplates(record[windowKey], windowFallback);

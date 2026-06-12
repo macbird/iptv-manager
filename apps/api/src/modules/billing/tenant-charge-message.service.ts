@@ -4,6 +4,7 @@ import {
   DEFAULT_CHARGE_MESSAGE_TEMPLATES,
   DEFAULT_ONE_OFF_CHARGE_MESSAGE_TEMPLATES,
   buildDefaultOverdueChargeMessages,
+  extractOverdueReminderDays,
   parseOverdueChargeMessages,
   serializeOverdueChargeMessages,
   type ChargeMessageSettingsDto,
@@ -48,6 +49,8 @@ export class TenantChargeMessageService {
     tenantId: string,
     input: TenantChargeMessagesSettingsInput,
   ): Promise<TenantChargeMessagesSettingsDto> {
+    const overdueReminderDays = extractOverdueReminderDays(input.overdue);
+
     const row = await prisma.tenantBillingAutomationConfig.upsert({
       where: { accountId: tenantId },
       create: {
@@ -56,12 +59,14 @@ export class TenantChargeMessageService {
         oneOffMessageTemplates: input.oneOff.templates,
         chargeMessageDelayMs: input.subscription.delayMs,
         overdueMessageTemplates: serializeOverdueChargeMessages(input.overdue),
+        overdueReminderDays,
       },
       update: {
         chargeMessageTemplates: input.subscription.templates,
         oneOffMessageTemplates: input.oneOff.templates,
         chargeMessageDelayMs: input.subscription.delayMs,
         overdueMessageTemplates: serializeOverdueChargeMessages(input.overdue),
+        overdueReminderDays,
       },
     });
 

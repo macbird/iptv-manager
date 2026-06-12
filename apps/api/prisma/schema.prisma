@@ -379,6 +379,8 @@ model TenantBillingAutomationConfig {
   overdueReminderDays           Int[]    @default([1, 7, 15])
   overdueReminderFailureGraceDays Int    @default(1)
   overdueMessageTemplates       Json?
+  lastAutomationRunAt           DateTime?
+  lastAutomationRunSummary      Json?
   updatedAt             DateTime @updatedAt
 
   @@map("tenant_billing_automation_config")

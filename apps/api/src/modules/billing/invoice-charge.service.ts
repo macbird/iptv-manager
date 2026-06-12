@@ -1,4 +1,5 @@
 import { prisma } from '../../core/database';
+import { Prisma } from '@prisma/client';
 import {
   isPayableInvoiceStatus,
   normalizePhoneE164,
@@ -261,17 +262,33 @@ export class InvoiceChargeService {
         }
       }
 
-      await prisma.invoiceChargeDelivery.create({
-        data: {
-          invoiceId: invoice.id,
-          channel: 'whatsapp',
-          source,
-          windowDaysAfterDue,
-          messagesCount: messages.length,
-          providerMessageIds,
-          success: true,
-        },
-      });
+      try {
+        await prisma.invoiceChargeDelivery.create({
+          data: {
+            invoiceId: invoice.id,
+            channel: 'whatsapp',
+            source,
+            windowDaysAfterDue,
+            messagesCount: messages.length,
+            providerMessageIds,
+            success: true,
+          },
+        });
+      } catch (createError) {
+        if (
+          createError instanceof Prisma.PrismaClientKnownRequestError &&
+          createError.code === 'P2002'
+        ) {
+          return {
+            sent: true,
+            messagesCount: messages.length,
+            providerMessageId: providerMessageIds[providerMessageIds.length - 1] ?? null,
+            providerMessageIds,
+            phoneMasked: maskPhone(phone),
+          };
+        }
+        throw createError;
+      }
     } catch (error) {
       const messageText = error instanceof Error ? error.message : 'Falha ao enviar WhatsApp';
       await prisma.invoiceChargeDelivery.create({

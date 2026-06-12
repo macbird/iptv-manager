@@ -61,8 +61,6 @@ async function handleWebhook(request: FastifyRequest, reply: FastifyReply) {
       result,
     });
 
-    request.log.info({ tenantId, outcome, paymentId: paymentIdHint }, 'webhook processed');
-
     await safeRecordLog({
       tenantRef: tenantId,
       httpMethod: request.method,
@@ -84,8 +82,6 @@ async function handleWebhook(request: FastifyRequest, reply: FastifyReply) {
       query,
       body: request.body,
     });
-
-    request.log.warn({ tenantId, status, message, paymentId: paymentIdHint }, 'webhook failed');
 
     await safeRecordLog({
       tenantRef: tenantId,

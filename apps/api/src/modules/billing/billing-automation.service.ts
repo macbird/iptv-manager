@@ -247,6 +247,8 @@ export class BillingAutomationService {
       }
     }
 
+    await persistLastAutomationRun(accountId, runStartedAt, summary);
+
     return summary;
   }
 
@@ -300,4 +302,37 @@ function maskCustomerPhone(phone: string | null | undefined): string {
   const digits = phone.replace(/\D/g, '');
   if (digits.length <= 4) return '****';
   return `${digits.slice(0, 4)}****${digits.slice(-2)}`;
+}
+
+async function persistLastAutomationRun(
+  accountId: string,
+  runStartedAt: Date,
+  summary: BillingAutomationRunSummary,
+): Promise<void> {
+  try {
+    await prisma.tenantBillingAutomationConfig.update({
+      where: { accountId },
+      data: {
+        lastAutomationRunAt: runStartedAt,
+        lastAutomationRunSummary: {
+          customersScanned: summary.customersScanned,
+          invoicesCreated: summary.invoicesCreated,
+          invoicesAutoClosed: summary.invoicesAutoClosed,
+          chargesSent: summary.chargesSent,
+          chargesSkipped: summary.chargesSkipped,
+          overdueRemindersSent: summary.overdueRemindersSent,
+          overdueRemindersFailed: summary.overdueRemindersFailed,
+          overdueRemindersSkippedBlocked: summary.overdueRemindersSkippedBlocked,
+          overdueRemindersSkippedNoPix: summary.overdueRemindersSkippedNoPix,
+          tenantReportSent: summary.tenantReportsSent > 0,
+          errorsCount: summary.errors.length,
+          errors: summary.errors.slice(0, 20),
+        },
+      },
+    });
+  } catch (error) {
+    summary.errors.push(
+      `last run snapshot: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }

@@ -154,6 +154,7 @@ export const AdminSettingsPage: React.FC = () => {
           <p className="mt-1 text-sm text-slate-500">Opcional — avisos para revendas.</p>
           <div className="mt-4">
             <WhatsAppProviderFields
+              variant="platform"
               whatsappProvider={whatsappProvider}
               whatsappInstanceUrl={whatsappInstanceUrl}
               whatsappApiKey={whatsappApiKey}

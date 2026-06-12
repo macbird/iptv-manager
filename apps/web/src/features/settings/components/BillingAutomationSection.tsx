@@ -1,17 +1,11 @@
 import React from 'react';
 import type { BillingAutomationSettingsDto } from '@client-manager/shared';
 import { DEFAULT_OVERDUE_REMINDERS_SETTINGS } from '@client-manager/shared';
+import { BillingAutomationObservabilitySection } from './BillingAutomationObservabilitySection';
 
 interface BillingAutomationSectionProps {
   value: BillingAutomationSettingsDto;
   onChange: (value: BillingAutomationSettingsDto) => void;
-}
-
-function parseWindowDaysInput(raw: string): number[] {
-  return raw
-    .split(/[,;\s]+/)
-    .map((part) => Number(part.trim()))
-    .filter((day) => Number.isInteger(day) && day >= 1);
 }
 
 export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> = ({
@@ -19,7 +13,6 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
   onChange,
 }) => {
   const overdue = value.overdueReminders ?? DEFAULT_OVERDUE_REMINDERS_SETTINGS;
-  const windowsInput = overdue.daysAfterDue.join(', ');
 
   return (
     <div className="space-y-5">
@@ -127,32 +120,21 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
 
         {overdue.enabled ? (
           <>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Dias após vencimento (janelas)
-              </label>
-              <input
-                type="text"
-                value={windowsInput}
-                onChange={(e) => {
-                  const daysAfterDue = parseWindowDaysInput(e.target.value);
-                  onChange({
-                    ...value,
-                    overdueReminders: {
-                      ...overdue,
-                      daysAfterDue:
-                        daysAfterDue.length > 0
-                          ? daysAfterDue
-                          : [...DEFAULT_OVERDUE_REMINDERS_SETTINGS.daysAfterDue],
-                    },
-                  });
-                }}
-                placeholder="1, 7, 15"
-                className="mt-1 block w-full max-w-md rounded-md border border-slate-300 p-2 text-sm"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Padrão: 1, 7, 15. Valores inteiros ≥ 1, sem duplicatas. Máximo 5 janelas.
-              </p>
+            {!value.active ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
+                A automação principal está desligada — os lembretes pós-vencimento só rodam quando{' '}
+                <strong>Automação ativa</strong> estiver marcada acima.
+              </div>
+            ) : null}
+
+            <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-3 text-xs text-indigo-900">
+              Configure <strong>quantas janelas quiser</strong> (D+1, D+7, D+20…) e as mensagens de
+              cada uma em <strong>Cobrança → Pós-vencimento (D+N)</strong>.
+              {overdue.daysAfterDue.length > 0 ? (
+                <span className="mt-1 block font-medium">
+                  Janelas atuais: {overdue.daysAfterDue.map((day) => `D+${day}`).join(' · ')}
+                </span>
+              ) : null}
             </div>
 
             <div>
@@ -222,6 +204,8 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
           </p>
         </div>
       ) : null}
+
+      <BillingAutomationObservabilitySection settings={value} />
     </div>
   );
 };

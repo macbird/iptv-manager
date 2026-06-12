@@ -58,7 +58,7 @@ const start = async () => {
           throw new Error('Unauthorized');
         }
       } catch (err) {
-        sendUnauthorized(reply);
+        return sendUnauthorized(reply);
       }
     });
 
