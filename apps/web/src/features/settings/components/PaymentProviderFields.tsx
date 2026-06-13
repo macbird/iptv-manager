@@ -66,8 +66,7 @@ interface WhatsAppProviderFieldsProps {
   apiKeyConfigured?: boolean;
   metaConnection?: WhatsAppMetaConnectionDto | null;
   evolutionConnection?: WhatsAppEvolutionConnectionDto | null;
-  /** Platform admin settings use simple credential fields (no tenant Evolution/Meta flows). */
-  variant?: 'tenant' | 'platform';
+  scope?: 'tenant' | 'platform';
 }
 
 export const WhatsAppProviderFields: React.FC<WhatsAppProviderFieldsProps> = ({
@@ -80,7 +79,7 @@ export const WhatsAppProviderFields: React.FC<WhatsAppProviderFieldsProps> = ({
   apiKeyConfigured,
   metaConnection,
   evolutionConnection,
-  variant = 'tenant',
+  scope = 'tenant',
 }) => (
   <div className="space-y-4">
     <div>
@@ -98,35 +97,15 @@ export const WhatsAppProviderFields: React.FC<WhatsAppProviderFieldsProps> = ({
       </select>
     </div>
 
-    {variant === 'platform' ? (
-      <>
-        <div>
-          <label className="block text-sm font-medium text-slate-700">URL da instância</label>
-          <input
-            value={whatsappInstanceUrl}
-            onChange={(e) => onInstanceUrlChange(e.target.value)}
-            placeholder="https://evolution.exemplo.com"
-            className="mt-1 block w-full rounded-md border border-slate-300 p-2 shadow-sm"
-          />
-        </div>
-        <SecretCredentialField
-          id="platform-whatsapp-api-key"
-          label="API Key"
-          value={whatsappApiKey}
-          configured={Boolean(apiKeyConfigured)}
-          onChange={onApiKeyChange}
-          emptyPlaceholder="Cole a API Key da instância"
-        />
-      </>
-    ) : whatsappProvider === 'meta' ? (
-      <MetaWhatsAppConnect connection={metaConnection ?? null} />
+    {whatsappProvider === 'meta' ? (
+      <MetaWhatsAppConnect connection={metaConnection ?? null} scope={scope} />
     ) : (
-      <EvolutionWhatsAppConnect connection={evolutionConnection ?? null} />
+      <EvolutionWhatsAppConnect connection={evolutionConnection ?? null} scope={scope} />
     )}
 
     <p className="text-xs text-slate-500">
-      {variant === 'platform'
-        ? 'Credenciais globais da plataforma para avisos às revendas.'
+      {scope === 'platform'
+        ? 'Cobranças e avisos para revendas podem ser enviados por WhatsApp. Com Evolution, conecte o número abaixo. Com Meta, use Embedded Signup.'
         : 'Cobranças de fatura podem ser enviadas por WhatsApp. Com Evolution, conecte o número do seu negócio abaixo. Com Meta, cada revendedor conecta a própria conta via Embedded Signup.'}
     </p>
   </div>

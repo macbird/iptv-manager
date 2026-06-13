@@ -77,6 +77,56 @@ export const platformBillingApi = {
     const { data } = await api.post(`/admin/invoices/${invoiceId}/mark-paid`);
     return data;
   },
+  updateAutomation: async (payload: Record<string, unknown>) => {
+    const { data } = await api.patch('/admin/platform-settings/automation', payload);
+    return data;
+  },
+  updateChargeMessages: async (payload: Record<string, unknown>) => {
+    const { data } = await api.patch('/admin/platform-settings/charge-messages', payload);
+    return data;
+  },
+  getGlobalLastJobRun: async () => {
+    const { data } = await api.get('/admin/billing-job-runs/last');
+    return data;
+  },
+  getMetaWhatsappConfig: async (): Promise<MetaEmbeddedSignupConfigDto> => {
+    const { data } = await api.get('/admin/platform-settings/whatsapp/meta/config');
+    return data;
+  },
+  getMetaWhatsappConnection: async (): Promise<WhatsAppMetaConnectionDto> => {
+    const { data } = await api.get('/admin/platform-settings/whatsapp/meta/connection');
+    return data;
+  },
+  connectMetaWhatsapp: async (
+    payload: MetaEmbeddedSignupInput,
+  ): Promise<WhatsAppMetaConnectionDto> => {
+    const { data } = await api.post('/admin/platform-settings/whatsapp/meta/connect', payload);
+    return data;
+  },
+  disconnectMetaWhatsapp: async (): Promise<WhatsAppMetaConnectionDto> => {
+    const { data } = await api.post('/admin/platform-settings/whatsapp/meta/disconnect');
+    return data;
+  },
+  getEvolutionWhatsappConnection: async (): Promise<WhatsAppEvolutionConnectionDto> => {
+    const { data } = await api.get('/admin/platform-settings/whatsapp/evolution/connection');
+    return data;
+  },
+  connectEvolutionWhatsapp: async (
+    payload?: EvolutionConnectInput,
+  ): Promise<EvolutionConnectResponseDto> => {
+    const { data } = await api.post('/admin/platform-settings/whatsapp/evolution/connect', payload ?? {});
+    return data;
+  },
+  disconnectEvolutionWhatsapp: async (): Promise<WhatsAppEvolutionConnectionDto> => {
+    const { data } = await api.post('/admin/platform-settings/whatsapp/evolution/disconnect');
+    return data;
+  },
+  sendEvolutionTestMessage: async (
+    payload?: EvolutionTestMessageInput,
+  ): Promise<EvolutionTestMessageResponseDto> => {
+    const { data } = await api.post('/admin/platform-settings/whatsapp/evolution/test-message', payload ?? {});
+    return data;
+  },
 };
 
 export const tenantBillingApi = {
@@ -158,6 +208,20 @@ export const tenantBillingApi = {
     scenario?: 'current' | 'next_scheduled_run';
   }): Promise<BillingAutomationPreviewDto> => {
     const { data } = await api.get('/settings/billing-automation/preview', { params });
+    return data;
+  },
+  getBillingAutomationSchedulerMeta: async () => {
+    const { data } = await api.get('/settings/billing-automation/scheduler-meta');
+    return data;
+  },
+  getBillingAutomationGlobalLastRun: async () => {
+    const { data } = await api.get('/settings/billing-automation/global-last-run');
+    return data;
+  },
+  listCustomerInvoices: async (customerId: string, params: PaginatedListParams) => {
+    const { data } = await api.get(`/customers/${customerId}/invoices`, {
+      params: toListQueryParams(params),
+    });
     return data;
   },
   updateInvoiceChargeMessages: async (

@@ -2,9 +2,11 @@ import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MetaEmbeddedSignupInput, WhatsAppMetaConnectionDto } from '@client-manager/shared';
 import { WHATSAPP_CONNECTION_STATUS_LABELS } from '@client-manager/shared';
-import { tenantBillingApi } from '../../billing/api/billing.api';
+import { tenantBillingApi, platformBillingApi } from '../../billing/api/billing.api';
 import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
+
+type WhatsappSettingsScope = 'tenant' | 'platform';
 
 declare global {
   interface Window {
@@ -21,6 +23,7 @@ declare global {
 
 interface MetaWhatsAppConnectProps {
   connection: WhatsAppMetaConnectionDto | null | undefined;
+  scope?: WhatsappSettingsScope;
 }
 
 function loadFacebookSdk(appId: string, version: string): Promise<void> {
@@ -54,14 +57,21 @@ function loadFacebookSdk(appId: string, version: string): Promise<void> {
   });
 }
 
-export const MetaWhatsAppConnect: React.FC<MetaWhatsAppConnectProps> = ({ connection }) => {
+export const MetaWhatsAppConnect: React.FC<MetaWhatsAppConnectProps> = ({
+  connection,
+  scope = 'tenant',
+}) => {
+  const billingApi = scope === 'platform' ? platformBillingApi : tenantBillingApi;
+  const settingsQueryKey = scope === 'platform' ? 'platform-settings' : 'tenant-settings';
+  const metaConfigQueryKey =
+    scope === 'platform' ? 'platform-meta-whatsapp-config' : 'meta-whatsapp-config';
   const queryClient = useQueryClient();
   const signupSessionRef = React.useRef<{ wabaId?: string; phoneNumberId?: string }>({});
   const [isLaunching, setIsLaunching] = React.useState(false);
 
   const { data: metaConfig, isError: configError } = useQuery({
-    queryKey: ['meta-whatsapp-config'],
-    queryFn: tenantBillingApi.getMetaWhatsappConfig,
+    queryKey: [metaConfigQueryKey],
+    queryFn: billingApi.getMetaWhatsappConfig,
     retry: false,
   });
 
@@ -89,10 +99,9 @@ export const MetaWhatsAppConnect: React.FC<MetaWhatsAppConnectProps> = ({ connec
   }, []);
 
   const connectMutation = useMutation({
-    mutationFn: (payload: MetaEmbeddedSignupInput) => tenantBillingApi.connectMetaWhatsapp(payload),
+    mutationFn: (payload: MetaEmbeddedSignupInput) => billingApi.connectMetaWhatsapp(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-settings'] });
-      queryClient.invalidateQueries({ queryKey: ['meta-whatsapp-connection'] });
+      queryClient.invalidateQueries({ queryKey: [settingsQueryKey] });
       showToast.success('WhatsApp Business conectado via Meta');
     },
     onError: (error: unknown) =>
@@ -100,10 +109,9 @@ export const MetaWhatsAppConnect: React.FC<MetaWhatsAppConnectProps> = ({ connec
   });
 
   const disconnectMutation = useMutation({
-    mutationFn: tenantBillingApi.disconnectMetaWhatsapp,
+    mutationFn: billingApi.disconnectMetaWhatsapp,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-settings'] });
-      queryClient.invalidateQueries({ queryKey: ['meta-whatsapp-connection'] });
+      queryClient.invalidateQueries({ queryKey: [settingsQueryKey] });
       showToast.success('WhatsApp Meta desconectado');
     },
     onError: (error: unknown) =>
@@ -163,8 +171,9 @@ export const MetaWhatsAppConnect: React.FC<MetaWhatsAppConnectProps> = ({ connec
       <div>
         <p className="text-sm font-medium text-slate-900">API oficial Meta (Tech Provider)</p>
         <p className="mt-1 text-xs text-slate-600">
-          Cada tenant conecta a própria conta WhatsApp Business via Embedded Signup. O faturamento
-          das mensagens é feito diretamente na Meta — sem custo repassado pela plataforma.
+          {scope === 'platform'
+            ? 'Conecte a conta WhatsApp Business da plataforma via Embedded Signup para cobranças e avisos às revendas.'
+            : 'Cada tenant conecta a própria conta WhatsApp Business via Embedded Signup. O faturamento das mensagens é feito diretamente na Meta — sem custo repassado pela plataforma.'}
         </p>
       </div>
 

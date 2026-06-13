@@ -40,7 +40,7 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
   const navigate = useNavigate();
   const api = variant === 'admin' ? platformBillingApi : tenantBillingApi;
   const queryClient = useQueryClient();
-  const title = variant === 'admin' ? 'Faturas SaaS' : 'Faturas';
+  const title = variant === 'admin' ? 'Faturas' : 'Faturas';
   const basePath = variant === 'admin' ? '/admin' : '';
 
   const {

@@ -1,15 +1,20 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import {
   ACCOUNT_SLUG_FIELD_HINT,
   ACCOUNT_SLUG_FIELD_LABEL,
   createTenantAccountSchema,
+  nullableOptionalPhoneE164Schema,
 } from '@client-manager/shared';
-import { Building2, Calendar, Link2, Mail, ToggleLeft, User } from 'lucide-react';
+import { z } from 'zod';
+import { Building2, Calendar, Link2, Mail, Package, Phone, ToggleLeft, User } from 'lucide-react';
+import { platformPlansApi } from '../api/platform-plans.api';
 import { FormInput } from '../../../shared/ui/forms/FormInput';
 import { FormPasswordInput } from '../../../shared/ui/forms/FormPasswordInput';
 import { FormSelect } from '../../../shared/ui/forms/FormSelect';
+import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 import { showToast } from '../../../shared/utils/toast';
 
 export interface AccountCreateInput {
@@ -19,12 +24,25 @@ export interface AccountCreateInput {
   ownerEmail: string;
   initialPassword?: string;
   dueDate: string;
+  platformPlanId?: string;
+  phone?: string;
 }
 
 export interface AccountEditInput {
   status: 'active' | 'inactive';
   dueDate: string;
+  platformPlanId?: string;
+  phone?: string | null;
 }
+
+const accountEditFormSchema = z.object({
+  name: z.string().optional(),
+  slug: z.string().optional(),
+  status: z.enum(['active', 'inactive']),
+  dueDate: z.string().min(1, 'Informe a data de vencimento'),
+  platformPlanId: z.string().uuid('Selecione um plano'),
+  phone: nullableOptionalPhoneE164Schema,
+});
 
 function suggestedDueDateValue(): string {
   const now = new Date();
@@ -63,7 +81,11 @@ type AccountFormProps = {
         name?: string;
         slug?: string;
         status?: 'active' | 'inactive';
-        subscription?: { nextDueDate?: string; platformPlan?: { name: string; priceCents: number } } | null;
+        subscription?: {
+          nextDueDate?: string;
+          platformPlan?: { id: string; name: string; priceCents: number };
+        } | null;
+        phone?: string | null;
         users?: Array<{ name?: string; email?: string; role?: string }>;
       };
     }
@@ -75,15 +97,34 @@ export const AccountForm: React.FC<AccountFormProps> = ({
   onSubmit,
   initialData,
 }) => {
+  const { data: platformPlansData, isLoading: platformPlansLoading } = useQuery({
+    queryKey: ['platform-plans', 'selectable'],
+    queryFn: () =>
+      platformPlansApi.list({
+        page: 1,
+        pageSize: 100,
+        filter: '',
+        selectableOnly: true,
+      }),
+  });
+
+  const platformPlans = platformPlansData?.data ?? [];
+  const defaultPlatformPlanId =
+    platformPlans.find((plan) => plan.isDefault)?.id ?? platformPlans[0]?.id ?? '';
+
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm({
-    resolver: mode === 'create' ? zodResolver(createTenantAccountSchema) : undefined,
+    resolver:
+      mode === 'create'
+        ? zodResolver(createTenantAccountSchema)
+        : zodResolver(accountEditFormSchema),
     defaultValues: {
       dueDate: suggestedDueDateValue(),
+      platformPlanId: defaultPlatformPlanId,
     },
   });
 
@@ -94,9 +135,19 @@ export const AccountForm: React.FC<AccountFormProps> = ({
         slug: initialData.slug ?? '',
         status: initialData.status ?? 'active',
         dueDate: toDateInputValue(initialData.subscription?.nextDueDate),
+        platformPlanId: initialData.subscription?.platformPlan?.id ?? defaultPlatformPlanId,
+        phone: initialData.phone ?? '',
       });
+      return;
     }
-  }, [mode, initialData, reset]);
+
+    if (mode === 'create' && defaultPlatformPlanId) {
+      reset((current) => ({
+        ...current,
+        platformPlanId: current.platformPlanId || defaultPlatformPlanId,
+      }));
+    }
+  }, [mode, initialData, reset, defaultPlatformPlanId]);
 
   const onInvalid = () => {
     showToast.error('Revise os campos destacados antes de continuar');
@@ -111,22 +162,63 @@ export const AccountForm: React.FC<AccountFormProps> = ({
         ownerEmail: data.ownerEmail,
         initialPassword: data.initialPassword || undefined,
         dueDate: data.dueDate,
+        platformPlanId: data.platformPlanId || undefined,
+        phone: data.phone?.trim() || undefined,
       });
       return;
     }
-    await onSubmit({ status: data.status, dueDate: data.dueDate });
+    await onSubmit({
+      status: data.status,
+      dueDate: data.dueDate,
+      platformPlanId: data.platformPlanId || undefined,
+      phone: data.phone?.trim() || null,
+    });
   }, onInvalid);
+
+  const platformPlanField = platformPlansLoading ? (
+    <div className="relative h-16">
+      <LoadingSpinner />
+    </div>
+  ) : (
+    <FormSelect
+      label="Plano"
+      prefixIcon={Package}
+      hint="Valor usado nas faturas desta revenda."
+      {...register('platformPlanId', { required: 'Selecione um plano' })}
+    >
+      {platformPlans.length === 0 ? (
+        <option value="">Nenhum plano ativo</option>
+      ) : (
+        platformPlans.map((plan) => (
+          <option key={plan.id} value={plan.id}>
+            {plan.name} — R$ {(plan.priceCents / 100).toFixed(2)}/mês
+            {plan.isDefault ? ' (padrão)' : ''}
+          </option>
+        ))
+      )}
+    </FormSelect>
+  );
+
+  const phoneField = (
+    <FormInput
+      label="Telefone (notificações / cobrança)"
+      prefixIcon={Phone}
+      placeholder="(11) 99999-9999"
+      error={errors.phone?.message ? String(errors.phone.message) : undefined}
+      {...register('phone')}
+    />
+  );
 
   const dueDateField = (
     <FormInput
-      label="Próximo vencimento SaaS"
+      label="Próximo vencimento"
       type="date"
       prefixIcon={Calendar}
       error={errors.dueDate?.message ? String(errors.dueDate.message) : undefined}
       hint={
         errors.dueDate
           ? undefined
-          : 'Usada para gerar a fatura SaaS da plataforma nesta data.'
+          : 'Usada para gerar a fatura da plataforma nesta data.'
       }
       {...register('dueDate', { required: 'Informe a data de vencimento' })}
     />
@@ -143,12 +235,21 @@ export const AccountForm: React.FC<AccountFormProps> = ({
               <span className="font-mono text-xs">{initialData.slug}</span>
             </>
           ) : null}
-          {initialData?.subscription?.platformPlan ? (
-            <div className="mt-1 text-xs text-slate-500">
-              Plano SaaS: {initialData.subscription.platformPlan.name} — R${' '}
-              {(initialData.subscription.platformPlan.priceCents / 100).toFixed(2)}/mês
-            </div>
-          ) : null}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {platformPlanField}
+          {dueDateField}
+          {phoneField}
+          <FormSelect
+            label="Status da conta"
+            prefixIcon={ToggleLeft}
+            hint="Contas suspensas não conseguem fazer login no app do revendedor."
+            {...register('status', { required: true })}
+          >
+            <option value="active">Ativa</option>
+            <option value="inactive">Desativada</option>
+          </FormSelect>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -167,19 +268,6 @@ export const AccountForm: React.FC<AccountFormProps> = ({
             hint="Definido na criação da conta; não pode ser alterado depois."
             {...register('slug')}
           />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormSelect
-            label="Status da conta"
-            prefixIcon={ToggleLeft}
-            hint="Contas suspensas não conseguem fazer login no app do revendedor."
-            {...register('status', { required: true })}
-          >
-            <option value="active">Ativa</option>
-            <option value="inactive">Desativada</option>
-          </FormSelect>
-          {dueDateField}
         </div>
 
         {initialData?.users && initialData.users.length > 0 && (
@@ -228,8 +316,12 @@ export const AccountForm: React.FC<AccountFormProps> = ({
       </div>
 
       <div className="border-t border-slate-200 pt-4">
-        <h3 className="mb-4 text-sm font-medium text-slate-900">Cobrança SaaS</h3>
-        <div className="max-w-xs">{dueDateField}</div>
+        <h3 className="mb-4 text-sm font-medium text-slate-900">Cobrança</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {platformPlanField}
+          <div className="max-w-xs">{dueDateField}</div>
+          {phoneField}
+        </div>
       </div>
 
       <div className="border-t border-slate-200 pt-4">

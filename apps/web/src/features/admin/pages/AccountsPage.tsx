@@ -18,10 +18,56 @@ import {
 import { showToast } from '../../../shared/utils/toast';
 import type { AccountListItem } from '@client-manager/shared';
 
+function AccountHealthBadges({ account }: { account: AccountListItem }) {
+  const badges: Array<{ key: string; label: string; className: string; title: string }> = [];
+
+  if (account.status === 'active' && !account.paymentConfigured) {
+    badges.push({
+      key: 'mp',
+      label: 'Sem MP',
+      className: 'bg-amber-100 text-amber-800',
+      title: 'Mercado Pago não configurado pelo tenant',
+    });
+  }
+  if (account.status === 'active' && !account.phone?.trim()) {
+    badges.push({
+      key: 'phone',
+      label: 'Sem tel',
+      className: 'bg-orange-100 text-orange-800',
+      title: 'Telefone da conta não cadastrado — cobrança WhatsApp da plataforma pode falhar',
+    });
+  }
+  if (!account.subscription) {
+    badges.push({
+      key: 'sub',
+      label: 'Sem plano',
+      className: 'bg-slate-100 text-slate-700',
+      title: 'Sem assinatura/plano vinculado',
+    });
+  }
+
+  if (badges.length === 0) return null;
+
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {badges.map((badge) => (
+        <span
+          key={badge.key}
+          className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase ${badge.className}`}
+          title={badge.title}
+        >
+          {badge.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export const AccountsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const formModal = useEntityFormModal();
   useOpenFormFromRouteState(formModal);
+  const [statusFilter, setStatusFilter] = React.useState('');
   const [resetUser, setResetUser] = React.useState<{
     id: string;
     name: string;
@@ -40,8 +86,8 @@ export const AccountsPage: React.FC = () => {
     goToNextPage,
     isLoading,
   } = usePaginatedList<AccountListItem>({
-    queryKey: ['accounts'],
-    queryFn: tenantsApi.list,
+    queryKey: ['accounts', statusFilter],
+    queryFn: (params) => tenantsApi.list({ ...params, status: statusFilter || undefined }),
   });
 
   const toggleMutation = useMutation({
@@ -50,6 +96,9 @@ export const AccountsPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       showToast.success('Status atualizado');
+    },
+    onError: (err: unknown) => {
+      showToast.error(getApiErrorMessage(err, 'Erro ao atualizar status'));
     },
   });
 
@@ -67,7 +116,7 @@ export const AccountsPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      showToast.success('Fatura SaaS gerada');
+      showToast.success('Fatura gerada');
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
       showToast.error(getApiErrorMessage(err, 'Erro ao gerar fatura'));
@@ -84,7 +133,31 @@ export const AccountsPage: React.FC = () => {
   };
 
   const columns = [
-    { header: 'Nome', accessor: (a: AccountListItem) => a.name, width: '28%' },
+    { header: 'Nome', accessor: (a: AccountListItem) => (
+        <div>
+          <div className="flex items-center gap-2">
+            <span>{a.name}</span>
+          </div>
+          <AccountHealthBadges account={a} />
+        </div>
+      ), width: '24%' },
+    {
+      header: 'Telefone',
+      width: '14%',
+      accessor: (a: AccountListItem) => (
+        <span className="text-sm text-slate-600">{a.phone ?? '—'}</span>
+      ),
+    },
+    {
+      header: 'Plano',
+      width: '16%',
+      accessor: (a: AccountListItem) =>
+        a.subscription?.platformPlan ? (
+          <span className="text-sm text-slate-700">{a.subscription.platformPlan.name}</span>
+        ) : (
+          '—'
+        ),
+    },
     {
       header: 'Vencimento',
       width: '18%',
@@ -120,8 +193,8 @@ export const AccountsPage: React.FC = () => {
             onClick={() => generateInvoiceMutation.mutate(a.id)}
             disabled={!a.subscription || generateInvoiceMutation.isPending}
             className="p-2 text-slate-500 hover:text-emerald-600 disabled:opacity-40"
-            aria-label="Gerar fatura SaaS"
-            title="Gerar fatura SaaS"
+            aria-label="Gerar fatura"
+            title="Gerar fatura"
           >
             <Receipt className="h-4 w-4" />
           </button>
@@ -167,8 +240,9 @@ export const AccountsPage: React.FC = () => {
         <div className="overflow-hidden">
           <div className="truncate text-sm font-bold leading-tight text-slate-900">{a.name}</div>
           <div className="truncate text-[10px] leading-tight text-slate-400">
-            {a.users?.length || 0} usuários
+            {a.phone ?? 'Sem telefone'} · {a.users?.length || 0} usuários
           </div>
+          <AccountHealthBadges account={a} />
         </div>
       </div>
 
@@ -195,7 +269,7 @@ export const AccountsPage: React.FC = () => {
             onClick={() => generateInvoiceMutation.mutate(a.id)}
             disabled={!a.subscription || generateInvoiceMutation.isPending}
             className="p-2 text-slate-400 hover:text-emerald-600 disabled:opacity-40"
-            aria-label="Gerar fatura SaaS"
+            aria-label="Gerar fatura"
           >
             <Receipt className="h-4 w-4" />
           </button>
@@ -225,14 +299,26 @@ export const AccountsPage: React.FC = () => {
       title="Contas"
       noPadding={true}
       actions={
-        <PageHeaderActions
-          onSearch={setFilter}
-          currentFilter={filter}
-          primaryAction={{
-            label: 'Nova',
-            onClick: formModal.openCreate,
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-700"
+            aria-label="Filtrar por status"
+          >
+            <option value="">Todas</option>
+            <option value="active">Ativas</option>
+            <option value="inactive">Desativadas</option>
+          </select>
+          <PageHeaderActions
+            onSearch={setFilter}
+            currentFilter={filter}
+            primaryAction={{
+              label: 'Nova',
+              onClick: formModal.openCreate,
+            }}
+          />
+        </div>
       }
       footer={
         <ListPagination

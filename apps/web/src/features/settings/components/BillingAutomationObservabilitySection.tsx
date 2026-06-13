@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   BillingAutomationPreviewAction,
   BillingAutomationSettingsDto,
@@ -47,13 +47,31 @@ function formatMoney(cents: number | null): string {
 export const BillingAutomationObservabilitySection: React.FC<
   BillingAutomationObservabilitySectionProps
 > = ({ settings }) => {
+  const queryClient = useQueryClient();
+
+  const { data: schedulerMeta } = useQuery({
+    queryKey: ['billing-automation-scheduler-meta'],
+    queryFn: tenantBillingApi.getBillingAutomationSchedulerMeta,
+  });
+
+  const { data: globalLastRun } = useQuery({
+    queryKey: ['billing-automation-global-last-run'],
+    queryFn: tenantBillingApi.getBillingAutomationGlobalLastRun,
+  });
+
   const { data: lastRun, isLoading: lastRunLoading } = useQuery({
     queryKey: ['billing-automation-last-run'],
     queryFn: tenantBillingApi.getBillingAutomationLastRun,
   });
 
-  const { data: nextRunPreview, isLoading: nextPreviewLoading } = useQuery({
-    queryKey: ['billing-automation-preview', 'next_scheduled_run', settings.automationRunHour, settings.daysBeforeDue],
+  const { data: nextRunPreview, isLoading: nextPreviewLoading, refetch: refetchNextPreview } = useQuery({
+    queryKey: [
+      'billing-automation-preview',
+      'next_scheduled_run',
+      settings.automationRunHour,
+      settings.automationRunMinute,
+      settings.daysBeforeDue,
+    ],
     queryFn: () =>
       tenantBillingApi.getBillingAutomationPreview({ scenario: 'next_scheduled_run' }),
   });
@@ -63,17 +81,54 @@ export const BillingAutomationObservabilitySection: React.FC<
     queryFn: () => tenantBillingApi.getBillingAutomationPreview({ scenario: 'current' }),
   });
 
-  const runHourLabel = `${String(settings.automationRunHour).padStart(2, '0')}:00`;
+  const runHourLabel = `${String(settings.automationRunHour).padStart(2, '0')}:${String(settings.automationRunMinute).padStart(2, '0')}`;
+
+  const handleSimulateNextRun = () => {
+    void refetchNextPreview();
+    void queryClient.invalidateQueries({ queryKey: ['billing-automation-preview', 'current'] });
+  };
 
   return (
     <div className="space-y-4">
+      {schedulerMeta?.isDevelopment && !schedulerMeta.matchByClock ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
+          Ambiente de desenvolvimento: o job roda a cada {schedulerMeta.intervalMinutes} minutos
+          para <strong>todos</strong> os tenants ativos, ignorando o horário configurado acima.
+        </div>
+      ) : null}
+
       <div>
         <h4 className="text-sm font-semibold text-slate-900">Observabilidade</h4>
         <p className="mt-1 text-xs text-slate-600">
           Acompanhe a última execução e quem entra na janela D-{settings.daysBeforeDue} antes do
           próximo job.
         </p>
+        <button
+          type="button"
+          onClick={handleSimulateNextRun}
+          className="mt-2 rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+        >
+          Simular próximo run (dry-run)
+        </button>
       </div>
+
+      {globalLastRun?.runAt ? (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-xs">
+          <h5 className="text-sm font-medium text-slate-900">Último job global do servidor</h5>
+          <p className="mt-2 text-slate-600">
+            {formatDateTime(globalLastRun.runAt)} · {globalLastRun.tenantsProcessed} tenant(s) ·{' '}
+            {globalLastRun.invoicesCreated} fatura(s) · {globalLastRun.chargesSent} cobrança(s) ·{' '}
+            {globalLastRun.errorsCount} erro(s)
+          </p>
+          {globalLastRun.errors.length > 0 ? (
+            <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto text-red-700">
+              {globalLastRun.errors.map((error) => (
+                <li key={error}>{error}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
         <h5 className="text-sm font-medium text-slate-900">Última execução</h5>

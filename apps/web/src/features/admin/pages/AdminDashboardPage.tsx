@@ -12,6 +12,8 @@ import {
   TrendingUp,
   CreditCard,
   ArrowRight,
+  AlertTriangle,
+  MessageCircle,
 } from 'lucide-react';
 import { adminDashboardApi } from '../api/admin.api';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
@@ -42,6 +44,48 @@ export const AdminDashboardPage: React.FC = () => {
   }
 
   const billing = stats?.billing;
+  const health = stats?.health;
+
+  const healthCards = [
+    {
+      title: 'MP plataforma',
+      value: health?.platformMercadoPagoConfigured ? 'OK' : 'Pendente',
+      subtitle: health?.platformMercadoPagoConfigured
+        ? 'Token Mercado Pago salvo'
+        : 'Configure em Configurações → Pagamentos',
+      icon: CreditCard,
+      iconColor: health?.platformMercadoPagoConfigured ? 'text-emerald-600' : 'text-amber-600',
+      iconBg: health?.platformMercadoPagoConfigured ? 'bg-emerald-100' : 'bg-amber-100',
+      href: '/admin/settings',
+    },
+    {
+      title: 'WhatsApp plataforma',
+      value: health?.platformWhatsappConnected ? 'Conectado' : 'Desconectado',
+      subtitle: 'Cobrança automática às revendas',
+      icon: MessageCircle,
+      iconColor: health?.platformWhatsappConnected ? 'text-emerald-600' : 'text-amber-600',
+      iconBg: health?.platformWhatsappConnected ? 'bg-emerald-100' : 'bg-amber-100',
+      href: '/admin/settings',
+    },
+    {
+      title: 'Tenants sem MP',
+      value: health?.activeTenantsWithoutMercadoPago ?? 0,
+      subtitle: 'Contas ativas sem PIX configurado',
+      icon: AlertTriangle,
+      iconColor: 'text-amber-600',
+      iconBg: 'bg-amber-100',
+      href: '/admin/accounts',
+    },
+    {
+      title: 'Tenants sem telefone',
+      value: health?.activeTenantsWithoutPhone ?? 0,
+      subtitle: 'Dificulta cobrança WhatsApp da plataforma',
+      icon: AlertTriangle,
+      iconColor: 'text-amber-600',
+      iconBg: 'bg-amber-100',
+      href: '/admin/accounts',
+    },
+  ];
 
   const accountCards = [
     {
@@ -92,7 +136,7 @@ export const AdminDashboardPage: React.FC = () => {
     {
       title: 'Recebido no mês',
       value: formatCents(billing?.receivedCurrentMonthCents ?? 0),
-      subtitle: 'SaaS — pagamentos confirmados',
+      subtitle: 'Pagamentos confirmados',
       icon: Wallet,
       iconColor: 'text-emerald-600',
       iconBg: 'bg-emerald-100',
@@ -122,7 +166,7 @@ export const AdminDashboardPage: React.FC = () => {
     {
       title: 'Taxa de cobrança',
       value: `${billing?.collectionRate ?? 0}%`,
-      subtitle: 'Ciclo SaaS atual',
+      subtitle: 'Ciclo atual',
       icon: TrendingUp,
       iconColor: 'text-violet-600',
       iconBg: 'bg-violet-100',
@@ -134,8 +178,19 @@ export const AdminDashboardPage: React.FC = () => {
   return (
     <PageLayout title="Dashboard">
       <p className="text-slate-600 mb-6">
-        Visão da plataforma — contas, assinaturas SaaS e progressão de cobrança.
+        Visão da plataforma — contas, assinaturas e progressão de cobrança.
       </p>
+
+      <section className="mb-8">
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          Saúde operacional
+        </h2>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+          {healthCards.map((card) => (
+            <StatCard key={card.title} {...card} />
+          ))}
+        </div>
+      </section>
 
       <section className="mb-8">
         <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
@@ -150,7 +205,7 @@ export const AdminDashboardPage: React.FC = () => {
 
       <section className="mb-8">
         <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
-          Cobrança SaaS
+          Cobrança
         </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5 lg:gap-4">
           {billingCards.map((card) => (
@@ -163,7 +218,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="mb-8">
           <BillingMonthlyBars
             data={stats.monthlyBilling}
-            title="Receita SaaS — últimos 6 meses"
+            title="Receita — últimos 6 meses"
           />
         </div>
       )}
@@ -174,22 +229,29 @@ export const AdminDashboardPage: React.FC = () => {
             payments={stats.recentPayments}
             paymentsHref="/admin/payments"
             paymentsLinkState={{ listFilters: dashboardPaymentListFilters.currentMonth }}
-            emptyLabel="Nenhum pagamento SaaS registrado. Execute npm run seed:billing em apps/api."
+            emptyLabel="Nenhum pagamento registrado. Execute npm run seed:billing em apps/api."
           />
         )}
 
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:p-6">
           <h2 className="text-base font-semibold text-slate-900 lg:text-lg">Visão geral da plataforma</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            Gerencie tenants, assinaturas e cobrança SaaS. O gráfico reflete faturas e pagamentos dos
+            Gerencie tenants, assinaturas e cobrança. O gráfico reflete faturas e pagamentos dos
             últimos 6 meses gerados pelo seed de billing.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               to="/admin/invoices"
+              state={{ listFilters: dashboardInvoiceListFilters.canceled }}
               className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
             >
-              Faturas SaaS <ArrowRight className="w-4 h-4" />
+              Faturas canceladas <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/admin/invoices"
+              className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+            >
+              Faturas <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               to="/admin/payments"

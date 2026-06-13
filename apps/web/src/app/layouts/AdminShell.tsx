@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, UserCog, LogOut, Menu, X, Settings, FileText, Wallet } from 'lucide-react';
+import { LayoutDashboard, Users, UserCog, LogOut, Menu, X, Settings, FileText, Wallet, Package } from 'lucide-react';
 import { AppLogo } from '../../shared/ui/brand/AppLogo';
 
 export const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -15,7 +15,8 @@ export const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
     { name: 'Contas', icon: Users, href: '/admin/accounts' },
-    { name: 'Faturas SaaS', icon: FileText, href: '/admin/invoices' },
+    { name: 'Planos', icon: Package, href: '/admin/plans' },
+    { name: 'Faturas', icon: FileText, href: '/admin/invoices' },
     { name: 'Pagamentos', icon: Wallet, href: '/admin/payments' },
     { name: 'Configurações', icon: Settings, href: '/admin/settings' },
     { name: 'Perfil', icon: UserCog, href: '/admin/profile' },

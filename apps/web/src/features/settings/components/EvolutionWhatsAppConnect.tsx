@@ -2,12 +2,15 @@ import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { WhatsAppEvolutionConnectionDto } from '@client-manager/shared';
 import { WHATSAPP_CONNECTION_STATUS_LABELS, normalizePhoneE164 } from '@client-manager/shared';
-import { tenantBillingApi } from '../../billing/api/billing.api';
+import { tenantBillingApi, platformBillingApi } from '../../billing/api/billing.api';
 import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 
+type WhatsappSettingsScope = 'tenant' | 'platform';
+
 interface EvolutionWhatsAppConnectProps {
   connection: WhatsAppEvolutionConnectionDto | null | undefined;
+  scope?: WhatsappSettingsScope;
 }
 
 function toQrSrc(base64: string): string {
@@ -22,7 +25,12 @@ function normalizePhoneInput(value: string): string {
 
 export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> = ({
   connection,
+  scope = 'tenant',
 }) => {
+  const billingApi = scope === 'platform' ? platformBillingApi : tenantBillingApi;
+  const connectionQueryKey =
+    scope === 'platform' ? 'platform-evolution-whatsapp-connection' : 'evolution-whatsapp-connection';
+  const settingsQueryKey = scope === 'platform' ? 'platform-settings' : 'tenant-settings';
   const queryClient = useQueryClient();
   const [phone, setPhone] = React.useState('');
   const [testPhone, setTestPhone] = React.useState('');
@@ -36,8 +44,8 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
     error: connectionError,
     isLoading: connectionLoading,
   } = useQuery({
-    queryKey: ['evolution-whatsapp-connection'],
-    queryFn: tenantBillingApi.getEvolutionWhatsappConnection,
+    queryKey: [connectionQueryKey],
+    queryFn: billingApi.getEvolutionWhatsappConnection,
     refetchInterval: (query) =>
       query.state.data?.connectionStatus === 'pending' ? 3000 : false,
     initialData: connection ?? undefined,
@@ -79,15 +87,15 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
     mutationFn: () => {
       const digits = phone.replace(/\D/g, '');
       const normalized = digits ? normalizePhoneInput(digits) : '';
-      return tenantBillingApi.connectEvolutionWhatsapp(
+      return billingApi.connectEvolutionWhatsapp(
         usePairingCode && normalized ? { phone: normalized } : undefined,
       );
     },
     onSuccess: (data) => {
       setQrCodeBase64(data.qrCodeBase64);
       setPairingCode(data.pairingCode);
-      queryClient.invalidateQueries({ queryKey: ['evolution-whatsapp-connection'] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-settings'] });
+      queryClient.invalidateQueries({ queryKey: [connectionQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [settingsQueryKey] });
 
       if (data.connectionStatus === 'connected') {
         showToast.success('WhatsApp já estava conectado');
@@ -110,12 +118,12 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
   });
 
   const disconnectMutation = useMutation({
-    mutationFn: tenantBillingApi.disconnectEvolutionWhatsapp,
+    mutationFn: billingApi.disconnectEvolutionWhatsapp,
     onSuccess: () => {
       setQrCodeBase64(null);
       setPairingCode(null);
-      queryClient.invalidateQueries({ queryKey: ['evolution-whatsapp-connection'] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-settings'] });
+      queryClient.invalidateQueries({ queryKey: [connectionQueryKey] });
+      queryClient.invalidateQueries({ queryKey: [settingsQueryKey] });
       showToast.success('WhatsApp desconectado');
     },
     onError: (error: unknown) => showToast.error(getApiErrorMessage(error, 'Falha ao desconectar')),
@@ -125,7 +133,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
     mutationFn: () => {
       const digits = testPhone.replace(/\D/g, '');
       const normalized = digits ? normalizePhoneInput(digits) : undefined;
-      return tenantBillingApi.sendEvolutionTestMessage(
+      return billingApi.sendEvolutionTestMessage(
         normalized ? { phone: normalized } : undefined,
       );
     },
@@ -268,7 +276,10 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
           <p className="text-sm font-medium text-slate-900">Testar envio</p>
           <div>
             <label className="block text-xs text-slate-600">
-              Número de destino (opcional — usa o telefone da conta se vazio; 55 automático)
+              Número de destino
+              {scope === 'tenant'
+                ? ' (opcional — usa o telefone da conta se vazio; 55 automático)'
+                : ' (obrigatório; 55 automático)'}
             </label>
             <input
               type="text"
@@ -285,7 +296,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
           <button
             type="button"
             onClick={() => testMutation.mutate()}
-            disabled={testMutation.isPending}
+            disabled={testMutation.isPending || (scope === 'platform' && testPhone.trim().length < 10)}
             className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
           >
             {testMutation.isPending ? 'Enviando...' : 'Enviar mensagem de teste'}

@@ -28,8 +28,16 @@ export const tenantsApi = {
     page: number;
     pageSize: number;
     filter: string;
+    status?: string;
   }): Promise<PaginatedResponse<AccountListItem>> => {
-    const response = await api.get('/admin/tenants', { params });
+    const response = await api.get('/admin/tenants', {
+      params: {
+        page: params.page,
+        pageSize: params.pageSize,
+        filter: params.filter,
+        ...(params.status ? { status: params.status } : {}),
+      },
+    });
     return response.data;
   },
   getById: async (id: string): Promise<AccountListItem> => {
@@ -68,6 +76,12 @@ export interface AdminDashboardStats {
   billing: BillingSnapshot;
   monthlyBilling: MonthlyBillingPoint[];
   recentPayments: RecentPaymentItem[];
+  health: {
+    platformMercadoPagoConfigured: boolean;
+    platformWhatsappConnected: boolean;
+    activeTenantsWithoutMercadoPago: number;
+    activeTenantsWithoutPhone: number;
+  };
 }
 
 export const adminDashboardApi = {

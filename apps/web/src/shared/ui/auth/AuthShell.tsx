@@ -23,8 +23,8 @@ const branding: Record<
   tenant: {
     tagline: 'Gestão de clientes, planos e servidores em um só lugar.',
     panelClass:
-      'bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 text-white',
-    accentClass: 'text-indigo-100',
+      'bg-gradient-to-br from-slate-800 via-slate-900 to-blue-950 text-white',
+    accentClass: 'text-slate-300',
   },
   admin: {
     tagline: 'Administração de contas e acesso dos revendedores.',
@@ -48,7 +48,7 @@ export const AuthShell: React.FC<AuthShellProps> = ({
         className={`relative hidden lg:flex lg:w-[44%] xl:w-[42%] flex-col justify-between p-10 xl:p-14 overflow-hidden ${brand.panelClass}`}
       >
         <div
-          className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+          className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl"
           aria-hidden
         />
         <div

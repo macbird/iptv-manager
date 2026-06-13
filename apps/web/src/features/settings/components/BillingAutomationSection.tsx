@@ -1,7 +1,6 @@
 import React from 'react';
 import type { BillingAutomationSettingsDto } from '@client-manager/shared';
 import { DEFAULT_OVERDUE_REMINDERS_SETTINGS } from '@client-manager/shared';
-import { BillingAutomationObservabilitySection } from './BillingAutomationObservabilitySection';
 
 interface BillingAutomationSectionProps {
   value: BillingAutomationSettingsDto;
@@ -20,8 +19,8 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
         <h3 className="text-sm font-semibold text-slate-900">Automação de cobrança</h3>
         <p className="mt-1 text-xs text-slate-600">
           Gera faturas de assinatura e envia WhatsApp para clientes com vencimento IPTV na janela D-N.
-          O job do servidor roda uma vez por hora (início de cada hora cheia) e processa tenants cujo
-          horário configurado coincide com a hora atual em America/Sao_Paulo.
+          O job do servidor verifica hora e minuto configurados (America/Sao_Paulo) a cada minuto em
+          produção; em desenvolvimento pode rodar em intervalo menor — veja o aviso abaixo.
         </p>
       </div>
 
@@ -48,27 +47,37 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Horário diário (hora cheia)</label>
-          <select
-            value={value.automationRunHour}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                automationRunHour: Number(e.target.value),
-                automationRunMinute: 0,
-              })
-            }
-            className="mt-1 block w-full rounded-md border border-slate-300 p-2 text-sm"
-          >
-            {Array.from({ length: 24 }, (_, hour) => (
-              <option key={hour} value={hour}>
-                {String(hour).padStart(2, '0')}:00
-              </option>
-            ))}
-          </select>
+          <label className="block text-sm font-medium text-slate-700">Horário diário</label>
+          <div className="mt-1 flex gap-2">
+            <select
+              value={value.automationRunHour}
+              onChange={(e) =>
+                onChange({ ...value, automationRunHour: Number(e.target.value) })
+              }
+              className="block w-full rounded-md border border-slate-300 p-2 text-sm"
+            >
+              {Array.from({ length: 24 }, (_, hour) => (
+                <option key={hour} value={hour}>
+                  {String(hour).padStart(2, '0')}h
+                </option>
+              ))}
+            </select>
+            <select
+              value={value.automationRunMinute}
+              onChange={(e) =>
+                onChange({ ...value, automationRunMinute: Number(e.target.value) })
+              }
+              className="block w-24 rounded-md border border-slate-300 p-2 text-sm"
+            >
+              {Array.from({ length: 60 }, (_, minute) => (
+                <option key={minute} value={minute}>
+                  :{String(minute).padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+          </div>
           <p className="mt-1 text-xs text-slate-500">
-            Padrão: 09:00. Fuso America/Sao_Paulo. O cron verifica a cada hora (ex.: 09:00, 10:00) —
-            escolha apenas horas cheias.
+            Fuso America/Sao_Paulo. Em produção o job casa hora e minuto exatos.
           </p>
         </div>
       </div>
@@ -204,8 +213,6 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
           </p>
         </div>
       ) : null}
-
-      <BillingAutomationObservabilitySection settings={value} />
     </div>
   );
 };
