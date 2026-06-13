@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import type { ConnectionRenewalStatus } from '@prisma/client';
 import { updateActivationStatusSchema } from '@client-manager/shared';
 import { requireTenantId } from '../../core/middleware/require-tenant';
+import { resolveActorUserId } from '../../core/utils/actor-user-id';
 import { sendApiError, sendNotFound, sendValidationError } from '../../core/errors/send-api-error';
 import { ActivationsService } from './activations.service';
 
@@ -55,7 +56,12 @@ export async function activationsRoutes(app: FastifyInstance) {
     const body = (request.body ?? {}) as { notes?: string };
 
     try {
-      return await activationsService.complete(id, tenantId, body.notes);
+      return await activationsService.complete(
+        id,
+        tenantId,
+        body.notes,
+        resolveActorUserId(request),
+      );
     } catch (error) {
       return sendApiError(reply, error);
     }
@@ -72,7 +78,13 @@ export async function activationsRoutes(app: FastifyInstance) {
     }
 
     try {
-      return await activationsService.updateStatus(id, tenantId, parsed.data.status, parsed.data.notes);
+      return await activationsService.updateStatus(
+        id,
+        tenantId,
+        parsed.data.status,
+        parsed.data.notes,
+        resolveActorUserId(request),
+      );
     } catch (error) {
       return sendApiError(reply, error);
     }

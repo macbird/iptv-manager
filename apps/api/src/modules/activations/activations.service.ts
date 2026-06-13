@@ -3,6 +3,7 @@ import { safeDecryptCredential } from '../../core/crypto/credential-crypto';
 import { API_ERROR_CODES, ApiBusinessError } from '@client-manager/shared';
 import type { BillingCycle, ConnectionRenewalStatus, Prisma } from '@prisma/client';
 import { extendExpiryFromDate, resolveRenewalBaseDate } from './activation-expiry.util';
+import { auditLogFireAndForget } from '../audit/audit.service';
 
 const listInclude = {
   customer: {
@@ -240,7 +241,12 @@ export class ActivationsService {
   /**
    * Completes the activation and renews customer expiry per plan billing cycle.
    */
-  async complete(taskId: string, tenantId: string, notes?: string) {
+  async complete(
+    taskId: string,
+    tenantId: string,
+    notes?: string,
+    accountUserId?: string | null,
+  ) {
     const task = await prisma.connectionRenewalTask.findFirst({
       where: { id: taskId, tenantId },
       include: {
@@ -285,6 +291,19 @@ export class ActivationsService {
       throw new ApiBusinessError('Ativação não encontrada', API_ERROR_CODES.NOT_FOUND, 404);
     }
 
+    auditLogFireAndForget({
+      tenantId,
+      accountUserId,
+      entityType: 'activation',
+      action: 'activation.completed',
+      entityId: taskId,
+      metadata: {
+        customerId: detail.customer.id,
+        customerName: detail.customer.name,
+        newExpiresAt: newExpiresAt.toISOString(),
+      },
+    });
+
     return {
       ...detail,
       customerExpiresAtUpdated: true,
@@ -300,6 +319,7 @@ export class ActivationsService {
     tenantId: string,
     status: ConnectionRenewalStatus,
     notes?: string,
+    accountUserId?: string | null,
   ) {
     const task = await prisma.connectionRenewalTask.findFirst({
       where: { id: taskId, tenantId },
@@ -321,7 +341,7 @@ export class ActivationsService {
           400,
         );
       }
-      return this.complete(taskId, tenantId, notes);
+      return this.complete(taskId, tenantId, notes, accountUserId);
     }
 
     if (status === 'cancelled') {

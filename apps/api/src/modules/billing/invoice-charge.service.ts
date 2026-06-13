@@ -9,10 +9,13 @@ import { PaymentGenerationService } from '../../integrations/payment/payment-gen
 import { WhatsAppProviderFactory } from '../../integrations/whatsapp/whatsapp-provider.factory';
 import { InvoiceActionError } from './invoice-errors';
 import { TenantChargeMessageConfigLoader } from './tenant-charge-message-config.loader';
+import { auditLogFireAndForget } from '../audit/audit.service';
+import { PlatformChargeMessageConfigLoader } from './platform-charge-message-config.loader';
 
 const paymentGeneration = new PaymentGenerationService();
 const whatsappFactory = new WhatsAppProviderFactory();
 const chargeMessageConfigLoader = new TenantChargeMessageConfigLoader();
+const platformChargeMessageConfigLoader = new PlatformChargeMessageConfigLoader();
 
 /**
  * Sends PIX billing charges via WhatsApp after ensuring PIX is generated.
@@ -20,8 +23,7 @@ const chargeMessageConfigLoader = new TenantChargeMessageConfigLoader();
  * @author João Paulo da Silva
  * @since 4.9.0
  * @creationDate 04/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultologia de Negócio e Tecnologia da Informação Ltda.
- * Todos os direitos reservados.
+
  */
 export class InvoiceChargeService {
   /**
@@ -31,6 +33,7 @@ export class InvoiceChargeService {
     invoiceId: string,
     tenantId?: string,
     source: 'manual' | 'automation' = 'manual',
+    accountUserId?: string | null,
   ) {
     let invoice = await prisma.invoice.findFirst({
       where: {
@@ -84,26 +87,27 @@ export class InvoiceChargeService {
     const payerName =
       invoice.customer?.name ?? invoice.account.users[0]?.name ?? invoice.account.name;
 
-    const { messages, delayMs } = await chargeMessageConfigLoader.buildMessages(
-      invoice.accountId,
-      {
-        payerName,
-        tenantName: invoice.account.name,
-        description: invoice.description ?? undefined,
-        invoice: {
-          pixCopyPaste: invoice.pixCopyPaste,
-          amountCents: invoice.amountCents,
-          billingCycleKey: invoice.billingCycleKey,
-          dueDate: invoice.dueDate,
-        },
+    const messageContext = {
+      payerName,
+      tenantName: invoice.account.name,
+      description: invoice.description ?? undefined,
+      invoice: {
+        pixCopyPaste: invoice.pixCopyPaste,
+        amountCents: invoice.amountCents,
+        billingCycleKey: invoice.billingCycleKey,
+        dueDate: invoice.dueDate,
       },
-      {
-        kind: invoice.kind,
-        chargeMessageTemplates: invoice.chargeMessageTemplates,
-        chargeMessageDelayMs: invoice.chargeMessageDelayMs,
-        description: invoice.description,
-      },
-    );
+    };
+
+    const { messages, delayMs } =
+      invoice.scope === 'platform'
+        ? await platformChargeMessageConfigLoader.buildMessages(messageContext)
+        : await chargeMessageConfigLoader.buildMessages(invoice.accountId, messageContext, {
+            kind: invoice.kind,
+            chargeMessageTemplates: invoice.chargeMessageTemplates,
+            chargeMessageDelayMs: invoice.chargeMessageDelayMs,
+            description: invoice.description,
+          });
 
     if (messages.length === 0) {
       throw new InvoiceActionError(
@@ -142,6 +146,22 @@ export class InvoiceChargeService {
           success: true,
         },
       });
+
+      // Tenant-scoped audit only; platform SaaS charges use admin flows without tenant audit log.
+      if (invoice.scope === 'tenant') {
+        auditLogFireAndForget({
+          tenantId: invoice.accountId,
+          accountUserId,
+          entityType: 'invoice',
+          action: 'invoice.charge_sent',
+          entityId: invoice.id,
+          metadata: {
+            source,
+            messagesCount: messages.length,
+            customerId: invoice.customerId,
+          },
+        });
+      }
     } catch (error) {
       const messageText = error instanceof Error ? error.message : 'Falha ao enviar WhatsApp';
       await prisma.invoiceChargeDelivery.create({

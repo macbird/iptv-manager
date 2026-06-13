@@ -14,6 +14,7 @@ import { registerAdminModule } from './modules/admin';
 import { registerBillingModule } from './modules/billing';
 import { paymentWebhookRoutes } from './modules/billing/payment-webhook.routes';
 import { registerActivationsModule } from './modules/activations';
+import { registerAuditModule } from './modules/audit';
 import { startBillingScheduler } from './modules/billing/billing-scheduler';
 import { tenantContextMiddleware } from './core/middleware/tenant-context';
 import { prisma } from './core/database';
@@ -62,15 +63,29 @@ const start = async () => {
       }
     });
 
-    // Health check
-    app.get('/health', async () => {
+    // Health check (DB included — P0.2)
+    app.get('/health', async (_request, reply) => {
       const { APP_VERSION } = await import('@client-manager/shared');
-      return {
-        status: 'ok',
+      let db: 'ok' | 'fail' = 'fail';
+      let dbMessage: string | undefined;
+
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        db = 'ok';
+      } catch (error) {
+        dbMessage = error instanceof Error ? error.message : String(error);
+      }
+
+      const payload = {
+        status: db === 'ok' ? 'ok' : 'degraded',
         version: APP_VERSION,
+        db,
+        ...(dbMessage ? { dbMessage } : {}),
         gitSha: process.env.DEPLOY_GIT_SHA ?? null,
         deployedAt: process.env.DEPLOYED_AT ?? null,
       };
+
+      return reply.status(db === 'ok' ? 200 : 503).send(payload);
     });
 
     app.get('/health/db', async () => {
@@ -97,6 +112,7 @@ const start = async () => {
     await registerBillingModule(app);
     await app.register(paymentWebhookRoutes, { prefix: '/api/webhooks' });
     await registerActivationsModule(app);
+    await registerAuditModule(app);
 
     app.setErrorHandler((error, request, reply) => {
       const mapped = mapErrorToApiResponse(error);

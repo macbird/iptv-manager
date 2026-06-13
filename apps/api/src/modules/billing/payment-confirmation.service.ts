@@ -3,6 +3,7 @@ import type { BillingScope } from '@prisma/client';
 import { ActivationsService } from '../activations/activations.service';
 import { InvoiceActionError } from './invoice-errors';
 import { PaymentReceivedNotificationService } from './payment-received-notification.service';
+import { auditLogFireAndForget } from '../audit/audit.service';
 
 const activationsService = new ActivationsService();
 const paymentReceivedNotification = new PaymentReceivedNotificationService();
@@ -17,6 +18,7 @@ export interface ConfirmPaymentInput {
   notes?: string;
   providerPaymentId?: string;
   paidAt?: Date;
+  accountUserId?: string | null;
 }
 
 /**
@@ -82,7 +84,7 @@ export class PaymentConfirmationService {
       throw new InvoiceActionError('Fatura já está paga', 'NOT_ALLOWED');
     }
 
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const payment = await tx.payment.create({
         data: {
           invoiceId: invoice.id,
@@ -115,14 +117,6 @@ export class PaymentConfirmationService {
         );
       }
 
-      const result = {
-        paymentId: payment.id,
-        invoiceId: invoice.id,
-        activationTasksCreated: activationTasks.length,
-        activationTasks,
-        idempotent: false as const,
-      };
-
       void paymentReceivedNotification
         .notifyTenant({
           invoiceId: invoice.id,
@@ -138,7 +132,30 @@ export class PaymentConfirmationService {
           );
         });
 
-      return result;
+      return {
+        paymentId: payment.id,
+        invoiceId: invoice.id,
+        activationTasksCreated: activationTasks.length,
+        activationTasks,
+        idempotent: false as const,
+      };
     });
+
+    auditLogFireAndForget({
+      tenantId: invoice.accountId,
+      accountUserId: input.accountUserId,
+      entityType: 'payment',
+      action: 'payment.confirmed',
+      entityId: result.paymentId,
+      metadata: {
+        invoiceId: invoice.id,
+        amountCents: input.amountCents,
+        method: input.method,
+        source: input.source ?? 'manual',
+        activationTasksCreated: result.activationTasksCreated,
+      },
+    });
+
+    return result;
   }
 }

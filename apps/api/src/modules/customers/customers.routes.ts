@@ -5,6 +5,8 @@ import { requireTenantId } from '../../core/middleware/require-tenant';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
 import { isSelectableOnlyQuery } from '../../core/utils/parse-selectable-only';
 import { sendApiError, sendNotFound, sendValidationError } from '../../core/errors/send-api-error';
+import { resolveActorUserId } from '../../core/utils/actor-user-id';
+import { auditLogFireAndForget } from '../audit/audit.service';
 
 const CUSTOMER_LIST_FILTER_KEYS = [
   'status',
@@ -79,10 +81,19 @@ export async function customersRoutes(app: FastifyInstance) {
       return sendValidationError(reply, parsed.error);
     }
     try {
-      return await customersService.create(tenantId, {
+      const created = await customersService.create(tenantId, {
         ...parsed.data,
         tagIds: extractTagIds(body),
       });
+      auditLogFireAndForget({
+        tenantId,
+        accountUserId: resolveActorUserId(request),
+        entityType: 'customer',
+        action: 'customer.created',
+        entityId: created.id,
+        metadata: { name: created.name },
+      });
+      return created;
     } catch (error) {
       return sendApiError(reply, error);
     }
@@ -102,10 +113,19 @@ export async function customersRoutes(app: FastifyInstance) {
       return sendValidationError(reply, parsed.error);
     }
     try {
-      return await customersService.update(tenantId, id, {
+      const updated = await customersService.update(tenantId, id, {
         ...parsed.data,
         tagIds: extractTagIds(body),
       });
+      auditLogFireAndForget({
+        tenantId,
+        accountUserId: resolveActorUserId(request),
+        entityType: 'customer',
+        action: 'customer.updated',
+        entityId: updated.id,
+        metadata: { name: updated.name },
+      });
+      return updated;
     } catch (error) {
       return sendApiError(reply, error);
     }
@@ -117,7 +137,15 @@ export async function customersRoutes(app: FastifyInstance) {
 
     const { id } = request.params as { id: string };
     try {
-      return await customersService.deactivate(tenantId, id);
+      const result = await customersService.deactivate(tenantId, id);
+      auditLogFireAndForget({
+        tenantId,
+        accountUserId: resolveActorUserId(request),
+        entityType: 'customer',
+        action: 'customer.deactivated',
+        entityId: id,
+      });
+      return result;
     } catch (error) {
       return sendApiError(reply, error);
     }
@@ -129,7 +157,15 @@ export async function customersRoutes(app: FastifyInstance) {
 
     const { id } = request.params as { id: string };
     try {
-      return await customersService.activate(tenantId, id);
+      const result = await customersService.activate(tenantId, id);
+      auditLogFireAndForget({
+        tenantId,
+        accountUserId: resolveActorUserId(request),
+        entityType: 'customer',
+        action: 'customer.activated',
+        entityId: id,
+      });
+      return result;
     } catch (error) {
       return sendApiError(reply, error);
     }
