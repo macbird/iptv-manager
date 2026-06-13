@@ -19,6 +19,7 @@ export const dashboardCustomerListFilters = {
 export const dashboardInvoiceListFilters = {
   open: { status: 'open' } satisfies ListFilterValues,
   overdue: { status: 'overdue' } satisfies ListFilterValues,
+  canceled: { status: 'canceled' } satisfies ListFilterValues,
   currentCycle: { billingCycleKey: currentBillingCycleKey() } satisfies ListFilterValues,
 } as const;
 

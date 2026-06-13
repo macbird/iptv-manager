@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, Server, LogOut, Menu, X, UserCog, Settings, FileText, Wallet, CheckCircle2 } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Server, LogOut, Menu, X, UserCog, Settings, FileText, Wallet, CheckCircle2, ScrollText } from 'lucide-react';
 import { APP_VERSION } from '@client-manager/shared';
 import { AppLogo } from '../../shared/ui/brand/AppLogo';
 import { PwaInstallBanner } from '../pwa/PwaInstallBanner';
@@ -22,6 +22,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     { name: 'Faturas', icon: FileText, href: '/invoices' },
     { name: 'Pagamentos', icon: Wallet, href: '/payments' },
     { name: 'Ativações pendentes', icon: CheckCircle2, href: '/activations' },
+    { name: 'Registro de atividades', icon: ScrollText, href: '/logs' },
     { name: 'Configurações', icon: Settings, href: '/settings' },
     { name: 'Perfil', icon: UserCog, href: '/profile' },
   ];

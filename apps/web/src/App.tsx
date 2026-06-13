@@ -17,8 +17,10 @@ import { InvoiceDetailPage } from './features/billing/pages/InvoiceDetailPage';
 import { PaymentsPage } from './features/billing/pages/PaymentsPage';
 import { PaymentDetailPage } from './features/billing/pages/PaymentDetailPage';
 import { ActivationsPage } from './features/activations/pages/ActivationsPage';
+import { LogsPage } from './features/audit/pages/LogsPage';
 import { AdminProfilePage } from './features/admin/pages/AdminProfilePage';
 import { AdminSettingsPage } from './features/admin/pages/AdminSettingsPage';
+import { PlatformPlansPage } from './features/admin/pages/PlatformPlansPage';
 import { CreateFormRedirect, EditFormRedirect } from './app/routes/FormRouteRedirect';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -177,6 +179,17 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/renewals" element={<Navigate to="/activations" replace />} />
+          <Route
+            path="/logs"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <LogsPage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route
             path="/admin/dashboard"
@@ -210,6 +223,16 @@ function App() {
           />
           <Route path="/admin/accounts/new" element={<CreateFormRedirect to="/admin/accounts" />} />
           <Route path="/admin/accounts/:id/edit" element={<EditFormRedirect to="/admin/accounts" />} />
+          <Route
+            path="/admin/plans"
+            element={
+              <AdminProtectedRoute>
+                <AdminShell>
+                  <PlatformPlansPage />
+                </AdminShell>
+              </AdminProtectedRoute>
+            }
+          />
           <Route
             path="/admin/settings"
             element={

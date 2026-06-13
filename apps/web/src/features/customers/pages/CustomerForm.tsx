@@ -39,6 +39,7 @@ import {
 } from '../../../shared/ui/forms/FormEntitySelect';
 import type { TagDto } from '../../tags/api/tags.api';
 import { CustomerConfigurationWarningBanner } from '../components/CustomerConfigurationWarningBanner';
+import { CustomerInvoicesSection } from '../components/CustomerInvoicesSection';
 import { showToast } from '../../../shared/utils/toast';
 import {
   formInputClass,
@@ -424,6 +425,8 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
         </div>
 
         <FormInput label="Data de vencimento" type="date" prefixIcon={Calendar} {...register('expiresAt')} />
+
+        {initialData?.id ? <CustomerInvoicesSection customerId={initialData.id} /> : null}
 
         <FormField label="Observações">
           <textarea {...register('notes')} rows={3} className={formTextareaClass} />
