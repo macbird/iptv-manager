@@ -120,6 +120,7 @@ model Account {
   invoices               Invoice[]
   connectionRenewalTasks ConnectionRenewalTask[]
   paymentWebhookLogs   PaymentWebhookLog[]
+  auditLogs            AuditLog[]
 
   @@map("accounts")
 }
@@ -136,6 +137,7 @@ model AccountUser {
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  auditLogs    AuditLog[]
 
   @@map("account_users")
 }
@@ -283,6 +285,23 @@ model PlatformWhatsappConfig {
   updatedAt          DateTime                 @updatedAt
 
   @@map("platform_whatsapp_config")
+}
+
+model PlatformBillingAutomationConfig {
+  id                       String    @id @default("default")
+  active                   Boolean   @default(false)
+  sendWhatsapp             Boolean   @default(true)
+  sendPaymentCharge        Boolean   @default(true)
+  automationRunHour        Int       @default(9)
+  automationRunMinute      Int       @default(0)
+  chargeMessageTemplates   Json?
+  chargeMessageDelayMs     Int       @default(1500)
+  suspendOverdueAccounts   Boolean   @default(false)
+  lastAutomationRunAt      DateTime?
+  lastAutomationRunSummary Json?
+  updatedAt                DateTime  @updatedAt
+
+  @@map("platform_billing_automation_config")
 }
 
 model AccountSubscription {
@@ -510,4 +529,20 @@ model PaymentWebhookLog {
   @@index([accountId, createdAt])
   @@index([tenantSlug, createdAt])
   @@map("payment_webhook_logs")
+}
+
+model AuditLog {
+  id            String       @id @default(uuid())
+  tenantId      String
+  account       Account      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accountUserId String?
+  accountUser   AccountUser? @relation(fields: [accountUserId], references: [id], onDelete: SetNull)
+  entityType    String
+  action        String
+  entityId      String?
+  metadata      Json?
+  createdAt     DateTime     @default(now())
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("audit_logs")
 }
