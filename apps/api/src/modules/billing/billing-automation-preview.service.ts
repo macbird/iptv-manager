@@ -20,8 +20,7 @@ export interface BillingAutomationPreviewOptions {
  * @author João Paulo da Silva
  * @since 4.9.0
  * @creationDate 12/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultologia de Negócio e Tecnologia da Informação Ltda.
- * Todos os direitos reservados.
+
  */
 export class BillingAutomationPreviewService {
   /**
@@ -76,13 +75,21 @@ export class BillingAutomationPreviewService {
 
     const referenceAt =
       scenario === 'next_scheduled_run'
-        ? computeNextScheduledRunAt(config.automationRunHour, timeZone)
+        ? computeNextScheduledRunAt(
+            config.automationRunHour,
+            config.automationRunMinute,
+            timeZone,
+          )
         : new Date();
 
     const nextScheduledRunAt =
       scenario === 'next_scheduled_run'
         ? referenceAt
-        : computeNextScheduledRunAt(config.automationRunHour, timeZone);
+        : computeNextScheduledRunAt(
+            config.automationRunHour,
+            config.automationRunMinute,
+            timeZone,
+          );
 
     if (!config.active) {
       return emptyPreview(
@@ -111,34 +118,52 @@ export class BillingAutomationPreviewService {
       orderBy: { expiresAt: 'asc' },
     });
 
+    const customerIds = customers.map((customer) => customer.id);
+    const billingCycleKeys = customers
+      .filter((customer) => customer.expiresAt)
+      .map((customer) => billingCycleKeyFromDate(customer.expiresAt!));
+
+    const invoices =
+      customerIds.length === 0
+        ? []
+        : await prisma.invoice.findMany({
+            where: {
+              scope: 'tenant',
+              accountId,
+              customerId: { in: customerIds },
+              kind: 'subscription',
+              billingCycleKey: { in: billingCycleKeys },
+              status: { not: 'canceled' },
+            },
+            select: { id: true, customerId: true, billingCycleKey: true },
+          });
+
+    const invoiceIds = invoices.map((invoice) => invoice.id);
+    const deliveries =
+      invoiceIds.length === 0
+        ? []
+        : await prisma.invoiceChargeDelivery.findMany({
+            where: {
+              invoiceId: { in: invoiceIds },
+              success: true,
+              source: { in: ['manual', 'automation'] },
+            },
+            select: { invoiceId: true },
+          });
+
+    const invoiceByCustomerCycle = new Map(
+      invoices.map((invoice) => [`${invoice.customerId}:${invoice.billingCycleKey}`, invoice]),
+    );
+    const deliveredInvoiceIds = new Set(deliveries.map((delivery) => delivery.invoiceId));
+
     const previewCustomers = [];
 
     for (const customer of customers) {
       if (!customer.expiresAt) continue;
 
       const billingCycleKey = billingCycleKeyFromDate(customer.expiresAt);
-      const invoice = await prisma.invoice.findFirst({
-        where: {
-          scope: 'tenant',
-          accountId,
-          customerId: customer.id,
-          kind: 'subscription',
-          billingCycleKey,
-          status: { not: 'canceled' },
-        },
-        select: { id: true },
-      });
-
-      const alreadySent = invoice
-        ? await prisma.invoiceChargeDelivery.findFirst({
-            where: {
-              invoiceId: invoice.id,
-              success: true,
-              source: { in: ['manual', 'automation'] },
-            },
-            select: { id: true },
-          })
-        : null;
+      const invoice = invoiceByCustomerCycle.get(`${customer.id}:${billingCycleKey}`);
+      const alreadySent = invoice ? deliveredInvoiceIds.has(invoice.id) : false;
 
       const amountCents =
         customer.plan && Number.isFinite(Number(customer.plan.price))
@@ -148,7 +173,7 @@ export class BillingAutomationPreviewService {
       const action = resolvePreviewAction({
         sendWhatsapp: config.sendWhatsapp,
         hasInvoice: Boolean(invoice),
-        alreadyCharged: Boolean(alreadySent),
+        alreadyCharged: alreadySent,
         hasValidPlan: Boolean(customer.plan && amountCents && amountCents > 0),
       });
 
@@ -159,7 +184,7 @@ export class BillingAutomationPreviewService {
         billingCycleKey,
         amountCents,
         hasInvoice: Boolean(invoice),
-        alreadyCharged: Boolean(alreadySent),
+        alreadyCharged: alreadySent,
         action,
       });
     }
@@ -184,20 +209,34 @@ export class BillingAutomationPreviewService {
  */
 export function computeNextScheduledRunAt(
   automationRunHour: number,
+  automationRunMinute = 0,
   timeZone: string = DEFAULT_TIMEZONE,
   from: Date = new Date(),
 ): Date {
   const candidate = new Date(from);
-  candidate.setUTCMinutes(0, 0, 0);
+  candidate.setUTCSeconds(0, 0);
 
-  for (let step = 0; step < 48; step += 1) {
-    if (getZonedHour(candidate, timeZone) === automationRunHour && candidate.getTime() > from.getTime()) {
+  for (let step = 0; step < 48 * 60; step += 1) {
+    if (
+      getZonedHour(candidate, timeZone) === automationRunHour &&
+      getZonedMinute(candidate, timeZone) === automationRunMinute &&
+      candidate.getTime() > from.getTime()
+    ) {
       return candidate;
     }
-    candidate.setTime(candidate.getTime() + 60 * 60 * 1000);
+    candidate.setTime(candidate.getTime() + 60 * 1000);
   }
 
   return new Date(from.getTime() + 24 * 60 * 60 * 1000);
+}
+
+function getZonedMinute(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    minute: 'numeric',
+  }).formatToParts(date);
+
+  return Number(parts.find((part) => part.type === 'minute')?.value ?? '0');
 }
 
 function getZonedHour(date: Date, timeZone: string): number {

@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { platformBillingRoutes } from './platform-billing.routes';
+import { platformWhatsappRoutes } from './platform-whatsapp.routes';
 import { tenantBillingRoutes } from './tenant-billing.routes';
 import { metaWhatsappWebhookRoutes, tenantWhatsappMetaRoutes } from './whatsapp-meta.routes';
 import { tenantWhatsappEvolutionRoutes } from './whatsapp-evolution.routes';
@@ -13,4 +14,5 @@ export async function registerBillingModule(app: FastifyInstance) {
 
 export async function registerPlatformBillingModule(app: FastifyInstance) {
   await app.register(platformBillingRoutes);
+  await app.register(platformWhatsappRoutes);
 }

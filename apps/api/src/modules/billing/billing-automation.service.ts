@@ -33,14 +33,13 @@ export interface BillingAutomationRunSummary {
  * @author João Paulo da Silva
  * @since 4.9.0
  * @creationDate 10/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultologia de Negócio e Tecnologia da Informação Ltda.
- * Todos os direitos reservados.
+
  */
 export class BillingAutomationService {
   /**
-   * Executes automation for tenants scheduled at the given hour, or all active tenants when hour is omitted.
+   * Executes automation for tenants scheduled at the given hour and minute, or all active tenants when omitted.
    */
-  async runForSchedule(filterByHour?: number): Promise<BillingAutomationRunSummary> {
+  async runForSchedule(filterByHour?: number, filterByMinute?: number): Promise<BillingAutomationRunSummary> {
     const summary: BillingAutomationRunSummary = {
       tenantsProcessed: 0,
       customersScanned: 0,
@@ -60,6 +59,7 @@ export class BillingAutomationService {
       where: {
         active: true,
         ...(filterByHour !== undefined ? { automationRunHour: filterByHour } : {}),
+        ...(filterByMinute !== undefined ? { automationRunMinute: filterByMinute } : {}),
       },
       select: { accountId: true },
     });

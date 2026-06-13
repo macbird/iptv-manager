@@ -10,7 +10,7 @@ import { computeNextScheduledRunAt } from './billing-automation-preview.service'
 describe('computeNextScheduledRunAt', () => {
   it('testComputeNextScheduledRunAt_whenBeforeRunHour_shouldReturnSameDay', () => {
     const from = new Date('2026-06-12T10:00:00.000Z');
-    const next = computeNextScheduledRunAt(9, 'America/Sao_Paulo', from);
+    const next = computeNextScheduledRunAt(9, 0, 'America/Sao_Paulo', from);
     const hour = Number(
       new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Sao_Paulo',
@@ -25,7 +25,7 @@ describe('computeNextScheduledRunAt', () => {
 
   it('testComputeNextScheduledRunAt_whenAfterRunHour_shouldReturnFutureHour', () => {
     const from = new Date('2026-06-12T14:00:00.000Z');
-    const next = computeNextScheduledRunAt(9, 'America/Sao_Paulo', from);
+    const next = computeNextScheduledRunAt(9, 0, 'America/Sao_Paulo', from);
 
     expect(next.getTime()).toBeGreaterThan(from.getTime());
   });

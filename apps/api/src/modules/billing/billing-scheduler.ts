@@ -1,16 +1,19 @@
 import cron from 'node-cron';
 import { prisma } from '../../core/database';
 import { BillingAutomationService } from './billing-automation.service';
+import { PlatformBillingAutomationService } from './platform-billing-automation.service';
+import { resolveSchedulerIntervalMinutes } from './billing-scheduler.util';
 
 const billingAutomationService = new BillingAutomationService();
+const platformBillingAutomationService = new PlatformBillingAutomationService();
 
 const DEFAULT_TZ = 'America/Sao_Paulo';
-const HOURLY_CRON = '0 * * * *';
+const MINUTE_CRON = '* * * * *';
 
 interface BillingSchedulerConfig {
   timezone: string;
   cronExpression: string;
-  matchByHour: boolean;
+  matchByClock: boolean;
   intervalMinutes?: number;
 }
 
@@ -20,8 +23,7 @@ interface BillingSchedulerConfig {
  * @author João Paulo da Silva
  * @since 4.9.0
  * @creationDate 10/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultologia de Negócio e Tecnologia da Informação Ltda.
- * Todos os direitos reservados.
+
  */
 export function startBillingScheduler(): void {
   if (process.env.BILLING_SCHEDULER_ENABLED === 'false') {
@@ -43,7 +45,7 @@ export function startBillingScheduler(): void {
     config.intervalMinutes !== undefined
       ? `${config.intervalMinutes}min`
       : `cron=${config.cronExpression}`;
-  const matchLabel = config.matchByHour ? 'hour-match' : 'all-active-tenants';
+  const matchLabel = config.matchByClock ? 'clock-match (hour+minute)' : 'all-active-tenants';
 
   console.info(
     `[billing-scheduler] started (timezone=${config.timezone}, ${intervalLabel}, ${matchLabel})`,
@@ -51,16 +53,29 @@ export function startBillingScheduler(): void {
 }
 
 async function runScheduledTick(config: BillingSchedulerConfig): Promise<void> {
-  const filterByHour = config.matchByHour
-    ? getZonedHour(new Date(), config.timezone)
-    : undefined;
+  const now = new Date();
+  const filterByHour = config.matchByClock ? getZonedHour(now, config.timezone) : undefined;
+  const filterByMinute = config.matchByClock ? getZonedMinute(now, config.timezone) : undefined;
 
   const run = await prisma.billingJobRun.create({
     data: { status: 'running' },
   });
 
   try {
-    const summary = await billingAutomationService.runForSchedule(filterByHour);
+    const tenantSummary = await billingAutomationService.runForSchedule(
+      filterByHour,
+      filterByMinute,
+    );
+    const platformSummary = await platformBillingAutomationService.runForSchedule(
+      filterByHour,
+      filterByMinute,
+    );
+
+    const summary = {
+      tenant: tenantSummary,
+      platform: platformSummary,
+    };
+
     await prisma.billingJobRun.update({
       where: { id: run.id },
       data: {
@@ -70,15 +85,19 @@ async function runScheduledTick(config: BillingSchedulerConfig): Promise<void> {
       },
     });
 
-    if (
-      summary.tenantsProcessed > 0 ||
-      summary.invoicesCreated > 0 ||
-      summary.chargesSent > 0 ||
-      summary.tenantReportsSent > 0 ||
-      summary.invoicesAutoClosed > 0 ||
-      summary.overdueRemindersSent > 0 ||
-      summary.errors.length > 0
-    ) {
+    const hasActivity =
+      tenantSummary.tenantsProcessed > 0 ||
+      tenantSummary.invoicesCreated > 0 ||
+      tenantSummary.chargesSent > 0 ||
+      tenantSummary.tenantReportsSent > 0 ||
+      tenantSummary.invoicesAutoClosed > 0 ||
+      tenantSummary.overdueRemindersSent > 0 ||
+      platformSummary.invoicesCreated > 0 ||
+      platformSummary.chargesSent > 0 ||
+      tenantSummary.errors.length > 0 ||
+      platformSummary.errors.length > 0;
+
+    if (hasActivity) {
       console.info('[billing-scheduler] run summary', summary);
     }
   } catch (error) {
@@ -101,39 +120,24 @@ function resolveSchedulerConfig(): BillingSchedulerConfig {
   const customCron = process.env.BILLING_SCHEDULER_CRON?.trim();
 
   if (customCron) {
-    const matchByHour = resolveMatchByHour(customCron, undefined);
-    return { timezone, cronExpression: customCron, matchByHour };
+    const matchByClock = resolveMatchByClock(customCron, undefined);
+    return { timezone, cronExpression: customCron, matchByClock };
   }
 
-  const intervalMinutes = resolveIntervalMinutes();
-  const matchByHour = intervalMinutes >= 60;
-  const cronExpression = matchByHour ? HOURLY_CRON : `*/${intervalMinutes} * * * *`;
+  const intervalMinutes = resolveSchedulerIntervalMinutes();
+  const matchByClock = intervalMinutes >= 60;
+  const cronExpression = matchByClock ? MINUTE_CRON : `*/${intervalMinutes} * * * *`;
 
-  if (!matchByHour && 60 % intervalMinutes !== 0) {
+  if (!matchByClock && 60 % intervalMinutes !== 0) {
     console.warn(
       `[billing-scheduler] BILLING_SCHEDULER_INTERVAL_MINUTES=${intervalMinutes} does not divide 60 evenly`,
     );
   }
 
-  return { timezone, cronExpression, matchByHour, intervalMinutes };
+  return { timezone, cronExpression, matchByClock, intervalMinutes };
 }
 
-function resolveIntervalMinutes(): number {
-  const raw = process.env.BILLING_SCHEDULER_INTERVAL_MINUTES?.trim();
-  if (raw) {
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed) || parsed < 1) {
-      throw new Error(
-        `Invalid BILLING_SCHEDULER_INTERVAL_MINUTES="${raw}" (expected integer >= 1)`,
-      );
-    }
-    return Math.floor(parsed);
-  }
-
-  return process.env.NODE_ENV === 'development' ? 10 : 60;
-}
-
-function resolveMatchByHour(cronExpression: string, intervalMinutes: number | undefined): boolean {
+function resolveMatchByClock(cronExpression: string, intervalMinutes: number | undefined): boolean {
   const explicit = process.env.BILLING_SCHEDULER_MATCH_HOUR?.trim().toLowerCase();
   if (explicit === 'true') {
     return true;
@@ -146,7 +150,7 @@ function resolveMatchByHour(cronExpression: string, intervalMinutes: number | un
     return intervalMinutes >= 60;
   }
 
-  return cronExpression === HOURLY_CRON;
+  return cronExpression === MINUTE_CRON;
 }
 
 function getZonedHour(date: Date, timeZone: string): number {
@@ -157,4 +161,13 @@ function getZonedHour(date: Date, timeZone: string): number {
   }).formatToParts(date);
 
   return Number(parts.find((part) => part.type === 'hour')?.value ?? '0');
+}
+
+function getZonedMinute(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    minute: 'numeric',
+  }).formatToParts(date);
+
+  return Number(parts.find((part) => part.type === 'minute')?.value ?? '0');
 }

@@ -19,8 +19,7 @@ import {
  * @author João Paulo da Silva
  * @since 4.9.0
  * @creationDate 12/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultologia de Negócio e Tecnologia da Informação Ltda.
- * Todos os direitos reservados.
+
  */
 export class TenantChargeMessageService {
   /**

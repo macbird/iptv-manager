@@ -1,11 +1,25 @@
 import { FastifyInstance } from 'fastify';
+import {
+  chargeMessageSettingsSchema,
+  platformBillingAutomationSettingsSchema,
+  platformPlanSchema,
+} from '@client-manager/shared';
 import { PlatformSettingsService } from './platform-settings.service';
+import { PlatformPlansService } from './platform-plans.service';
+import { PlatformBillingAutomationService } from './platform-billing-automation.service';
+import { BillingJobRunService } from './billing-job-run.service';
 import { InvoicesService } from './invoices.service';
 import { InvoiceChargeService } from './invoice-charge.service';
 import { PaymentsService } from './payments.service';
-import { sendApiError, sendNotFound } from '../../core/errors/send-api-error';
+import {
+  sendApiError,
+  sendNotFound,
+  sendValidationError,
+} from '../../core/errors/send-api-error';
 import { handleInvoiceActionError } from './invoice-route.util';
+import { resolveActorUserId } from '../../core/utils/actor-user-id';
 import { pickListFilters } from '../../core/utils/parse-list-filters';
+import { isSelectableOnlyQuery } from '../../core/utils/parse-selectable-only';
 
 const INVOICE_LIST_FILTER_KEYS = [
   'status',
@@ -18,6 +32,9 @@ const INVOICE_LIST_FILTER_KEYS = [
 const PAYMENT_LIST_FILTER_KEYS = ['method', 'billingCycleKey', 'paidFrom', 'paidTo'] as const;
 
 const platformSettings = new PlatformSettingsService();
+const platformPlansService = new PlatformPlansService();
+const platformBillingAutomationService = new PlatformBillingAutomationService();
+const billingJobRunService = new BillingJobRunService();
 const invoicesService = new InvoicesService();
 const invoiceChargeService = new InvoiceChargeService();
 const paymentsService = new PaymentsService();
@@ -25,7 +42,93 @@ const paymentsService = new PaymentsService();
 export async function platformBillingRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticateAdmin);
 
+  app.get('/platform-plans', async (request) => {
+    const { page, pageSize, filter } = request.query as {
+      page?: string;
+      pageSize?: string;
+      filter?: string;
+    };
+    const selectableOnly = isSelectableOnlyQuery(request.query as Record<string, unknown>);
+    return platformPlansService.list(
+      parseInt(page || '1', 10),
+      parseInt(pageSize || '10', 10),
+      filter || '',
+      selectableOnly,
+    );
+  });
+
+  app.get('/platform-plans/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const plan = await platformPlansService.findById(id);
+    if (!plan) {
+      return sendNotFound(reply, 'Plano não encontrado');
+    }
+    return plan;
+  });
+
+  app.post('/platform-plans', async (request, reply) => {
+    const parsed = platformPlanSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return sendValidationError(reply, parsed.error);
+    }
+    try {
+      return await platformPlansService.create(parsed.data);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
+  });
+
+  app.patch('/platform-plans/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const parsed = platformPlanSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return sendValidationError(reply, parsed.error);
+    }
+    try {
+      return await platformPlansService.update(id, parsed.data);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
+  });
+
+  app.delete('/platform-plans/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      return await platformPlansService.remove(id);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
+  });
+
   app.get('/platform-settings', async () => platformSettings.get());
+
+  app.patch('/platform-settings/automation', async (request, reply) => {
+    const parsed = platformBillingAutomationSettingsSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return sendValidationError(reply, parsed.error);
+    }
+    try {
+      await platformBillingAutomationService.updateAutomation(parsed.data);
+      return platformSettings.get();
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
+  });
+
+  app.patch('/platform-settings/charge-messages', async (request, reply) => {
+    const parsed = chargeMessageSettingsSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return sendValidationError(reply, parsed.error);
+    }
+    try {
+      await platformBillingAutomationService.updateChargeMessages(parsed.data);
+      return platformSettings.get();
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
+  });
+
+  app.get('/billing-job-runs/last', async () => billingJobRunService.getLastGlobalRun());
 
   app.patch('/platform-settings', async (request, reply) => {
     const body = request.body as Record<string, unknown>;
@@ -134,7 +237,9 @@ export async function platformBillingRoutes(app: FastifyInstance) {
   app.post('/invoices/:id/mark-paid', async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
-      return await invoicesService.markPaidManual(id);
+      return await invoicesService.markPaidManual(id, undefined, {
+        accountUserId: resolveActorUserId(request),
+      });
     } catch (error) {
       return sendApiError(reply, error);
     }

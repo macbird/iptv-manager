@@ -1,15 +1,18 @@
 import { assertEnabledPaymentProvider } from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import type { PaymentProviderType, WhatsAppProviderType } from '@prisma/client';
+import { PlatformBillingAutomationService } from './platform-billing-automation.service';
 
 const CONFIG_ID = 'default';
+const platformBillingAutomationService = new PlatformBillingAutomationService();
 
 export class PlatformSettingsService {
   async get() {
-    const [plan, payment, whatsapp] = await Promise.all([
+    const [plan, payment, whatsapp, automationSettings] = await Promise.all([
       prisma.platformPlan.findFirst({ where: { isDefault: true, active: true } }),
       prisma.platformPaymentConfig.findUnique({ where: { id: CONFIG_ID } }),
       prisma.platformWhatsappConfig.findUnique({ where: { id: CONFIG_ID } }),
+      platformBillingAutomationService.getSettings(),
     ]);
 
     const defaultPlan =
@@ -58,6 +61,8 @@ export class PlatformSettingsService {
         displayPhoneNumber: whatsappConfig.displayPhoneNumber,
         tokenExpiresAt: whatsappConfig.tokenExpiresAt?.toISOString() ?? null,
       },
+      chargeMessages: automationSettings.chargeMessages,
+      billingAutomation: automationSettings.billingAutomation,
     };
   }
 
