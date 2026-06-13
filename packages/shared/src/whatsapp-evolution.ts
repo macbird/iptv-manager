@@ -1,22 +1,15 @@
 import { z } from 'zod';
 import type { WhatsAppConnectionStatusValue } from './whatsapp-meta';
+import { optionalPhoneE164Schema } from './phone-e164';
 
 export const evolutionConnectSchema = z.object({
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\d{10,15}$/, 'Informe DDD + número (somente dígitos; 55 é opcional)')
-    .optional(),
+  phone: optionalPhoneE164Schema,
 });
 
 export type EvolutionConnectInput = z.infer<typeof evolutionConnectSchema>;
 
 export const evolutionTestMessageSchema = z.object({
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\d{10,15}$/, 'Informe DDD + número (somente dígitos; 55 é opcional)')
-    .optional(),
+  phone: optionalPhoneE164Schema,
   text: z.string().trim().min(1).max(500).optional(),
 });
 

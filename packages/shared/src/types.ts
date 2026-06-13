@@ -1,7 +1,12 @@
 import type { CustomerConfigurationWarning } from './customer-configuration-warning';
 import type { CustomerStatusValue } from './customer-status';
 import type { ChargeMessageSettingsDto } from './charge-message';
-import type { BillingAutomationSettingsDto, InvoiceChargeDeliveryDto, TenantChargeMessagesSettingsDto } from './billing-automation';
+import type {
+  BillingAutomationSettingsDto,
+  InvoiceChargeDeliveryDto,
+  PlatformBillingAutomationSettingsDto,
+  TenantChargeMessagesSettingsDto,
+} from './billing-automation';
 import type { InvoiceKindValue } from './billing-enums';
 
 export interface CustomerListItem {
@@ -45,6 +50,8 @@ export interface PlatformSettingsDto {
     displayPhoneNumber: string | null;
     tokenExpiresAt: string | null;
   };
+  chargeMessages: ChargeMessageSettingsDto;
+  billingAutomation: PlatformBillingAutomationSettingsDto;
 }
 
 export interface PaymentWebhookLogDto {
@@ -213,11 +220,26 @@ export interface PaymentDetailDto {
   };
 }
 
+export interface PlatformPlanListItem {
+  id: string;
+  name: string;
+  priceCents: number;
+  billingCycle: 'monthly';
+  maxCustomers: number | null;
+  active: boolean;
+  isDefault: boolean;
+  subscriptionCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AccountListItem {
   id: string;
   name: string;
   slug: string;
+  phone: string | null;
   status: 'active' | 'inactive';
+  paymentConfigured: boolean;
   subscription: {
     dueDay: number;
     nextDueDate: string;

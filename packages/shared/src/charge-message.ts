@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { PaymentMessageInvoice } from './payment-message';
 import { buildPaymentWhatsAppBlock } from './payment-message';
+import { APP_NAME } from './app-version';
 import {
   DEFAULT_OVERDUE_REMINDER_DAYS,
   normalizeOverdueReminderDays,
@@ -32,6 +33,15 @@ export const DEFAULT_ONE_OFF_CHARGE_MESSAGE_TEMPLATES = [
   `Olá, {{nome}}!
 
 {{descricao}}
+Valor: {{valor}}
+Vencimento: {{vencimento}}`,
+  '{{pix}}',
+] as const;
+
+export const DEFAULT_PLATFORM_SAAS_CHARGE_MESSAGE_TEMPLATES = [
+  `Olá, {{nome}}!
+
+Sua fatura ${APP_NAME} do ciclo {{ciclo}} está disponível.
 Valor: {{valor}}
 Vencimento: {{vencimento}}`,
   '{{pix}}',

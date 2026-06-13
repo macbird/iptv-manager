@@ -1,3 +1,4 @@
+export * from './audit-log';
 export * from './app-version';
 export * from './account-slug';
 export * from './payment-routing';

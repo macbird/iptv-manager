@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ENABLED_PAYMENT_PROVIDER_VALUES } from './billing-enums';
 import { CUSTOMER_STATUS_VALUES } from './customer-status';
 import { CustomerStatus } from './enums';
+import { optionalPhoneE164Schema, requiredPhoneE164Schema } from './phone-e164';
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -16,7 +17,7 @@ export const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   confirmPassword: z.string().min(8),
-  phone: z.string().optional(),
+  phone: optionalPhoneE164Schema,
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -91,10 +92,7 @@ export const customerSchema = z.object({
     (val) => (val === '' || val === null || val === undefined ? '' : String(val)),
     z.string().email('E-mail inválido').optional().or(z.literal('')),
   ),
-  phone: z.preprocess(
-    (val) => String(val ?? '').replace(/\D/g, ''),
-    z.string().min(10, 'Informe um telefone válido com DDD'),
-  ),
+  phone: requiredPhoneE164Schema,
   status: z.enum(CUSTOMER_STATUS_VALUES).default(CustomerStatus.ACTIVE),
   tagIds: z.array(z.string().uuid()).optional(),
   planId: z.preprocess(

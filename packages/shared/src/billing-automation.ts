@@ -143,3 +143,46 @@ export interface InvoiceChargeDeliveryDto {
   errorMessage: string | null;
   windowDaysAfterDue: number | null;
 }
+
+export const platformBillingAutomationSettingsSchema = z.object({
+  active: z.boolean(),
+  sendWhatsapp: z.boolean(),
+  sendPaymentCharge: z.boolean(),
+  automationRunHour: z.number().int().min(0).max(23),
+  automationRunMinute: z.number().int().min(0).max(59),
+  suspendOverdueAccounts: z.boolean(),
+});
+
+export type PlatformBillingAutomationSettingsInput = z.infer<
+  typeof platformBillingAutomationSettingsSchema
+>;
+
+export interface PlatformBillingAutomationSettingsDto extends PlatformBillingAutomationSettingsInput {
+  lastRun: PlatformBillingAutomationLastRunDto;
+}
+
+export interface PlatformBillingAutomationLastRunDto {
+  runAt: string | null;
+  invoicesCreated: number;
+  chargesSent: number;
+  chargesFailed: number;
+  accountsSuspended: number;
+  errorsCount: number;
+  errors: string[];
+}
+
+export interface BillingJobRunGlobalSummaryDto {
+  runAt: string | null;
+  status: string | null;
+  tenantsProcessed: number;
+  invoicesCreated: number;
+  chargesSent: number;
+  errorsCount: number;
+  errors: string[];
+}
+
+export interface BillingAutomationSchedulerMetaDto {
+  intervalMinutes: number;
+  matchByClock: boolean;
+  isDevelopment: boolean;
+}
