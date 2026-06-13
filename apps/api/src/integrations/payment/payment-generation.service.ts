@@ -12,15 +12,7 @@ import type { CreateChargeInput } from './payment-provider.interface';
 
 const factory = new PaymentProviderFactory();
 
-/**
- * Generates PIX charges via configured PSP adapters.
- *
- * @author João Paulo da Silva
- * @since 4.9.0
- * @creationDate 04/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultoria de Negócio e Tecnologia da Informação Ltda.
- * Todos os direitos reservados.
- */
+/** Generates PIX charges via configured PSP adapters. */
 export class PaymentGenerationService {
   /**
    * Creates or refreshes PIX copia e cola for an invoice using the tenant/platform PSP.

@@ -1,12 +1,4 @@
-/**
- * Payment provider contract for PIX EMV and future checkout-link adapters.
- *
- * @author João Paulo da Silva
- * @since 4.9.0
- * @creationDate 04/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultoria de Negócio e Tecnologia da Informação Ltda.
- * Todos os direitos reservados.
- */
+/** Payment provider contract for PIX EMV and future checkout-link adapters. */
 
 export type PaymentDeliveryType = 'emv' | 'checkout_link';
 

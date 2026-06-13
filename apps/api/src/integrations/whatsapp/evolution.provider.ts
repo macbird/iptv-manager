@@ -4,16 +4,7 @@ interface EvolutionSendResponse {
   key?: { id?: string };
 }
 
-/**
- * Evolution API adapter for sending text messages.
- *
- * @author João Paulo da Silva
- * @since 4.9.0
- * @creationDate 04/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultoria de Negócio e Tecnologia da Informação Ltda.
- * Todos os direitos reservados.
- */
-
+/** Evolution API adapter for sending text messages. */
 export class EvolutionWhatsAppProvider implements WhatsAppProvider {
   constructor(
     private readonly instanceUrl: string,

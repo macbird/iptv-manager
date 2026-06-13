@@ -30,15 +30,7 @@ interface MercadoPagoUserProfile {
   email?: string;
 }
 
-/**
- * Mercado Pago PSP adapter — PIX via Orders API (Checkout API orders).
- *
- * @author João Paulo da Silva
- * @since 4.9.0
- * @creationDate 04/06/2026
- * Copyright (c) 2026 NTT DATA Brasil Consultoria de Negócio e Tecnologia da Informação Ltda.
- * Todos os direitos reservados.
- */
+/** Mercado Pago PSP adapter — PIX via Orders API (Checkout API orders). */
 export class MercadoPagoPaymentProvider implements PaymentProvider {
   readonly deliveryType = 'emv' as const;
 
