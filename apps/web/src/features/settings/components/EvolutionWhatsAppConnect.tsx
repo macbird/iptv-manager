@@ -154,7 +154,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
       setPairingPhoneNumber(null);
       queryClient.invalidateQueries({ queryKey: [connectionQueryKey] });
       queryClient.invalidateQueries({ queryKey: [settingsQueryKey] });
-      showToast.success('WhatsApp desconectado');
+      showToast.success('WhatsApp desconectado — instância resetada na Evolution');
     },
     onError: (error: unknown) => showToast.error(getApiErrorMessage(error, 'Falha ao desconectar')),
   });

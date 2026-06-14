@@ -71,19 +71,16 @@ export class EvolutionConnectionService {
       token: context.instanceName,
     });
 
+    if (!normalizedPhone) {
+      await context.client.prepareInstanceForConnect({
+        instanceName: context.instanceName,
+        token: context.instanceName,
+      });
+    }
+
     let summary = await context.client.fetchInstanceSummary(context.instanceName).catch(() => null);
     let connect = await context.client.getConnectInfo(context.instanceName, normalizedPhone);
     let remoteState = connect.state.toLowerCase();
-
-    if (
-      (remoteState === 'open' || remoteState === 'connected') &&
-      !hasEvolutionSessionProof(toSessionSignals(summary))
-    ) {
-      await context.client.logoutInstance(context.instanceName).catch(() => undefined);
-      connect = await context.client.getConnectInfo(context.instanceName, normalizedPhone);
-      remoteState = connect.state.toLowerCase();
-      summary = await context.client.fetchInstanceSummary(context.instanceName).catch(() => null);
-    }
 
     const connectionStatus = mapEvolutionState(
       remoteState,
@@ -141,7 +138,10 @@ export class EvolutionConnectionService {
   async disconnect(accountId: string): Promise<WhatsAppEvolutionConnectionDto> {
     const context = await this.loadTenantContext(accountId);
     if (context) {
-      await context.client.logoutInstance(context.instanceName).catch(() => undefined);
+      await context.client.disconnectInstance({
+        instanceName: context.instanceName,
+        token: context.instanceName,
+      });
     }
 
     await prisma.tenantWhatsappConfig.upsert({
@@ -253,19 +253,16 @@ export class EvolutionConnectionService {
       token: context.instanceName,
     });
 
+    if (!normalizedPhone) {
+      await context.client.prepareInstanceForConnect({
+        instanceName: context.instanceName,
+        token: context.instanceName,
+      });
+    }
+
     let summary = await context.client.fetchInstanceSummary(context.instanceName).catch(() => null);
     let connect = await context.client.getConnectInfo(context.instanceName, normalizedPhone);
     let remoteState = connect.state.toLowerCase();
-
-    if (
-      (remoteState === 'open' || remoteState === 'connected') &&
-      !hasEvolutionSessionProof(toSessionSignals(summary))
-    ) {
-      await context.client.logoutInstance(context.instanceName).catch(() => undefined);
-      connect = await context.client.getConnectInfo(context.instanceName, normalizedPhone);
-      remoteState = connect.state.toLowerCase();
-      summary = await context.client.fetchInstanceSummary(context.instanceName).catch(() => null);
-    }
 
     const connectionStatus = mapEvolutionState(
       remoteState,
@@ -323,7 +320,10 @@ export class EvolutionConnectionService {
   async disconnectPlatform(): Promise<WhatsAppEvolutionConnectionDto> {
     const context = await this.loadPlatformContext();
     if (context) {
-      await context.client.logoutInstance(context.instanceName).catch(() => undefined);
+      await context.client.disconnectInstance({
+        instanceName: context.instanceName,
+        token: context.instanceName,
+      });
     }
 
     await prisma.platformWhatsappConfig.upsert({
@@ -439,6 +439,7 @@ export class EvolutionConnectionService {
     instanceName: string,
     client: EvolutionAdminClient,
   ): Promise<void> {
+    const existing = await prisma.tenantWhatsappConfig.findUnique({ where: { accountId } });
     const remoteState = await client.fetchConnectionState(instanceName).catch(() => 'unknown');
     const summary = await client.fetchInstanceSummary(instanceName).catch(() => null);
     const connectionStatus = mapEvolutionState(
@@ -446,6 +447,10 @@ export class EvolutionConnectionService {
       summary?.connectionStatus?.toLowerCase(),
       toSessionSignals(summary),
     );
+
+    if (existing?.connectionStatus === 'disconnected' && connectionStatus === 'connected') {
+      return;
+    }
 
     const displayPhoneNumber = formatEvolutionDisplayPhone(summary?.number, summary?.ownerJid);
 
@@ -520,6 +525,9 @@ export class EvolutionConnectionService {
     instanceName: string,
     client: EvolutionAdminClient,
   ): Promise<void> {
+    const existing = await prisma.platformWhatsappConfig.findUnique({
+      where: { id: PLATFORM_WHATSAPP_CONFIG_ID },
+    });
     const remoteState = await client.fetchConnectionState(instanceName).catch(() => 'unknown');
     const summary = await client.fetchInstanceSummary(instanceName).catch(() => null);
     const connectionStatus = mapEvolutionState(
@@ -527,6 +535,10 @@ export class EvolutionConnectionService {
       summary?.connectionStatus?.toLowerCase(),
       toSessionSignals(summary),
     );
+
+    if (existing?.connectionStatus === 'disconnected' && connectionStatus === 'connected') {
+      return;
+    }
 
     const displayPhoneNumber = formatEvolutionDisplayPhone(summary?.number, summary?.ownerJid);
 

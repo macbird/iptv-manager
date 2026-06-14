@@ -106,6 +106,34 @@ export class EvolutionAdminClient {
   }
 
   /**
+   * Fully disconnects an instance on Evolution (logout, delete, recreate empty instance).
+   */
+  async disconnectInstance(input: EvolutionInstanceCreateInput): Promise<void> {
+    await this.recreateInstance(input);
+  }
+
+  /**
+   * Ensures the instance is idle on Evolution before a new QR or pairing attempt.
+   */
+  async prepareInstanceForConnect(input: EvolutionInstanceCreateInput): Promise<void> {
+    const state = (await this.fetchConnectionState(input.instanceName).catch(() => 'close')).toLowerCase();
+    const summary = await this.fetchInstanceSummary(input.instanceName).catch(() => null);
+
+    const stillLinked =
+      state === 'open' ||
+      state === 'connected' ||
+      state === 'connecting' ||
+      Boolean(summary?.ownerJid?.trim());
+
+    if (stillLinked) {
+      await this.recreateInstance(input);
+      return;
+    }
+
+    await this.ensureInstance(input);
+  }
+
+  /**
    * Returns QR / pairing data to link WhatsApp on the instance.
    */
   async getConnectInfo(instanceName: string, phone?: string): Promise<EvolutionConnectInfo> {
@@ -147,6 +175,18 @@ export class EvolutionAdminClient {
     let connectResult = await this.fetchConnectPayload(instanceName);
     let parsed = connectResult.parsed;
     let qrCodeBase64 = parsed.qrCodeBase64;
+
+    const remoteState = parsed.state.toLowerCase();
+    if (
+      remoteState === 'open' ||
+      remoteState === 'connected' ||
+      remoteState === 'connecting'
+    ) {
+      await this.recreateInstance({ instanceName, token: instanceName });
+      connectResult = await this.fetchConnectPayload(instanceName);
+      parsed = connectResult.parsed;
+      qrCodeBase64 = parsed.qrCodeBase64;
+    }
 
     if (!qrCodeBase64 && !parsed.pairingCode && parsed.qrCodeRaw) {
       qrCodeBase64 = await QRCode.toDataURL(parsed.qrCodeRaw, { margin: 1, width: 280 });
@@ -230,7 +270,12 @@ export class EvolutionAdminClient {
    */
   async logoutInstance(instanceName: string): Promise<void> {
     const url = `${this.baseUrl}/instance/logout/${encodeURIComponent(instanceName)}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    let response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    if (response.ok || response.status === 404) {
+      return;
+    }
+
+    response = await fetch(url, { method: 'POST', headers: this.headers() });
     if (response.ok || response.status === 404) {
       return;
     }
