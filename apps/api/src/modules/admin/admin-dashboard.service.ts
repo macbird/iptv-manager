@@ -3,6 +3,9 @@ import {
   getBillingSnapshot,
   getMonthlyBillingTrend,
 } from '../billing/billing-dashboard.util';
+import { EvolutionAccountIntegrityService } from '../../integrations/whatsapp/evolution/evolution-account-integrity.service';
+
+const evolutionIntegrity = new EvolutionAccountIntegrityService();
 
 export class AdminDashboardService {
   async getStats() {
@@ -59,39 +62,46 @@ export class AdminDashboardService {
    * Returns platform and tenant configuration health indicators for the admin dashboard.
    */
   async getOperationalHealth() {
-    const [platformPayment, platformWhatsapp, activeTenantsWithoutMercadoPago, activeTenantsWithoutPhone] =
-      await Promise.all([
-        prisma.platformPaymentConfig.findUnique({
-          where: { id: 'default' },
-          select: { apiKey: true },
-        }),
-        prisma.platformWhatsappConfig.findUnique({
-          where: { id: 'default' },
-          select: { connectionStatus: true },
-        }),
-        prisma.account.count({
-          where: {
-            status: 'active',
-            NOT: {
-              tenantPaymentCredentials: {
-                some: { active: true, apiKey: { not: null } },
-              },
+    const [
+      platformPayment,
+      platformWhatsapp,
+      activeTenantsWithoutMercadoPago,
+      activeTenantsWithoutPhone,
+      evolutionAnomalyAccounts,
+    ] = await Promise.all([
+      prisma.platformPaymentConfig.findUnique({
+        where: { id: 'default' },
+        select: { apiKey: true },
+      }),
+      prisma.platformWhatsappConfig.findUnique({
+        where: { id: 'default' },
+        select: { connectionStatus: true },
+      }),
+      prisma.account.count({
+        where: {
+          status: 'active',
+          NOT: {
+            tenantPaymentCredentials: {
+              some: { active: true, apiKey: { not: null } },
             },
           },
-        }),
-        prisma.account.count({
-          where: {
-            status: 'active',
-            OR: [{ phone: null }, { phone: '' }],
-          },
-        }),
-      ]);
+        },
+      }),
+      prisma.account.count({
+        where: {
+          status: 'active',
+          OR: [{ phone: null }, { phone: '' }],
+        },
+      }),
+      evolutionIntegrity.countAccountsWithAnomalies(),
+    ]);
 
     return {
       platformMercadoPagoConfigured: Boolean(platformPayment?.apiKey),
       platformWhatsappConnected: platformWhatsapp?.connectionStatus === 'connected',
       activeTenantsWithoutMercadoPago,
       activeTenantsWithoutPhone,
+      evolutionAnomalyAccounts,
     };
   }
 

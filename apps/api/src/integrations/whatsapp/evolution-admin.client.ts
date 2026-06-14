@@ -1,5 +1,5 @@
 import QRCode from 'qrcode';
-import { expandBrazilPairingPhoneCandidates } from '@client-manager/shared';
+import { expandBrazilPairingPhoneCandidates, isEvolutionSessionStale } from '@client-manager/shared';
 import {
   normalizeEvolutionInstanceItem,
   parseEvolutionConnectPayload,
@@ -7,6 +7,7 @@ import {
   unwrapEvolutionInstanceList,
   type EvolutionInstanceSummary,
 } from './evolution-api-payload.util';
+import { EvolutionWhatsAppError } from './evolution/evolution-whatsapp.errors';
 
 export type { EvolutionInstanceSummary };
 
@@ -70,54 +71,84 @@ export class EvolutionAdminClient {
     }
 
     const message = parseEvolutionError(text);
-    if (response.status === 409 || /already exists/i.test(message)) {
+    if (response.status === 409 || /already exists|already in use/i.test(message)) {
       return;
     }
 
-    throw new Error(message || `Evolution create instance failed (${response.status})`);
+    throw this.providerError(message || `Evolution create instance failed (${response.status})`);
   }
 
   /**
    * Deletes a WhatsApp instance from the Evolution server.
    */
   async deleteInstance(instanceName: string): Promise<void> {
-    const url = `${this.baseUrl}/instance/delete/${encodeURIComponent(instanceName)}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
-    if (response.ok || response.status === 404) {
-      return;
+    const deleted = await this.tryDeleteInstance(instanceName);
+    if (!deleted) {
+      throw this.providerError(`Evolution delete instance failed for "${instanceName}"`);
     }
-
-    const text = await response.text();
-    const payload = safeJson(text);
-    throw new Error(
-      (payload.message as string) || `Evolution delete instance failed (${response.status})`,
-    );
   }
 
   /**
    * Deletes and recreates an instance (clean session for pairing after WhatsApp disconnect).
    */
   async recreateInstance(input: EvolutionInstanceCreateInput): Promise<void> {
-    await this.logoutInstance(input.instanceName).catch(() => undefined);
-    await this.deleteInstance(input.instanceName);
-    await sleep(500);
-    await this.createInstance(input);
-    await sleep(1000);
+    await this.softResetInstance(input.instanceName);
+
+    const deleted = await this.tryDeleteInstance(input.instanceName);
+    if (deleted) {
+      await sleep(500);
+      await this.createInstance(input);
+      await sleep(1000);
+      return;
+    }
+
+    const existing = await this.fetchInstanceSummary(input.instanceName).catch(() => null);
+    if (existing && isEvolutionSessionStale(existing)) {
+      throw this.resetFailedError(
+        `Instância "${input.instanceName}" está presa na Evolution (sessão expirada). ` +
+          'Peça ao admin para recriar em Contas ou remova manualmente na Evolution.',
+      );
+    }
+
+    if (!existing) {
+      await this.createInstance(input);
+      await sleep(1000);
+    }
   }
 
   /**
    * Fully disconnects an instance on Evolution (logout, delete, recreate empty instance).
    */
   async disconnectInstance(input: EvolutionInstanceCreateInput): Promise<void> {
-    await this.recreateInstance(input);
+    try {
+      await this.recreateInstance(input);
+    } catch (error) {
+      if (error instanceof EvolutionWhatsAppError && error.code === 'INSTANCE_RESET_FAILED') {
+        await this.softResetInstance(input.instanceName);
+      }
+      throw error;
+    }
   }
 
   /**
    * Ensures the instance is idle on Evolution before a new QR or pairing attempt.
    */
   async prepareInstanceForConnect(input: EvolutionInstanceCreateInput): Promise<void> {
-    const state = (await this.fetchConnectionState(input.instanceName).catch(() => 'close')).toLowerCase();
     const summary = await this.fetchInstanceSummary(input.instanceName).catch(() => null);
+    const state = (
+      await this.fetchConnectionState(input.instanceName).catch(() => 'close')
+    ).toLowerCase();
+
+    if (summary && isEvolutionSessionStale(summary)) {
+      await this.softResetInstance(input.instanceName);
+      const deleted = await this.tryDeleteInstance(input.instanceName);
+      if (deleted) {
+        await sleep(500);
+        await this.createInstance(input);
+        await sleep(1000);
+      }
+      return;
+    }
 
     const stillLinked =
       state === 'open' ||
@@ -138,10 +169,7 @@ export class EvolutionAdminClient {
    */
   async getConnectInfo(instanceName: string, phone?: string): Promise<EvolutionConnectInfo> {
     if (phone) {
-      await this.recreateInstance({
-        instanceName,
-        token: instanceName,
-      });
+      await this.prepareInstanceForPairing(instanceName);
 
       const candidates = expandBrazilPairingPhoneCandidates(phone);
 
@@ -161,7 +189,7 @@ export class EvolutionAdminClient {
         }
 
         if (index < candidates.length - 1) {
-          await this.resetInstanceSession(instanceName);
+          await this.softResetInstance(instanceName);
         }
       }
 
@@ -176,13 +204,20 @@ export class EvolutionAdminClient {
     let parsed = connectResult.parsed;
     let qrCodeBase64 = parsed.qrCodeBase64;
 
+    const summary = await this.fetchInstanceSummary(instanceName).catch(() => null);
     const remoteState = parsed.state.toLowerCase();
+    const stale = isEvolutionSessionStale(summary);
     if (
+      stale ||
       remoteState === 'open' ||
       remoteState === 'connected' ||
       remoteState === 'connecting'
     ) {
-      await this.recreateInstance({ instanceName, token: instanceName });
+      if (stale) {
+        await this.prepareInstanceForConnect({ instanceName, token: instanceName });
+      } else {
+        await this.recreateInstance({ instanceName, token: instanceName });
+      }
       connectResult = await this.fetchConnectPayload(instanceName);
       parsed = connectResult.parsed;
       qrCodeBase64 = parsed.qrCodeBase64;
@@ -193,7 +228,7 @@ export class EvolutionAdminClient {
     }
 
     if (!qrCodeBase64 && !parsed.pairingCode && isZeroCountQrcode(connectResult.payload)) {
-      await this.resetInstanceSession(instanceName);
+      await this.softResetInstance(instanceName);
       connectResult = await this.fetchConnectPayload(instanceName);
       parsed = connectResult.parsed;
       qrCodeBase64 = parsed.qrCodeBase64;
@@ -210,23 +245,141 @@ export class EvolutionAdminClient {
     };
   }
 
-  private async resetInstanceSession(instanceName: string): Promise<void> {
+  /**
+   * Logs out the WhatsApp session for an instance.
+   */
+  async logoutInstance(instanceName: string): Promise<void> {
+    const url = `${this.baseUrl}/instance/logout/${encodeURIComponent(instanceName)}`;
+    let response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    if (response.ok || response.status === 404) {
+      return;
+    }
+
+    response = await fetch(url, { method: 'POST', headers: this.headers() });
+    if (response.ok || response.status === 404) {
+      return;
+    }
+
+    const text = await response.text();
+    throw this.providerError(parseEvolutionError(text) || `Evolution logout failed (${response.status})`);
+  }
+
+  /**
+   * Restarts an instance session on Evolution (best-effort).
+   */
+  async restartInstance(instanceName: string): Promise<void> {
+    const url = `${this.baseUrl}/instance/restart/${encodeURIComponent(instanceName)}`;
+    const response = await fetch(url, { method: 'POST', headers: this.headers() });
+    if (response.ok || response.status === 404) {
+      return;
+    }
+
+    const text = await response.text();
+    throw this.providerError(
+      parseEvolutionError(text) || `Evolution restart failed (${response.status})`,
+    );
+  }
+
+  /**
+   * Returns summary data for a single instance from the Evolution server.
+   */
+  async fetchInstanceSummary(instanceName: string): Promise<EvolutionInstanceSummary | null> {
+    const instances = await this.fetchAllInstances();
+    return instances.get(instanceName) ?? null;
+  }
+
+  /**
+   * Returns all instances indexed by instance name (single HTTP round-trip).
+   */
+  async fetchAllInstances(): Promise<Map<string, EvolutionInstanceSummary>> {
+    const url = `${this.baseUrl}/instance/fetchInstances`;
+    const response = await fetch(url, { method: 'GET', headers: this.headers() });
+    const text = await response.text();
+    const payload = safeJson(text);
+
+    if (!response.ok) {
+      throw this.providerError(
+        parseEvolutionError(text) || `Evolution fetchInstances failed (${response.status})`,
+      );
+    }
+
+    const items = unwrapEvolutionInstanceList(payload);
+    const map = new Map<string, EvolutionInstanceSummary>();
+    for (const item of items) {
+      const summary = normalizeEvolutionInstanceItem(item);
+      if (summary) {
+        map.set(summary.instanceName, summary);
+      }
+    }
+
+    return map;
+  }
+
+  /**
+   * Reads WhatsApp connection state for an instance.
+   */
+  async fetchConnectionState(instanceName: string): Promise<string> {
+    const url = `${this.baseUrl}/instance/connectionState/${encodeURIComponent(instanceName)}`;
+    const response = await fetch(url, { method: 'GET', headers: this.headers() });
+    const text = await response.text();
+    const payload = safeJson(text);
+
+    if (!response.ok) {
+      throw this.providerError(
+        parseEvolutionError(text) || `Evolution connectionState failed (${response.status})`,
+      );
+    }
+
+    return readEvolutionRemoteState(payload);
+  }
+
+  private async prepareInstanceForPairing(instanceName: string): Promise<void> {
+    const summary = await this.fetchInstanceSummary(instanceName).catch(() => null);
+    if (summary && isEvolutionSessionStale(summary)) {
+      await this.prepareInstanceForConnect({ instanceName, token: instanceName });
+      return;
+    }
+
+    const deleted = await this.tryDeleteInstance(instanceName);
+    if (deleted) {
+      await sleep(500);
+      await this.createInstance({ instanceName, token: instanceName });
+      await sleep(1000);
+      return;
+    }
+
+    await this.softResetInstance(instanceName);
+    await this.ensureInstance({ instanceName, token: instanceName });
+  }
+
+  private async softResetInstance(instanceName: string): Promise<void> {
     await this.logoutInstance(instanceName).catch(() => undefined);
-    await sleep(1200);
+    await this.restartInstance(instanceName).catch(() => undefined);
+    await sleep(1500);
+  }
+
+  private async tryDeleteInstance(instanceName: string): Promise<boolean> {
+    const url = `${this.baseUrl}/instance/delete/${encodeURIComponent(instanceName)}`;
+    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    if (response.ok || response.status === 404) {
+      return true;
+    }
+
+    return false;
   }
 
   private async requestPairingConnect(
     instanceName: string,
     phone: string,
   ): Promise<{ payload: Record<string, unknown>; parsed: ReturnType<typeof parseEvolutionConnectPayload> }> {
-    const postResult = await this.requestConnect(instanceName, 'POST', phone).catch(() => null);
-    if (postResult?.parsed.pairingCode) {
-      return postResult;
-    }
-
     const getResult = await this.requestConnect(instanceName, 'GET', phone);
     if (getResult.parsed.pairingCode) {
       return getResult;
+    }
+
+    const postResult = await this.requestConnect(instanceName, 'POST', phone).catch(() => null);
+    if (postResult?.parsed.pairingCode) {
+      return postResult;
     }
 
     return postResult ?? getResult;
@@ -254,9 +407,14 @@ export class EvolutionAdminClient {
     const payload = safeJson(text);
 
     if (!response.ok) {
-      throw new Error(
-        (payload.message as string) || `Evolution connect failed (${response.status})`,
-      );
+      if (method === 'POST' && (response.status === 404 || response.status === 405)) {
+        return {
+          payload,
+          parsed: parseEvolutionConnectPayload(payload),
+        };
+      }
+
+      throw this.providerError(parseEvolutionError(text) || `Evolution connect failed (${response.status})`);
     }
 
     return {
@@ -265,86 +423,19 @@ export class EvolutionAdminClient {
     };
   }
 
-  /**
-   * Logs out the WhatsApp session for an instance.
-   */
-  async logoutInstance(instanceName: string): Promise<void> {
-    const url = `${this.baseUrl}/instance/logout/${encodeURIComponent(instanceName)}`;
-    let response = await fetch(url, { method: 'DELETE', headers: this.headers() });
-    if (response.ok || response.status === 404) {
-      return;
-    }
-
-    response = await fetch(url, { method: 'POST', headers: this.headers() });
-    if (response.ok || response.status === 404) {
-      return;
-    }
-
-    const text = await response.text();
-    const payload = safeJson(text);
-    throw new Error(
-      (payload.message as string) || `Evolution logout failed (${response.status})`,
-    );
-  }
-
-  /**
-   * Returns summary data for a single instance from the Evolution server.
-   */
-  async fetchInstanceSummary(instanceName: string): Promise<EvolutionInstanceSummary | null> {
-    const instances = await this.fetchAllInstances();
-    return instances.get(instanceName) ?? null;
-  }
-
-  /**
-   * Returns all instances indexed by instance name (single HTTP round-trip).
-   */
-  async fetchAllInstances(): Promise<Map<string, EvolutionInstanceSummary>> {
-    const url = `${this.baseUrl}/instance/fetchInstances`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers() });
-    const text = await response.text();
-    const payload = safeJson(text);
-
-    if (!response.ok) {
-      throw new Error(
-        (payload.message as string) || `Evolution fetchInstances failed (${response.status})`,
-      );
-    }
-
-    const items = unwrapEvolutionInstanceList(payload);
-    const map = new Map<string, EvolutionInstanceSummary>();
-    for (const item of items) {
-      const summary = normalizeEvolutionInstanceItem(item);
-      if (summary) {
-        map.set(summary.instanceName, summary);
-      }
-    }
-
-    return map;
-  }
-
-  /**
-   * Reads WhatsApp connection state for an instance.
-   */
-  async fetchConnectionState(instanceName: string): Promise<string> {
-    const url = `${this.baseUrl}/instance/connectionState/${encodeURIComponent(instanceName)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers() });
-    const text = await response.text();
-    const payload = safeJson(text);
-
-    if (!response.ok) {
-      throw new Error(
-        (payload.message as string) || `Evolution connectionState failed (${response.status})`,
-      );
-    }
-
-    return readEvolutionRemoteState(payload);
-  }
-
   private headers(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
       apikey: this.apiKey,
     };
+  }
+
+  private providerError(message: string): EvolutionWhatsAppError {
+    return new EvolutionWhatsAppError(message, 'PROVIDER_ERROR');
+  }
+
+  private resetFailedError(message: string): EvolutionWhatsAppError {
+    return new EvolutionWhatsAppError(message, 'INSTANCE_RESET_FAILED');
   }
 }
 
@@ -359,6 +450,21 @@ function safeJson(text: string): Record<string, unknown> {
 
 function parseEvolutionError(text: string): string {
   const payload = safeJson(text);
+  const response = payload.response;
+  if (response && typeof response === 'object' && !Array.isArray(response)) {
+    const message = (response as Record<string, unknown>).message;
+    if (Array.isArray(message)) {
+      return message.map(String).join('; ');
+    }
+    if (typeof message === 'string' && message.trim()) {
+      return message.trim();
+    }
+  }
+
+  if (Array.isArray(payload.message)) {
+    return payload.message.map(String).join('; ');
+  }
+
   return String(payload.message ?? payload.error ?? text).slice(0, 500);
 }
 

@@ -88,9 +88,7 @@ export class EvolutionTenantProvisioningService {
     const instanceUrl = buildEvolutionInstanceUrl(platform.baseUrl, instanceName);
     const encryptedApiKey = encryptCredential(platform.apiKey);
 
-    await client.logoutInstance(instanceName).catch(() => undefined);
-    await client.deleteInstance(instanceName);
-    await client.createInstance({ instanceName, token: instanceName });
+    await client.recreateInstance({ instanceName, token: instanceName });
 
     await prisma.tenantWhatsappConfig.upsert({
       where: { accountId },

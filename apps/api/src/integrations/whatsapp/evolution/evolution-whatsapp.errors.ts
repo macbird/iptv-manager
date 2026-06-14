@@ -10,7 +10,12 @@
 export class EvolutionWhatsAppError extends Error {
   constructor(
     message: string,
-    readonly code: 'NOT_CONFIGURED' | 'NO_ACCOUNT' | 'NOT_CONNECTED' = 'NOT_CONFIGURED',
+    readonly code:
+      | 'NOT_CONFIGURED'
+      | 'NO_ACCOUNT'
+      | 'NOT_CONNECTED'
+      | 'PROVIDER_ERROR'
+      | 'INSTANCE_RESET_FAILED' = 'NOT_CONFIGURED',
   ) {
     super(message);
     this.name = 'EvolutionWhatsAppError';

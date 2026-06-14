@@ -4,6 +4,8 @@ export interface EvolutionSessionSignals {
   ownerJid?: string | null;
   profileName?: string | null;
   number?: string | null;
+  disconnectionReasonCode?: number | null;
+  disconnectionAt?: string | null;
 }
 
 /**
@@ -42,7 +44,7 @@ export function mapEvolutionState(
  * Returns true when Evolution metadata indicates a paired WhatsApp session.
  */
 export function hasEvolutionSessionProof(session?: EvolutionSessionSignals | null): boolean {
-  if (!session) {
+  if (!session || isEvolutionSessionSignalsStale(session)) {
     return false;
   }
 
@@ -68,4 +70,12 @@ export function formatEvolutionDisplayPhone(
 
   const digits = ownerJid.split('@')[0]?.replace(/\D/g, '');
   return digits ? `+${digits}` : null;
+}
+
+function isEvolutionSessionSignalsStale(session: EvolutionSessionSignals): boolean {
+  if (session.disconnectionReasonCode != null) {
+    return true;
+  }
+
+  return Boolean(session.disconnectionAt?.trim());
 }

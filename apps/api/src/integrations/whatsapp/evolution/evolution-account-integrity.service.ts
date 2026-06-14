@@ -1,5 +1,8 @@
 import type { AccountEvolutionIntegrity } from '@client-manager/shared';
-import { resolveEvolutionIntegrityStatus } from '@client-manager/shared';
+import {
+  detectEvolutionInstanceAnomalies,
+  resolveEvolutionIntegrityStatus,
+} from '@client-manager/shared';
 import { prisma } from '../../../core/database';
 import type { EvolutionInstanceSummary } from '../evolution-admin.client';
 import { EvolutionAdminClient } from '../evolution-admin.client';
@@ -37,6 +40,7 @@ export class EvolutionAccountIntegrityService {
           status: 'not_configured',
           instanceName: account.slug || null,
           displayPhoneNumber: null,
+          anomalies: [],
         });
       }
       return result;
@@ -50,6 +54,7 @@ export class EvolutionAccountIntegrityService {
         instanceUrl: true,
         apiKey: true,
         displayPhoneNumber: true,
+        connectionStatus: true,
       },
     });
     const whatsappByAccountId = new Map(whatsappRows.map((row) => [row.accountId, row]));
@@ -68,29 +73,87 @@ export class EvolutionAccountIntegrityService {
     }
 
     for (const account of accounts) {
-      const instanceName = account.slug?.trim() || null;
-      const whatsapp = whatsappByAccountId.get(account.id);
-      const dbConfigured = Boolean(whatsapp?.instanceUrl && whatsapp?.apiKey);
-      const remote = instanceName ? remoteInstances.get(instanceName) : undefined;
-      const status = resolveEvolutionIntegrityStatus({
-        evolutionConfigured: true,
-        instanceName,
-        dbConfigured,
-        remote,
-        remoteCheckFailed,
-      });
-
-      const displayPhoneNumber =
-        whatsapp?.displayPhoneNumber ??
-        formatEvolutionDisplayPhone(remote?.number, remote?.ownerJid);
-
-      result.set(account.id, {
-        status,
-        instanceName,
-        displayPhoneNumber,
-      });
+      result.set(
+        account.id,
+        this.resolveOneAccount({
+          account,
+          whatsapp: whatsappByAccountId.get(account.id),
+          remoteInstances,
+          remoteCheckFailed,
+        }),
+      );
     }
 
     return result;
+  }
+
+  /**
+   * Counts tenant accounts with Evolution operational anomalies for the admin dashboard.
+   */
+  async countAccountsWithAnomalies(): Promise<number> {
+    const platform = getEvolutionPlatformConfig();
+    if (!platform) {
+      return 0;
+    }
+
+    const accounts = await prisma.account.findMany({
+      where: { status: 'active', slug: { not: '' } },
+      select: { id: true, slug: true },
+    });
+
+    const resolved = await this.resolveForAccounts(
+      accounts.map((account) => ({ id: account.id, slug: account.slug })),
+    );
+
+    let count = 0;
+    for (const integrity of resolved.values()) {
+      if (integrity.anomalies.length > 0 || integrity.status === 'stale_session') {
+        count += 1;
+      }
+    }
+
+    return count;
+  }
+
+  private resolveOneAccount(input: {
+    account: AccountEvolutionIntegrityInput;
+    whatsapp:
+      | {
+          instanceUrl: string | null;
+          apiKey: string | null;
+          displayPhoneNumber: string | null;
+          connectionStatus: string;
+        }
+      | undefined;
+    remoteInstances: Map<string, EvolutionInstanceSummary>;
+    remoteCheckFailed: boolean;
+  }): AccountEvolutionIntegrity {
+    const instanceName = input.account.slug?.trim() || null;
+    const whatsapp = input.whatsapp;
+    const dbConfigured = Boolean(whatsapp?.instanceUrl && whatsapp?.apiKey);
+    const remote = instanceName ? input.remoteInstances.get(instanceName) : undefined;
+    const status = resolveEvolutionIntegrityStatus({
+      evolutionConfigured: true,
+      instanceName,
+      dbConfigured,
+      remote,
+      remoteCheckFailed: input.remoteCheckFailed,
+    });
+
+    const anomalies = detectEvolutionInstanceAnomalies({
+      dbConnectionStatus: whatsapp?.connectionStatus,
+      remote,
+    });
+
+    const displayPhoneNumber =
+      whatsapp?.displayPhoneNumber ??
+      formatEvolutionDisplayPhone(remote?.number, remote?.ownerJid);
+
+    return {
+      status,
+      instanceName,
+      displayPhoneNumber,
+      anomalies,
+    };
   }
 }

@@ -15,7 +15,9 @@ import {
   isPastCalendarDate,
   resolveAccountListRowAccent,
   EVOLUTION_INTEGRITY_LABELS,
+  EVOLUTION_ANOMALY_LABELS,
   type EvolutionInstanceIntegrityStatus,
+  type EvolutionInstanceAnomalyCode,
 } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import type { AccountListItem } from '@client-manager/shared';
@@ -28,6 +30,7 @@ function evolutionBadgeClass(status: EvolutionInstanceIntegrityStatus): string {
       return 'bg-sky-100 text-sky-800';
     case 'missing_db':
     case 'missing_remote':
+    case 'stale_session':
       return 'bg-red-100 text-red-800';
     case 'disconnected':
       return 'bg-orange-100 text-orange-800';
@@ -36,6 +39,12 @@ function evolutionBadgeClass(status: EvolutionInstanceIntegrityStatus): string {
     default:
       return 'bg-slate-100 text-slate-700';
   }
+}
+
+function anomalyBadgeClass(code: EvolutionInstanceAnomalyCode): string {
+  return code === 'stale_session' || code === 'reset_likely_blocked'
+    ? 'bg-red-100 text-red-800'
+    : 'bg-amber-100 text-amber-800';
 }
 
 function AccountHealthBadges({ account }: { account: AccountListItem }) {
@@ -49,6 +58,16 @@ function AccountHealthBadges({ account }: { account: AccountListItem }) {
         label: meta.label,
         className: evolutionBadgeClass(account.evolutionIntegrity.status),
         title: meta.title,
+      });
+    }
+
+    for (const anomaly of account.evolutionIntegrity.anomalies ?? []) {
+      const anomalyMeta = EVOLUTION_ANOMALY_LABELS[anomaly.code];
+      badges.push({
+        key: `evolution-anomaly-${anomaly.code}`,
+        label: anomalyMeta.label,
+        className: anomalyBadgeClass(anomaly.code),
+        title: anomaly.message || anomalyMeta.title,
       });
     }
   }

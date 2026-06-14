@@ -138,10 +138,17 @@ export class EvolutionConnectionService {
   async disconnect(accountId: string): Promise<WhatsAppEvolutionConnectionDto> {
     const context = await this.loadTenantContext(accountId);
     if (context) {
-      await context.client.disconnectInstance({
-        instanceName: context.instanceName,
-        token: context.instanceName,
-      });
+      try {
+        await context.client.disconnectInstance({
+          instanceName: context.instanceName,
+          token: context.instanceName,
+        });
+      } catch (error) {
+        console.warn(
+          '[evolution-connect] disconnectInstance failed; marking tenant disconnected anyway:',
+          error instanceof Error ? error.message : error,
+        );
+      }
     }
 
     await prisma.tenantWhatsappConfig.upsert({
@@ -320,10 +327,17 @@ export class EvolutionConnectionService {
   async disconnectPlatform(): Promise<WhatsAppEvolutionConnectionDto> {
     const context = await this.loadPlatformContext();
     if (context) {
-      await context.client.disconnectInstance({
-        instanceName: context.instanceName,
-        token: context.instanceName,
-      });
+      try {
+        await context.client.disconnectInstance({
+          instanceName: context.instanceName,
+          token: context.instanceName,
+        });
+      } catch (error) {
+        console.warn(
+          '[evolution-connect] platform disconnectInstance failed; marking disconnected anyway:',
+          error instanceof Error ? error.message : error,
+        );
+      }
     }
 
     await prisma.platformWhatsappConfig.upsert({
@@ -583,6 +597,8 @@ function toSessionSignals(
   summary: {
     ownerJid: string | null;
     number: string | null;
+    disconnectionReasonCode?: number | null;
+    disconnectionAt?: string | null;
   } | null,
 ): EvolutionSessionSignals | null {
   if (!summary) {
@@ -592,5 +608,7 @@ function toSessionSignals(
   return {
     ownerJid: summary.ownerJid,
     number: summary.number,
+    disconnectionReasonCode: summary.disconnectionReasonCode,
+    disconnectionAt: summary.disconnectionAt,
   };
 }

@@ -88,7 +88,13 @@ export function mapErrorToApiResponse(error: unknown): MappedApiError {
           ? API_ERROR_CODES.WHATSAPP_NOT_CONNECTED
           : API_ERROR_CODES.WHATSAPP_PROVIDER_ERROR;
     const statusCode =
-      error.code === 'NOT_CONFIGURED' ? 503 : error.code === 'NOT_CONNECTED' ? 409 : 400;
+      error.code === 'NOT_CONFIGURED'
+        ? 503
+        : error.code === 'NOT_CONNECTED'
+          ? 409
+          : error.code === 'PROVIDER_ERROR' || error.code === 'INSTANCE_RESET_FAILED'
+            ? 502
+            : 400;
     return {
       statusCode,
       body: { message: error.message, code },

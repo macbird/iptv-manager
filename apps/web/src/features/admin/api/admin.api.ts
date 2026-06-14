@@ -85,6 +85,7 @@ export interface AdminDashboardStats {
     platformWhatsappConnected: boolean;
     activeTenantsWithoutMercadoPago: number;
     activeTenantsWithoutPhone: number;
+    evolutionAnomalyAccounts: number;
   };
 }
 

@@ -68,6 +68,15 @@ export const AdminDashboardPage: React.FC = () => {
       href: '/admin/settings',
     },
     {
+      title: 'Anomalias Evolution',
+      value: health?.evolutionAnomalyAccounts ?? 0,
+      subtitle: 'Instâncias presas ou com status divergente',
+      icon: AlertTriangle,
+      iconColor: (health?.evolutionAnomalyAccounts ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600',
+      iconBg: (health?.evolutionAnomalyAccounts ?? 0) > 0 ? 'bg-red-100' : 'bg-emerald-100',
+      href: '/admin/accounts',
+    },
+    {
       title: 'Tenants sem MP',
       value: health?.activeTenantsWithoutMercadoPago ?? 0,
       subtitle: 'Contas ativas sem PIX configurado',
@@ -185,7 +194,7 @@ export const AdminDashboardPage: React.FC = () => {
         <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
           Saúde operacional
         </h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5 lg:gap-4">
           {healthCards.map((card) => (
             <StatCard key={card.title} {...card} />
           ))}
