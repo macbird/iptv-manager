@@ -65,6 +65,29 @@ export function orderBrazilPairingPhoneCandidates(phone: string): string[] {
 }
 
 /**
+ * Expands pairing candidates with national numbers (without 55) for Evolution API v2.
+ */
+export function expandBrazilPairingPhoneCandidates(phone: string): string[] {
+  const ordered = orderBrazilPairingPhoneCandidates(phone);
+  const expanded: string[] = [];
+
+  for (const candidate of ordered) {
+    if (!expanded.includes(candidate)) {
+      expanded.push(candidate);
+    }
+
+    if (candidate.startsWith('55')) {
+      const national = candidate.slice(2);
+      if (!expanded.includes(national)) {
+        expanded.push(national);
+      }
+    }
+  }
+
+  return expanded;
+}
+
+/**
  * Formats a Brazilian E.164 phone for display (e.g. +55 (35) 99984-1521).
  */
 export function formatBrazilPhoneForDisplay(phone: string): string {

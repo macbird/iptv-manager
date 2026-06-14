@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildBrazilPairingPhoneCandidates,
+  expandBrazilPairingPhoneCandidates,
   formatBrazilPhoneForDisplay,
   isValidBrazilPhoneE164,
   normalizePhoneE164,
@@ -52,6 +53,17 @@ describe('orderBrazilPairingPhoneCandidates', () => {
     expect(orderBrazilPairingPhoneCandidates('553599841521')).toEqual([
       '5535999841521',
       '553599841521',
+    ]);
+  });
+});
+
+describe('expandBrazilPairingPhoneCandidates', () => {
+  it('testExpandBrazilPairingPhoneCandidates_whenE164_shouldIncludeNationalNumber', () => {
+    expect(expandBrazilPairingPhoneCandidates('5535999841521')).toEqual([
+      '5535999841521',
+      '35999841521',
+      '553599841521',
+      '3599841521',
     ]);
   });
 });

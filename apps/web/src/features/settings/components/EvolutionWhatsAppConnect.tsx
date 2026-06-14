@@ -130,7 +130,11 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
       if (data.qrCodeBase64) {
         showToast.success('QR gerado — escaneie no celular');
       } else if (data.pairingCode) {
-        showToast.success('Código gerado — digite no WhatsApp');
+        showToast.success('Código gerado — aguarde o aviso no WhatsApp');
+      } else if (usePairingCode) {
+        showToast.error(
+          'Não foi possível gerar o código de pareamento. Use o QR Code ou confira se o número tem DDD e o 9.',
+        );
       } else if (data.connectionStatus === 'pending') {
         showToast.info(
           'Aguardando pareamento. Se o QR não aparecer em ~10s, clique em Atualizar QR / código.',
@@ -235,7 +239,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
               />
               <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs text-sky-950">
                 <p className="font-semibold">
-                  Quando o código for gerado, o WhatsApp deste número deve mostrar um aviso de
+                  Quando o código for gerado, o WhatsApp deste número pode mostrar um aviso de
                   conexão em alguns segundos.
                 </p>
                 <ol className="mt-2 list-decimal space-y-1 pl-4">
@@ -244,16 +248,48 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
                     celular, se houver)
                   </li>
                   <li>
-                    Se aparecer o aviso no celular, toque para confirmar e digite o código abaixo
-                  </li>
-                  <li>
-                    Se <strong>não aparecer nada</strong> no celular, clique em{' '}
-                    <strong>Desconectar</strong> aqui, gere de novo ou use o QR Code
+                    Se aparecer o aviso no celular, toque para confirmar e digite o código gerado
+                    abaixo
                   </li>
                 </ol>
+
+                <div className="mt-3 rounded-md border border-sky-300 bg-white/80 px-3 py-2.5">
+                  <p className="font-semibold text-sky-950">
+                    Se não aparecer notificação no celular
+                  </p>
+                  <ol className="mt-2 list-decimal space-y-1.5 pl-4 text-sky-900">
+                    <li>
+                      Abra o <strong>WhatsApp neste celular</strong> (o mesmo número informado
+                      acima)
+                    </li>
+                    <li>
+                      Vá em <strong>Aparelhos conectados</strong> (menu ⋮ no Android ou{' '}
+                      <strong>Ajustes</strong> no iPhone)
+                    </li>
+                    <li>
+                      Toque em <strong>Conectar um aparelho</strong>
+                    </li>
+                    <li>
+                      Escolha <strong>Conectar com número de telefone</strong>
+                    </li>
+                    <li>
+                      Digite o número com DDD (ex.:{' '}
+                      {phone.trim().length >= 10
+                        ? phone
+                        : '35999841521'}
+                      ) — igual ao campo acima
+                    </li>
+                    <li>
+                      Quando o WhatsApp pedir o código, <strong>copie o código abaixo</strong> e
+                      cole (sem hífen)
+                    </li>
+                  </ol>
+                </div>
+
                 <p className="mt-2 text-sky-800">
-                  Desconectar só no WhatsApp não basta — clique em <strong>Desconectar</strong> aqui
-                  no PixFlow antes de tentar outra vez.
+                  Desconectar só no WhatsApp não basta — clique em <strong>Desconectar</strong>{' '}
+                  aqui no PixFlow antes de tentar outra vez. Se continuar falhando, use o{' '}
+                  <strong>QR Code</strong> (desmarque esta opção).
                 </p>
               </div>
             </div>
@@ -301,10 +337,32 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
                 </button>
               </div>
               <p className="mt-2 text-xs text-emerald-700">
-                Aguarde o aviso no WhatsApp ou digite o código em Aparelhos conectados → Conectar
-                com número de telefone. Válido por ~1 minuto — se expirar, clique em{' '}
-                <strong>Atualizar QR / código</strong>.
+                Válido por ~1 minuto. Se expirar, clique em <strong>Atualizar QR / código</strong>.
               </p>
+
+              <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-left text-xs text-amber-950">
+                <p className="font-semibold">Não recebeu aviso no celular?</p>
+                <p className="mt-1 text-amber-900">
+                  Faça o pareamento manualmente no WhatsApp:
+                </p>
+                <ol className="mt-2 list-decimal space-y-1 pl-4 text-amber-900">
+                  <li>
+                    <strong>Aparelhos conectados</strong> → <strong>Conectar um aparelho</strong>{' '}
+                    → <strong>Conectar com número de telefone</strong>
+                  </li>
+                  <li>
+                    Informe o número{' '}
+                    <strong>
+                      {pairingPhoneNumber
+                        ? formatBrazilPhoneForDisplay(pairingPhoneNumber)
+                        : phone.trim() || '(DDD + número)'}
+                    </strong>
+                  </li>
+                  <li>
+                    Copie o código acima (botão ao lado) e cole no WhatsApp — <strong>sem hífen</strong>
+                  </li>
+                </ol>
+              </div>
             </div>
           ) : null}
         </div>

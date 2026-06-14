@@ -1,5 +1,5 @@
 import QRCode from 'qrcode';
-import { orderBrazilPairingPhoneCandidates } from '@client-manager/shared';
+import { expandBrazilPairingPhoneCandidates } from '@client-manager/shared';
 import {
   normalizeEvolutionInstanceItem,
   parseEvolutionConnectPayload,
@@ -95,25 +95,45 @@ export class EvolutionAdminClient {
   }
 
   /**
+   * Deletes and recreates an instance (clean session for pairing after WhatsApp disconnect).
+   */
+  async recreateInstance(input: EvolutionInstanceCreateInput): Promise<void> {
+    await this.logoutInstance(input.instanceName).catch(() => undefined);
+    await this.deleteInstance(input.instanceName);
+    await sleep(500);
+    await this.createInstance(input);
+    await sleep(1000);
+  }
+
+  /**
    * Returns QR / pairing data to link WhatsApp on the instance.
    */
   async getConnectInfo(instanceName: string, phone?: string): Promise<EvolutionConnectInfo> {
     if (phone) {
-      const candidates = orderBrazilPairingPhoneCandidates(phone);
+      await this.recreateInstance({
+        instanceName,
+        token: instanceName,
+      });
 
-      for (const candidate of candidates) {
-        await this.resetInstanceSession(instanceName);
+      const candidates = expandBrazilPairingPhoneCandidates(phone);
+
+      for (let index = 0; index < candidates.length; index += 1) {
+        const candidate = candidates[index];
         const connectResult = await this.requestPairingConnect(instanceName, candidate);
         const pairingCode = connectResult.parsed.pairingCode;
 
         if (pairingCode) {
-          await sleep(1500);
+          await sleep(2000);
           return {
             instanceName,
             state: connectResult.parsed.state,
             pairingCode,
             pairingPhoneNumber: candidate,
           };
+        }
+
+        if (index < candidates.length - 1) {
+          await this.resetInstanceSession(instanceName);
         }
       }
 
@@ -159,7 +179,17 @@ export class EvolutionAdminClient {
     instanceName: string,
     phone: string,
   ): Promise<{ payload: Record<string, unknown>; parsed: ReturnType<typeof parseEvolutionConnectPayload> }> {
-    return this.requestConnect(instanceName, 'GET', phone);
+    const postResult = await this.requestConnect(instanceName, 'POST', phone).catch(() => null);
+    if (postResult?.parsed.pairingCode) {
+      return postResult;
+    }
+
+    const getResult = await this.requestConnect(instanceName, 'GET', phone);
+    if (getResult.parsed.pairingCode) {
+      return getResult;
+    }
+
+    return postResult ?? getResult;
   }
 
   private async fetchConnectPayload(
@@ -170,14 +200,15 @@ export class EvolutionAdminClient {
 
   private async requestConnect(
     instanceName: string,
-    method: 'GET',
+    method: 'GET' | 'POST',
     phone?: string,
   ): Promise<{ payload: Record<string, unknown>; parsed: ReturnType<typeof parseEvolutionConnectPayload> }> {
     const basePath = `${this.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}`;
-    const url = phone ? `${basePath}?number=${encodeURIComponent(phone)}` : basePath;
+    const url = method === 'GET' && phone ? `${basePath}?number=${encodeURIComponent(phone)}` : basePath;
     const response = await fetch(url, {
       method,
       headers: this.headers(),
+      ...(method === 'POST' && phone ? { body: JSON.stringify({ number: phone }) } : {}),
     });
     const text = await response.text();
     const payload = safeJson(text);
