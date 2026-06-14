@@ -9,6 +9,7 @@ import { showToast } from '../../../shared/utils/toast';
 import { AuthShell } from '../../../shared/ui/auth/AuthShell';
 import { AuthField } from '../../../shared/ui/auth/AuthField';
 import { RememberMeCheckbox } from '../../../shared/ui/auth/RememberMeCheckbox';
+import { secondaryButtonFullWidthClass } from '../../../shared/ui/buttons/button-styles';
 import { loadRememberedLogin, saveRememberedLogin } from '../../../shared/utils/remember-login';
 
 const remembered = loadRememberedLogin('admin');
@@ -99,7 +100,7 @@ export const AdminLoginPage: React.FC = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${secondaryButtonFullWidthClass} gap-2 focus:ring-offset-2`}
         >
           {isSubmitting ? (
             <>

@@ -175,7 +175,7 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
             type="button"
             title="Copiar PIX"
             onClick={() => copyPix(i.pixCopyPaste)}
-            className="p-2 text-slate-400 hover:text-indigo-600"
+            className="p-2 text-slate-400 hover:text-form-primary"
           >
             <Copy className="h-4 w-4" />
           </button>
@@ -185,7 +185,7 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ variant }) => {
                 type="button"
                 onClick={() => pixMutation.mutate(i.id)}
                 disabled={pixMutation.isPending}
-                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline px-1 disabled:opacity-60"
+                className="inline-flex items-center gap-1 text-xs font-medium text-form-primary hover:underline px-1 disabled:opacity-60"
               >
                 {pixMutation.isPending && pixMutation.variables === i.id ? (
                   <>

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Modal } from '../modals/Modal';
 import type { ListFilterValues } from '@client-manager/shared';
+import { primaryButtonModalClass, secondaryButtonModalClass } from '../buttons/button-styles';
+import { filterActionsRowClass, filterFieldClass } from '../brand/brand-styles';
 
 export type ListFilterFieldType = 'select' | 'date' | 'month' | 'number';
 
@@ -47,7 +49,7 @@ export const ListFiltersModal: React.FC<ListFiltersModalProps> = ({
               <select
                 value={draft[field.key] ?? ''}
                 onChange={(e) => setField(field.key, e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                className={filterFieldClass}
               >
                 <option value="">Todos</option>
                 {field.options?.map((option) => (
@@ -63,25 +65,17 @@ export const ListFiltersModal: React.FC<ListFiltersModalProps> = ({
                 placeholder={field.placeholder}
                 value={draft[field.key] ?? ''}
                 onChange={(e) => setField(field.key, e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                className={filterFieldClass}
               />
             )}
           </label>
         ))}
 
-        <div className="flex gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClear}
-            className="flex-1 rounded-md border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
+        <div className={filterActionsRowClass}>
+          <button type="button" onClick={onClear} className={secondaryButtonModalClass}>
             Limpar
           </button>
-          <button
-            type="button"
-            onClick={onApply}
-            className="flex-1 rounded-md bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-          >
+          <button type="button" onClick={onApply} className={primaryButtonModalClass}>
             Aplicar
           </button>
         </div>

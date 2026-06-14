@@ -9,6 +9,7 @@ import { AuthShell } from '../../../shared/ui/auth/AuthShell';
 import { AuthField } from '../../../shared/ui/auth/AuthField';
 import { RememberMeCheckbox } from '../../../shared/ui/auth/RememberMeCheckbox';
 import { showToast } from '../../../shared/utils/toast';
+import { primaryButtonFullWidthClass } from '../../../shared/ui/buttons/button-styles';
 import { loadRememberedLogin, saveRememberedLogin } from '../../../shared/utils/remember-login';
 
 const remembered = loadRememberedLogin('tenant');
@@ -57,7 +58,7 @@ export const LoginPage: React.FC = () => {
       footer={
         <span>
           Acesso da plataforma?{' '}
-          <Link to="/admin/login" className="font-medium text-indigo-600 hover:text-indigo-700">
+          <Link to="/admin/login" className="font-medium text-form-primary hover:text-form-primary-hover">
             Painel admin
           </Link>
         </span>
@@ -105,7 +106,7 @@ export const LoginPage: React.FC = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${primaryButtonFullWidthClass} gap-2 focus:ring-offset-2`}
         >
           {isSubmitting ? (
             <>

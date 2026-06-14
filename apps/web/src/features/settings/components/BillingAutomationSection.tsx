@@ -29,7 +29,7 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
           type="checkbox"
           checked={value.active}
           onChange={(e) => onChange({ ...value, active: e.target.checked })}
-          className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+          className="h-4 w-4 rounded border-slate-300 text-form-primary"
         />
         Automação ativa
       </label>
@@ -88,7 +88,7 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
             type="checkbox"
             checked={value.sendPaymentCharge}
             onChange={(e) => onChange({ ...value, sendPaymentCharge: e.target.checked })}
-            className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+            className="h-4 w-4 rounded border-slate-300 text-form-primary"
           />
           Gerar PIX antes do envio
         </label>
@@ -97,7 +97,7 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
             type="checkbox"
             checked={value.sendWhatsapp}
             onChange={(e) => onChange({ ...value, sendWhatsapp: e.target.checked })}
-            className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+            className="h-4 w-4 rounded border-slate-300 text-form-primary"
           />
           Enviar cobrança via WhatsApp
         </label>
@@ -122,7 +122,7 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
                 overdueReminders: { ...overdue, enabled: e.target.checked },
               })
             }
-            className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+            className="h-4 w-4 rounded border-slate-300 text-form-primary"
           />
           Lembretes pós-vencimento ativos
         </label>
@@ -136,7 +136,7 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
               </div>
             ) : null}
 
-            <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-3 text-xs text-indigo-900">
+            <div className="rounded-lg border border-form-primary/20 bg-form-primary/5/50 px-3 py-3 text-xs text-slate-900">
               Configure <strong>quantas janelas quiser</strong> (D+1, D+7, D+20…) e as mensagens de
               cada uma em <strong>Cobrança → Pós-vencimento (D+N)</strong>.
               {overdue.daysAfterDue.length > 0 ? (
@@ -185,7 +185,7 @@ export const BillingAutomationSection: React.FC<BillingAutomationSectionProps> =
           onChange={(e) =>
             onChange({ ...value, autoCloseSubscriptionInvoices: e.target.checked })
           }
-          className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+          className="h-4 w-4 rounded border-slate-300 text-form-primary"
         />
         Cancelar faturas de assinatura não pagas após o prazo (somente assinatura)
       </label>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getApiErrorMessage } from '@client-manager/shared';
 import { authApi } from '../api/auth.api';
+import { primaryButtonClass, secondaryButtonClass } from '../../../shared/ui/buttons/button-styles';
 import { showToast } from '../../../shared/utils/toast';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
@@ -45,7 +46,7 @@ export const UserProfilePage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className={secondaryButtonClass}
           >
             Cancelar
           </button>
@@ -53,7 +54,7 @@ export const UserProfilePage: React.FC = () => {
             type="button"
             disabled={updateMutation.isPending}
             onClick={() => formRef.current?.requestSubmit()}
-            className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+            className={primaryButtonClass}
           >
             {updateMutation.isPending ? 'Salvando...' : 'Salvar'}
           </button>

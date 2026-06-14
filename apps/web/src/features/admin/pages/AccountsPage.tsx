@@ -14,12 +14,44 @@ import {
   getApiErrorMessage,
   isPastCalendarDate,
   resolveAccountListRowAccent,
+  EVOLUTION_INTEGRITY_LABELS,
+  type EvolutionInstanceIntegrityStatus,
 } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
 import type { AccountListItem } from '@client-manager/shared';
 
+function evolutionBadgeClass(status: EvolutionInstanceIntegrityStatus): string {
+  switch (status) {
+    case 'connected':
+      return 'bg-emerald-100 text-emerald-800';
+    case 'pending':
+      return 'bg-sky-100 text-sky-800';
+    case 'missing_db':
+    case 'missing_remote':
+      return 'bg-red-100 text-red-800';
+    case 'disconnected':
+      return 'bg-orange-100 text-orange-800';
+    case 'unknown':
+    case 'not_configured':
+    default:
+      return 'bg-slate-100 text-slate-700';
+  }
+}
+
 function AccountHealthBadges({ account }: { account: AccountListItem }) {
   const badges: Array<{ key: string; label: string; className: string; title: string }> = [];
+
+  if (account.evolutionIntegrity) {
+    const meta = EVOLUTION_INTEGRITY_LABELS[account.evolutionIntegrity.status];
+    if (account.evolutionIntegrity.status !== 'connected') {
+      badges.push({
+        key: 'evolution',
+        label: meta.label,
+        className: evolutionBadgeClass(account.evolutionIntegrity.status),
+        title: meta.title,
+      });
+    }
+  }
 
   if (account.status === 'active' && !account.paymentConfigured) {
     badges.push({
@@ -206,14 +238,14 @@ export const AccountsPage: React.FC = () => {
                 status: a.status === 'active' ? 'inactive' : 'active',
               })
             }
-            className="text-xs font-semibold text-slate-600 hover:text-indigo-600"
+            className="text-xs font-semibold text-slate-600 hover:text-form-primary"
           >
             {a.status === 'active' ? 'Desativar' : 'Reativar'}
           </button>
           <button
             type="button"
             onClick={() => openResetPassword(a)}
-            className="p-2 text-slate-500 hover:text-indigo-600"
+            className="p-2 text-slate-500 hover:text-form-primary"
             aria-label="Resetar senha"
           >
             <Key className="h-4 w-4" />
@@ -221,7 +253,7 @@ export const AccountsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => formModal.openEdit(a.id)}
-            className="p-2 text-slate-500 hover:text-indigo-600"
+            className="p-2 text-slate-500 hover:text-form-primary"
             aria-label="Editar conta"
           >
             <Edit2 className="h-4 w-4" />
@@ -276,7 +308,7 @@ export const AccountsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => openResetPassword(a)}
-            className="p-2 text-slate-400 hover:text-indigo-600"
+            className="p-2 text-slate-400 hover:text-form-primary"
             aria-label="Resetar senha"
           >
             <Key className="h-4 w-4" />
@@ -284,7 +316,7 @@ export const AccountsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => formModal.openEdit(a.id)}
-            className="p-2 text-slate-400 hover:text-indigo-600"
+            className="p-2 text-slate-400 hover:text-form-primary"
             aria-label="Editar conta"
           >
             <Edit2 className="h-4 w-4" />

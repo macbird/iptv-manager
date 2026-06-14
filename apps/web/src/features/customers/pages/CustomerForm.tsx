@@ -50,6 +50,7 @@ import {
   formSectionClass,
   formTextareaClass,
 } from '../../../shared/ui/forms/form-styles';
+import { newButtonClass } from '../../../shared/ui/buttons/button-styles';
 
 const normalizeMacAddress = (value?: string) =>
   value ? value.replace(/-/g, ':').toUpperCase() : '';
@@ -312,7 +313,7 @@ export const CustomerForm = React.forwardRef<HTMLFormElement, CustomerFormProps>
             <button
               type="button"
               onClick={() => append(emptyConnection)}
-              className="flex items-center text-sm font-semibold text-form-primary hover:opacity-80"
+              className={newButtonClass}
             >
               <Plus className="w-4 h-4 mr-1" /> Adicionar
             </button>

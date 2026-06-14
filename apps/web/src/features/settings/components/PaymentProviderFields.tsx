@@ -43,7 +43,7 @@ export const PaymentProviderFields: React.FC<PaymentProviderFieldsProps> = ({
       value={paymentApiKey}
       configured={Boolean(apiKeyConfigured)}
       onChange={onPaymentApiKeyChange}
-      emptyPlaceholder="Cole o Access Token do sandbox"
+      emptyPlaceholder="Cole o Access Token de produção (APP_USR-...)"
     />
     <SecretCredentialField
       id="platform-payment-webhook"

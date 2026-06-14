@@ -19,9 +19,6 @@ export const FormPasswordInput = React.forwardRef<HTMLInputElement, FormPassword
       showLockIcon = true,
       className = '',
       id,
-      value,
-      onChange,
-      onBlur,
       name,
       ...rest
     },
@@ -47,9 +44,6 @@ export const FormPasswordInput = React.forwardRef<HTMLInputElement, FormPassword
           name={name}
           type={visible ? 'text' : 'password'}
           autoComplete="off"
-          value={value ?? ''}
-          onChange={onChange}
-          onBlur={onBlur}
           className={`${formInputClass} ${formInputPaddingWithBoth} ${className}`.trim()}
           {...rest}
         />

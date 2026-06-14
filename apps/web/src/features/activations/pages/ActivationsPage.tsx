@@ -114,7 +114,7 @@ export const ActivationsPage: React.FC = () => {
           type="button"
           onClick={(e) => openStatusModal(row, e)}
           disabled={statusMutation.isPending}
-          className="p-2 text-slate-400 hover:text-indigo-600 disabled:opacity-50"
+          className="p-2 text-slate-400 hover:text-form-primary disabled:opacity-50"
           title="Alterar status"
           aria-label="Alterar status"
         >

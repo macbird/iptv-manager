@@ -90,7 +90,7 @@ export const PlansPage: React.FC = () => {
     <div className="flex justify-end">
       <button
         onClick={() => formModal.openEdit(row.id)}
-        className="text-slate-500 hover:text-indigo-600 p-2"
+        className="text-slate-500 hover:text-form-primary p-2"
       >
         <Edit2 className="w-4 h-4" />
       </button>
@@ -150,7 +150,7 @@ export const PlansPage: React.FC = () => {
           <div className="mb-0.5 truncate text-sm font-bold leading-tight text-slate-900">
             {p.name}
           </div>
-          <div className="text-[9px] font-medium uppercase leading-none tracking-tighter text-indigo-500/70">
+          <div className="text-[9px] font-medium uppercase leading-none tracking-tighter text-form-primary/70">
             {p.maxConnections} conexões
           </div>
         </div>

@@ -8,6 +8,7 @@ import type {
   TenantChargeMessagesSettingsDto,
 } from './billing-automation';
 import type { InvoiceKindValue } from './billing-enums';
+import type { AccountEvolutionIntegrity } from './evolution-account-integrity';
 
 export interface CustomerListItem {
   id: string;
@@ -240,6 +241,7 @@ export interface AccountListItem {
   phone: string | null;
   status: 'active' | 'inactive';
   paymentConfigured: boolean;
+  evolutionIntegrity: AccountEvolutionIntegrity | null;
   subscription: {
     dueDay: number;
     nextDueDate: string;

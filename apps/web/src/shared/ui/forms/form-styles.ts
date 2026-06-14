@@ -1,5 +1,10 @@
 /** Checkout-style form tokens (Poppins, gray fields, prefix/suffix icons). */
 
+import {
+  primaryButtonFullWidthClass,
+  secondaryButtonFullWidthClass,
+} from '../buttons/button-styles';
+
 export const formRootClass = 'font-form';
 
 export const formLabelClass = 'mb-1.5 block text-xs font-medium text-slate-600';
@@ -47,11 +52,9 @@ export const formGridClass = 'grid grid-cols-1 gap-4 md:grid-cols-2';
 
 export const formFooterClass = 'mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5';
 
-export const formCancelButtonClass =
-  'w-full rounded-[10px] border-0 bg-form-field px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200/80 disabled:opacity-50';
+export const formCancelButtonClass = secondaryButtonFullWidthClass;
 
-export const formSubmitButtonClass =
-  'w-full rounded-[10px] bg-form-primary px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-form-primary-hover disabled:opacity-50';
+export const formSubmitButtonClass = primaryButtonFullWidthClass;
 
 export const formDangerSubmitButtonClass =
   'w-full rounded-[10px] bg-red-600 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700 disabled:opacity-50';

@@ -5,6 +5,7 @@ import { WHATSAPP_CONNECTION_STATUS_LABELS, normalizePhoneE164 } from '@client-m
 import { tenantBillingApi, platformBillingApi } from '../../billing/api/billing.api';
 import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
+import { primaryButtonClass } from '../../../shared/ui/buttons/button-styles';
 
 type WhatsappSettingsScope = 'tenant' | 'platform';
 
@@ -297,7 +298,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
             type="button"
             onClick={() => testMutation.mutate()}
             disabled={testMutation.isPending || (scope === 'platform' && testPhone.trim().length < 10)}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className={primaryButtonClass}
           >
             {testMutation.isPending ? 'Enviando...' : 'Enviar mensagem de teste'}
           </button>

@@ -116,6 +116,14 @@ export class EvolutionAdminClient {
    * Returns summary data for a single instance from the Evolution server.
    */
   async fetchInstanceSummary(instanceName: string): Promise<EvolutionInstanceSummary | null> {
+    const instances = await this.fetchAllInstances();
+    return instances.get(instanceName) ?? null;
+  }
+
+  /**
+   * Returns all instances indexed by instance name (single HTTP round-trip).
+   */
+  async fetchAllInstances(): Promise<Map<string, EvolutionInstanceSummary>> {
     const url = `${this.baseUrl}/instance/fetchInstances`;
     const response = await fetch(url, { method: 'GET', headers: this.headers() });
     const text = await response.text();
@@ -131,24 +139,21 @@ export class EvolutionAdminClient {
       ? payload
       : ((payload.response as unknown[]) ?? []);
 
-    const row = items.find(
-      (item) =>
-        item &&
-        typeof item === 'object' &&
-        ((item as Record<string, unknown>).name === instanceName ||
-          (item as Record<string, unknown>).instanceName === instanceName),
-    ) as Record<string, unknown> | undefined;
-
-    if (!row) {
-      return null;
+    const map = new Map<string, EvolutionInstanceSummary>();
+    for (const item of items) {
+      if (!item || typeof item !== 'object') continue;
+      const row = item as Record<string, unknown>;
+      const instanceName = String(row.name ?? row.instanceName ?? '').trim();
+      if (!instanceName) continue;
+      map.set(instanceName, {
+        instanceName,
+        connectionStatus: String(row.connectionStatus ?? row.state ?? '') || null,
+        number: (row.number as string) ?? null,
+        ownerJid: (row.ownerJid as string) ?? null,
+      });
     }
 
-    return {
-      instanceName,
-      connectionStatus: String(row.connectionStatus ?? row.state ?? '') || null,
-      number: (row.number as string) ?? null,
-      ownerJid: (row.ownerJid as string) ?? null,
-    };
+    return map;
   }
 
   /**

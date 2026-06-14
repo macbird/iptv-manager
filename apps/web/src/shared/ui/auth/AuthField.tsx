@@ -57,7 +57,7 @@ export const AuthField: React.FC<AuthFieldProps> = ({
           className={`block w-full rounded-lg border bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 focus:outline-none focus:ring-2 ${
             error
               ? 'border-red-300 focus:border-red-400 focus:ring-red-500/20'
-              : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20'
+              : 'border-slate-300 focus:border-form-primary focus:ring-form-primary/20'
           }`}
         />
       </div>

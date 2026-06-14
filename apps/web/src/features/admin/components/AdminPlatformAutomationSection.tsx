@@ -40,7 +40,7 @@ export const AdminPlatformAutomationSection: React.FC<AdminPlatformAutomationSec
           type="checkbox"
           checked={value.active}
           onChange={(e) => onChange({ ...value, active: e.target.checked })}
-          className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+          className="h-4 w-4 rounded border-slate-300 text-form-primary"
         />
         Automação ativa
       </label>
@@ -86,7 +86,7 @@ export const AdminPlatformAutomationSection: React.FC<AdminPlatformAutomationSec
             type="checkbox"
             checked={value.suspendOverdueAccounts}
             onChange={(e) => onChange({ ...value, suspendOverdueAccounts: e.target.checked })}
-            className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+            className="h-4 w-4 rounded border-slate-300 text-form-primary"
           />
           Suspender contas após dias de inadimplência (usa dias da aba Geral)
         </label>

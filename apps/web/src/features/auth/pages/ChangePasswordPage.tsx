@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { getApiErrorMessage } from '@client-manager/shared';
 import { authApi } from '../api/auth.api';
+import { primaryButtonFullWidthClass } from '../../../shared/ui/buttons/button-styles';
 import { showToast } from '../../../shared/utils/toast';
 import { PasswordInput } from '../../../shared/ui/forms/PasswordInput';
 
@@ -63,7 +64,7 @@ export const ChangePasswordPage: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-colors shadow-md disabled:opacity-50"
+            className={primaryButtonFullWidthClass}
           >
             {isSubmitting ? 'Salvando...' : 'Alterar Senha'}
           </button>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { PatternFormat } from 'react-number-format';
 import { useQuery } from '@tanstack/react-query';
 import {
   ACCOUNT_SLUG_FIELD_HINT,
@@ -11,9 +12,14 @@ import {
 import { z } from 'zod';
 import { Building2, Calendar, Link2, Mail, Package, Phone, ToggleLeft, User } from 'lucide-react';
 import { platformPlansApi } from '../api/platform-plans.api';
+import { FormField } from '../../../shared/ui/forms/FormField';
 import { FormInput } from '../../../shared/ui/forms/FormInput';
 import { FormPasswordInput } from '../../../shared/ui/forms/FormPasswordInput';
 import { FormSelect } from '../../../shared/ui/forms/FormSelect';
+import {
+  formInputClass,
+  formInputPaddingWithPrefix,
+} from '../../../shared/ui/forms/form-styles';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 import { showToast } from '../../../shared/utils/toast';
 
@@ -63,6 +69,19 @@ function toDateInputValue(isoDate?: string | null): string {
   const date = new Date(isoDate);
   if (Number.isNaN(date.getTime())) return suggestedDueDateValue();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function formatPhoneForInput(phone?: string | null): string {
+  if (!phone?.trim()) return '';
+  const digits = phone.replace(/\D/g, '');
+  const national = digits.startsWith('55') && digits.length >= 12 ? digits.slice(2) : digits;
+  if (national.length === 11) {
+    return `(${national.slice(0, 2)}) ${national.slice(2, 7)}-${national.slice(7)}`;
+  }
+  if (national.length === 10) {
+    return `(${national.slice(0, 2)}) ${national.slice(2, 6)}-${national.slice(6)}`;
+  }
+  return phone;
 }
 
 type AccountFormProps = {
@@ -116,6 +135,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm({
     resolver:
@@ -136,7 +156,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({
         status: initialData.status ?? 'active',
         dueDate: toDateInputValue(initialData.subscription?.nextDueDate),
         platformPlanId: initialData.subscription?.platformPlan?.id ?? defaultPlatformPlanId,
-        phone: initialData.phone ?? '',
+        phone: formatPhoneForInput(initialData.phone),
       });
       return;
     }
@@ -200,13 +220,27 @@ export const AccountForm: React.FC<AccountFormProps> = ({
   );
 
   const phoneField = (
-    <FormInput
+    <FormField
       label="Telefone (notificações / cobrança)"
       prefixIcon={Phone}
-      placeholder="(11) 99999-9999"
       error={errors.phone?.message ? String(errors.phone.message) : undefined}
-      {...register('phone')}
-    />
+    >
+      <Controller
+        name="phone"
+        control={control}
+        render={({ field }) => (
+          <PatternFormat
+            format="(##) #####-####"
+            mask="_"
+            value={field.value ?? ''}
+            onValueChange={(values) => field.onChange(values.formattedValue)}
+            onBlur={field.onBlur}
+            placeholder="(11) 99999-9999"
+            className={`${formInputClass} ${formInputPaddingWithPrefix}`}
+          />
+        )}
+      />
+    </FormField>
   );
 
   const dueDateField = (

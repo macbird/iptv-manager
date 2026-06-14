@@ -20,8 +20,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   value,
   subtitle,
   icon: Icon,
-  iconColor = 'text-indigo-600',
-  iconBg = 'bg-indigo-100',
+  iconColor = 'text-form-primary',
+  iconBg = 'bg-form-primary/10',
   href,
   linkState,
 }) => {
@@ -49,7 +49,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       <Link
         to={href}
         state={linkState}
-        className="block h-full w-full min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg"
+        className="block h-full w-full min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-form-primary rounded-lg"
       >
         {content}
       </Link>

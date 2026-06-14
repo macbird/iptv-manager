@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Search, X, Plus, SlidersHorizontal } from 'lucide-react';
+import { newButtonClass } from '../buttons/button-styles';
+import { brandIconButtonClass } from '../brand/brand-styles';
 
 interface ActionButtonProps {
   label: string;
@@ -67,7 +69,7 @@ export const PageHeaderActions: React.FC<PageHeaderActionsProps> = ({
       ) : (
         <button 
           onClick={() => setIsSearchOpen(true)} 
-          className="p-2 text-slate-500 hover:text-indigo-600 transition-colors"
+          className={`p-2 ${brandIconButtonClass}`}
           title="Abrir busca"
         >
           <Search className="w-5 h-5" />
@@ -79,12 +81,12 @@ export const PageHeaderActions: React.FC<PageHeaderActionsProps> = ({
         <button
           type="button"
           onClick={onOpenFilters}
-          className="relative p-2 text-slate-500 hover:text-indigo-600 transition-colors"
+          className={`relative p-2 ${brandIconButtonClass}`}
           title="Filtros"
         >
           <SlidersHorizontal className="w-5 h-5" />
           {activeFilterCount > 0 ? (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-form-primary px-1 text-[10px] font-bold text-white">
               {activeFilterCount}
             </span>
           ) : null}
@@ -93,8 +95,9 @@ export const PageHeaderActions: React.FC<PageHeaderActionsProps> = ({
 
       {primaryAction && (
         <button
+          type="button"
           onClick={primaryAction.onClick}
-          className={`bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 flex items-center text-sm transition-all whitespace-nowrap ${
+          className={`${newButtonClass} whitespace-nowrap transition-all ${
             isSearchOpen && showSearch ? 'hidden sm:flex' : 'flex'
           } ${primaryAction.className || ''}`}
         >

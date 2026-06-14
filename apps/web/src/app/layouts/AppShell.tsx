@@ -39,7 +39,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             onClick={() => setIsMobileMenuOpen(false)}
             className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
               isActive
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-form-primary text-white'
                 : 'text-gray-300 hover:bg-gray-700 hover:text-white'
             }`}
           >
@@ -66,7 +66,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           <div className="flex flex-col h-full bg-gray-800">
             <div className="flex h-16 flex-shrink-0 items-center justify-between gap-2 bg-gray-900 px-3">
               <AppLogo size="sm" />
-              <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-normal uppercase tracking-wider text-white bg-indigo-600 rounded">
+              <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-normal uppercase tracking-wider text-white bg-form-primary rounded">
                 v{APP_VERSION}
               </span>
             </div>
@@ -92,7 +92,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
               <div className="flex shrink-0 items-center justify-between gap-2 px-3">
                 <AppLogo size="sm" />
-                <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-normal uppercase tracking-wider text-white bg-indigo-600 rounded">
+                <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-normal uppercase tracking-wider text-white bg-form-primary rounded">
                   v{APP_VERSION}
                 </span>
               </div>

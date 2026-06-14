@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { platformBillingApi } from '../../billing/api/billing.api';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
+import { primaryButtonClass } from '../../../shared/ui/buttons/button-styles';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 import {
   PaymentProviderFields,
@@ -137,7 +138,7 @@ export const AdminSettingsPage: React.FC = () => {
             type="button"
             disabled={saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+            className={primaryButtonClass}
           >
             {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
           </button>
@@ -162,7 +163,7 @@ export const AdminSettingsPage: React.FC = () => {
               </div>
               <Link
                 to="/admin/plans"
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                className="text-sm font-medium text-form-primary hover:text-form-primary-hover"
               >
                 Gerenciar planos
               </Link>

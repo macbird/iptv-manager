@@ -138,7 +138,7 @@ export const ActivationDetailModal: React.FC<ActivationDetailModalProps> = ({
                 key={connection.id}
                 className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3"
               >
-                <p className="text-xs font-semibold text-indigo-700">
+                <p className="text-xs font-semibold text-form-primary">
                   Conexão {index + 1}
                   {connection.label ? ` · ${connection.label}` : ''}
                 </p>

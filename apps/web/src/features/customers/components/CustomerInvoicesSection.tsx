@@ -41,7 +41,7 @@ export const CustomerInvoicesSection: React.FC<CustomerInvoicesSectionProps> = (
     <div className="border-t border-slate-200 pt-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-medium text-slate-900">Faturas do cliente</h3>
-        <Link to="/invoices" className="text-xs font-medium text-indigo-600 hover:text-indigo-700">
+        <Link to="/invoices" className="text-xs font-medium text-form-primary hover:text-form-primary-hover">
           Ver todas
         </Link>
       </div>
@@ -57,7 +57,7 @@ export const CustomerInvoicesSection: React.FC<CustomerInvoicesSectionProps> = (
               <div>
                 <Link
                   to={`/invoices/${invoice.id}`}
-                  className="font-medium text-indigo-700 hover:underline"
+                  className="font-medium text-form-primary hover:underline"
                 >
                   {invoice.billingCycleKey}
                 </Link>

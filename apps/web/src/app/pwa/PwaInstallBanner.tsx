@@ -2,6 +2,7 @@ import React from 'react';
 import { APP_NAME } from '@client-manager/shared';
 import { Download, X } from 'lucide-react';
 import { usePwaInstall } from './usePwaInstall';
+import { primaryButtonSmClass } from '../../shared/ui/buttons/button-styles';
 
 const DISMISS_KEY = 'pwa-install-dismissed';
 
@@ -16,7 +17,7 @@ export const PwaInstallBanner: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-lg border border-indigo-200 bg-white p-4 shadow-lg md:left-auto">
+    <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-lg border border-form-primary/30 bg-white p-4 shadow-lg md:left-auto">
       <button
         type="button"
         className="absolute right-2 top-2 rounded p-1 text-slate-400 hover:bg-slate-100"
@@ -35,7 +36,7 @@ export const PwaInstallBanner: React.FC = () => {
       <button
         type="button"
         onClick={() => void install()}
-        className="mt-3 inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700"
+        className={`mt-3 gap-2 text-xs ${primaryButtonSmClass}`}
       >
         <Download className="h-4 w-4" />
         Instalar app

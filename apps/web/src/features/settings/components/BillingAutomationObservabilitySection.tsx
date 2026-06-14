@@ -106,7 +106,7 @@ export const BillingAutomationObservabilitySection: React.FC<
         <button
           type="button"
           onClick={handleSimulateNextRun}
-          className="mt-2 rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+          className="mt-2 rounded-md border border-form-primary/30 bg-white px-3 py-1.5 text-xs font-medium text-form-primary hover:bg-form-primary/5"
         >
           Simular próximo run (dry-run)
         </button>
@@ -237,8 +237,8 @@ function PreviewCard(props: {
   emptyMessage: string;
 }) {
   return (
-    <div className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-4">
-      <h5 className="text-sm font-medium text-indigo-950">{props.title}</h5>
+    <div className="rounded-lg border border-form-primary/20 bg-form-primary/5/40 p-4">
+      <h5 className="text-sm font-medium text-form-secondary">{props.title}</h5>
 
       {props.loading ? (
         <div className="relative mt-3 h-10">
@@ -247,7 +247,7 @@ function PreviewCard(props: {
       ) : (
         <>
           {props.preview ? (
-            <p className="mt-2 text-xs text-indigo-900">
+            <p className="mt-2 text-xs text-slate-900">
               {props.preview.totals.inWindow} na janela · {props.preview.totals.willSendCharge} vão
               receber cobrança · {props.preview.totals.willCreateInvoice} fatura(s) nova(s) ·{' '}
               {props.preview.totals.willSkipAlreadySent} já enviado(s)
@@ -255,7 +255,7 @@ function PreviewCard(props: {
           ) : null}
 
           {props.preview && props.preview.customers.length > 0 ? (
-            <div className="mt-3 overflow-x-auto rounded-md border border-indigo-100 bg-white">
+            <div className="mt-3 overflow-x-auto rounded-md border border-form-primary/20 bg-white">
               <table className="min-w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>

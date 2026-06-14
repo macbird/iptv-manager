@@ -37,7 +37,7 @@ export const SettingsTabs: React.FC<SettingsTabsProps> = ({
               onClick={() => onChange(tab.id)}
               className={`min-w-0 rounded-md px-2 py-2.5 text-center text-xs font-semibold leading-tight transition-colors sm:px-3 sm:py-2 sm:text-sm ${
                 active
-                  ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200/80'
+                  ? 'bg-white text-form-primary shadow-sm ring-1 ring-slate-200/80'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -62,7 +62,7 @@ export const SettingsTabs: React.FC<SettingsTabsProps> = ({
               onClick={() => onChange(tab.id)}
               className={`shrink-0 rounded-t-md px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
                 active
-                  ? 'border border-b-white border-slate-200 bg-white text-indigo-700'
+                  ? 'border border-b-white border-slate-200 bg-white text-form-primary'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >

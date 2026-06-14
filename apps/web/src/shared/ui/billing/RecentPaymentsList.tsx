@@ -34,7 +34,7 @@ export const RecentPaymentsList: React.FC<RecentPaymentsListProps> = ({
         <Link
           to={paymentsHref}
           state={paymentsLinkState}
-          className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+          className="text-sm text-form-primary hover:text-form-primary-hover flex items-center gap-1"
         >
           Ver todos <ArrowRight className="w-4 h-4" />
         </Link>

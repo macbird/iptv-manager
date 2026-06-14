@@ -81,7 +81,7 @@ export const ServersPage: React.FC = () => {
     <div className="flex justify-end">
       <button
         onClick={() => formModal.openEdit(row.id)}
-        className="text-slate-500 hover:text-indigo-600 p-2"
+        className="text-slate-500 hover:text-form-primary p-2"
       >
         <Edit2 className="w-4 h-4" />
       </button>
@@ -120,7 +120,7 @@ export const ServersPage: React.FC = () => {
           href={s.panelUrl}
           target="_blank"
           rel="noreferrer"
-          className="text-indigo-600 hover:text-indigo-800 flex items-center"
+          className="text-form-primary hover:text-form-primary-hover flex items-center"
         >
           {s.panelUrl} <ExternalLink className="ml-1 w-3 h-3" />
         </a>

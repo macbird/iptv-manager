@@ -19,7 +19,7 @@ export const RememberMeCheckbox: React.FC<RememberMeCheckboxProps> = ({
       type="checkbox"
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
-      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-form-primary focus:ring-form-primary"
     />
     <span>{label}</span>
   </label>

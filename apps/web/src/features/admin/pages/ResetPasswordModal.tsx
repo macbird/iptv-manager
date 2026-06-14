@@ -3,6 +3,7 @@ import { APP_NAME, getApiErrorMessage } from '@client-manager/shared';
 import { useForm } from 'react-hook-form';
 import { tenantsApi } from '../api/admin.api';
 import { showToast } from '../../../shared/utils/toast';
+import { resolveTenantLoginUrl } from '../../../shared/utils/app-url';
 import { FormModal } from '../../../shared/ui/modals/FormModal';
 import { Modal } from '../../../shared/ui/modals/Modal';
 import { formInputClass, formLabelClass } from '../../../shared/ui/forms/form-styles';
@@ -51,7 +52,8 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   };
 
   const handleCopy = () => {
-    const text = `Olá ${userName}, sua senha no ${APP_NAME} foi resetada.\n\nAcesso: http://localhost:5173/login\nE-mail: ${userEmail}\nSenha Provisória: ${savedPassword}\n\n(Você deverá alterar esta senha no primeiro acesso).`;
+    const loginUrl = resolveTenantLoginUrl();
+    const text = `Olá ${userName}, sua senha no ${APP_NAME} foi resetada.\n\nAcesso: ${loginUrl}\nE-mail: ${userEmail}\nSenha Provisória: ${savedPassword}\n\n(Você deverá alterar esta senha no primeiro acesso).`;
     navigator.clipboard.writeText(text);
     showToast.success('Instruções copiadas!');
   };
@@ -81,11 +83,11 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
               Senha provisória
             </p>
             <div className="flex items-center justify-between">
-              <code className="font-mono text-lg font-bold text-indigo-600">{savedPassword}</code>
+              <code className="font-mono text-lg font-bold text-form-primary">{savedPassword}</code>
               <button
                 type="button"
                 onClick={handleCopy}
-                className="rounded-md p-2 text-slate-400 transition-all hover:bg-indigo-50 hover:text-indigo-600"
+                className="rounded-md p-2 text-slate-400 transition-all hover:bg-form-primary/5 hover:text-form-primary"
                 title="Copiar senha"
               >
                 <Copy className="h-4 w-4" />

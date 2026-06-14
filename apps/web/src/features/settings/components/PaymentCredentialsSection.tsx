@@ -9,7 +9,10 @@ import {
 } from '@client-manager/shared';
 import { SecretCredentialField } from './SecretCredentialField';
 import { showToast } from '../../../shared/utils/toast';
-import { WebhookHelpModal } from './WebhookHelpModal';
+import {
+  MercadoPagoIntegrationHelpModal,
+  type MercadoPagoHelpFocus,
+} from './MercadoPagoIntegrationHelpModal';
 
 export type PaymentCredentialFormState = TenantPaymentCredentialDto & {
   apiKey: string;
@@ -73,7 +76,14 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
   mercadoPagoWebhookRequiresToken = false,
   legacyProviderWarning = false,
 }) => {
-  const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
+  const [helpModal, setHelpModal] = React.useState<{
+    open: boolean;
+    focus: MercadoPagoHelpFocus;
+  }>({ open: false, focus: 'overview' });
+
+  const openHelp = (focus: MercadoPagoHelpFocus = 'overview') => {
+    setHelpModal({ open: true, focus });
+  };
   const selected =
     credentials.find((item) => item.provider === ACTIVE_PROVIDER) ??
     emptyCredential(ACTIVE_PROVIDER);
@@ -101,10 +111,20 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-slate-600">
-        Meio de pagamento para <strong>gerar PIX</strong> das faturas:{' '}
-        <strong>Mercado Pago</strong>. Outros provedores serão habilitados em versões futuras.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="text-sm text-slate-600">
+          Meio de pagamento para <strong>gerar PIX</strong> das faturas:{' '}
+          <strong>Mercado Pago</strong>. Outros provedores serão habilitados em versões futuras.
+        </p>
+        <button
+          type="button"
+          onClick={() => openHelp('overview')}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-form-primary/30 bg-form-primary/5 px-3 py-2 text-xs font-semibold text-form-primary transition-colors hover:bg-form-primary/10"
+        >
+          <HelpCircle className="h-4 w-4" aria-hidden />
+          Como integrar Mercado Pago?
+        </button>
+      </div>
 
       {legacyProviderWarning ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -123,7 +143,7 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
         </p>
       </div>
 
-      <div className="rounded-lg border border-indigo-200 bg-indigo-50/30 p-4">
+      <div className="rounded-lg border border-form-primary/30 bg-form-primary/5/30 p-4">
         <h3 className="font-medium text-slate-900">{PAYMENT_PROVIDER_LABELS[ACTIVE_PROVIDER]}</h3>
         <p className="mt-0.5 text-xs text-slate-500">Credenciais para integração com o PIX</p>
 
@@ -134,7 +154,7 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
             value={selected.apiKey}
             configured={selected.apiKeyConfigured}
             onChange={(apiKey) => updateSelected({ apiKey })}
-            emptyPlaceholder="Cole o Access Token (ex.: TEST-...)"
+            emptyPlaceholder="Cole o Access Token de produção (APP_USR-...)"
             configuredHint="Access token salvo — não exibido por segurança"
           />
           <SecretCredentialField
@@ -149,14 +169,16 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
         </div>
 
         <p className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-              Mercado Pago: copie o <strong>Access Token</strong> (token longo) em{' '}
+              Mercado Pago: em <strong>Credenciais de produção</strong>, copie o{' '}
+              <strong>Access Token</strong> (começa com{' '}
+              <code className="font-mono">APP_USR-</code>) em{' '}
               <a
                 href="https://www.mercadopago.com.br/developers/panel/app"
                 target="_blank"
                 rel="noreferrer"
                 className="underline"
               >
-                Developers → Suas integrações → Credenciais
+                Developers → Suas integrações
               </a>
               . Não use a <strong>Public Key</strong> (UUID curto) nem o usuário{' '}
               <code className="font-mono">TESTUSER...</code>.
@@ -169,8 +191,8 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
                     <p className="text-xs font-medium text-emerald-900">URL do webhook (PIX pago)</p>
                     <button
                       type="button"
-                      onClick={() => setIsHelpModalOpen(true)}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-indigo-700 hover:text-indigo-800"
+                      onClick={() => openHelp('webhook')}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-form-primary hover:text-form-primary-hover"
                     >
                       <HelpCircle size={14} />
                       Como configurar?
@@ -195,47 +217,18 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
                   </div>
                 </div>
 
-                <div className="rounded-md border border-emerald-200 bg-white/70 px-3 py-2.5">
-                  <p className="text-xs font-semibold text-slate-900">
-                    Como configurar no Mercado Pago
+                <div className="rounded-md border border-emerald-200 bg-white/70 px-3 py-2.5 text-[11px] text-slate-700">
+                  <p>
+                    Passo a passo completo no guia{' '}
+                    <button
+                      type="button"
+                      onClick={() => openHelp('webhook')}
+                      className="font-semibold text-form-primary hover:underline"
+                    >
+                      Como integrar Mercado Pago?
+                    </button>
+                    .
                   </p>
-                  <ol className="mt-2 list-decimal space-y-1.5 pl-4 text-[11px] text-slate-700">
-                    <li>
-                      Acesse{' '}
-                      <a
-                        href="https://www.mercadopago.com.br/developers/panel/app"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-indigo-700 underline"
-                      >
-                        Mercado Pago Developers
-                      </a>{' '}
-                      e abra a mesma aplicação do Access Token acima.
-                    </li>
-                    <li>
-                      Vá em <strong>Webhooks</strong> (ou <strong>Notificações</strong> →{' '}
-                      <strong>Webhooks</strong>).
-                    </li>
-                    <li>
-                      Clique em <strong>Configurar notificações</strong> ou{' '}
-                      <strong>Adicionar URL</strong>.
-                    </li>
-                    <li>
-                      Cole a URL copiada acima no campo <strong>URL de produção</strong> (ou URL de
-                      teste, se estiver em sandbox).
-                    </li>
-                    <li>
-                      Marque o evento <strong>Payments</strong> (pagamentos).
-                    </li>
-                    <li>
-                      Salve. O Mercado Pago pode enviar um GET de verificação — a API responde
-                      automaticamente.
-                    </li>
-                    <li>
-                      Gere um PIX de teste e pague. A fatura deve mudar para <strong>paga</strong>{' '}
-                      em alguns segundos.
-                    </li>
-                  </ol>
                 </div>
 
                 <p className="text-[11px] text-slate-700">
@@ -275,10 +268,11 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
         ) : null}
       </div>
 
-      <WebhookHelpModal
-        isOpen={isHelpModalOpen}
-        onClose={() => setIsHelpModalOpen(false)}
-        webhookUrl={mercadoPagoWebhookUrl ?? ''}
+      <MercadoPagoIntegrationHelpModal
+        isOpen={helpModal.open}
+        onClose={() => setHelpModal((current) => ({ ...current, open: false }))}
+        webhookUrl={mercadoPagoWebhookUrl}
+        focus={helpModal.focus}
       />
     </div>
   );

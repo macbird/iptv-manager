@@ -2,6 +2,7 @@ import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { tenantBillingApi } from '../../billing/api/billing.api';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
+import { primaryButtonClass } from '../../../shared/ui/buttons/button-styles';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 import { WhatsAppProviderFields } from '../components/PaymentProviderFields';
 import {
@@ -185,7 +186,7 @@ export const TenantSettingsPage: React.FC = () => {
             type="button"
             disabled={saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className={primaryButtonClass}
           >
             {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
           </button>
@@ -196,7 +197,7 @@ export const TenantSettingsPage: React.FC = () => {
         <SettingsTabs tabs={[...SETTINGS_TABS]} activeTab={activeTab} onChange={setActiveTab} />
 
         {activeTab === 'geral' ? (
-          <section className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-5">
+          <section className="rounded-lg border border-form-primary/20 bg-form-primary/5/50 p-5">
             <h2 className="text-base font-semibold text-slate-900">Minha assinatura ({APP_NAME})</h2>
             <p className="mt-1 text-sm text-slate-600">
               Valor definido pela plataforma — não editável aqui.

@@ -215,8 +215,8 @@ export const AsyncSearchSelect: React.FC<AsyncSearchSelectProps> = ({
                   <button
                     type="button"
                     className={`flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-slate-50 ${
-                      index === activeIndex ? 'bg-indigo-50' : ''
-                    } ${value === option.value ? 'font-medium text-indigo-700' : 'text-slate-900'}`}
+                      index === activeIndex ? 'bg-form-primary/5' : ''
+                    } ${value === option.value ? 'font-medium text-form-primary' : 'text-slate-900'}`}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => selectOption(option)}
                   >

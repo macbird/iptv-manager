@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { API_ERROR_CODES, ApiBusinessError } from '@client-manager/shared';
+import { API_ERROR_CODES, ApiBusinessError, type AccountEvolutionIntegrity } from '@client-manager/shared';
 import { prisma } from '../../core/database';
 import argon2 from 'argon2';
 import {
@@ -10,6 +10,8 @@ import {
   defaultNextDueDate,
 } from '../billing/account-billing.util';
 import { InvoicesService } from '../billing/invoices.service';
+import { EvolutionAccountIntegrityService } from '../../integrations/whatsapp/evolution/evolution-account-integrity.service';
+import { EvolutionTenantProvisioningService } from '../../integrations/whatsapp/evolution/evolution-tenant-provisioning.service';
 const accountListInclude = {
   users: {
     select: {
@@ -34,6 +36,8 @@ const accountListInclude = {
 } as const;
 
 const invoicesService = new InvoicesService();
+const evolutionProvisioning = new EvolutionTenantProvisioningService();
+const evolutionIntegrity = new EvolutionAccountIntegrityService();
 
 function mapSubscription(
   subscription: {
@@ -72,6 +76,7 @@ function mapAccount(
     subscription: Parameters<typeof mapSubscription>[0];
   },
   paymentConfigured = false,
+  evolutionIntegrity: AccountEvolutionIntegrity | null = null,
 ) {
   return {
     id: account.id,
@@ -80,6 +85,7 @@ function mapAccount(
     phone: account.phone,
     status: account.status as 'active' | 'inactive',
     paymentConfigured,
+    evolutionIntegrity,
     users: account.users,
     subscription: mapSubscription(account.subscription),
   };
@@ -174,8 +180,18 @@ export class TenantsService {
       credentials.filter((row) => Boolean(row.apiKey)).map((row) => row.accountId),
     );
 
+    const evolutionByAccountId = await evolutionIntegrity.resolveForAccounts(
+      rows.map((row) => ({ id: row.id, slug: row.slug })),
+    );
+
     return {
-      data: rows.map((row) => mapAccount(row, paymentConfiguredIds.has(row.id))),
+      data: rows.map((row) =>
+        mapAccount(
+          row,
+          paymentConfiguredIds.has(row.id),
+          evolutionByAccountId.get(row.id) ?? null,
+        ),
+      ),
       total,
     };
   }
@@ -192,7 +208,7 @@ export class TenantsService {
       select: { id: true },
     });
 
-    return mapAccount(account, Boolean(credential));
+    return mapAccount(account, Boolean(credential), null);
   }
 
   async create(input: {
@@ -212,7 +228,7 @@ export class TenantsService {
     const dueDay = dueDayFromDate(nextDueDate);
 
     try {
-      return await prisma.$transaction(async (tx) => {
+      const created = await prisma.$transaction(async (tx) => {
       const platformPlanId = await resolvePlatformPlanId(tx, input.platformPlanId);
 
       const account = await tx.account.create({
@@ -250,8 +266,20 @@ export class TenantsService {
         include: accountListInclude,
       });
 
-      return mapAccount(full!);
+      return full!;
       });
+
+      await evolutionProvisioning.provisionForAccount(created.id, created.slug);
+
+      const evolutionByAccountId = await evolutionIntegrity.resolveForAccounts([
+        { id: created.id, slug: created.slug },
+      ]);
+
+      return mapAccount(
+        created,
+        false,
+        evolutionByAccountId.get(created.id) ?? null,
+      );
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&

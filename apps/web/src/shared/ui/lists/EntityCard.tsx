@@ -20,12 +20,12 @@ export const EntityCard: React.FC<{
     <div className="p-5">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          {icon && <div className="text-indigo-600">{icon}</div>}
+          {icon && <div className="text-form-primary">{icon}</div>}
           <h3 className="text-lg font-bold text-slate-900">{title}</h3>
         </div>
         <div className="flex space-x-1">
           {onEdit && (
-            <button onClick={onEdit} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+            <button onClick={onEdit} className="p-2 text-slate-400 hover:text-form-primary hover:bg-form-primary/5 rounded-lg transition-colors">
               <Pencil className="h-4 w-4" />
             </button>
           )}

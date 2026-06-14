@@ -16,8 +16,11 @@ export default {
         slate: colors.slate,
         form: {
           field: '#F3F3F3',
-          primary: '#2B80EA',
-          'primary-hover': '#2470D2',
+          primary: '#1D7DFC',
+          'primary-hover': '#1570EB',
+          secondary: '#1A1C2C',
+          'secondary-hover': '#252840',
+          'primary-ring': '#A0C4FF',
         },
       },
       borderRadius: {

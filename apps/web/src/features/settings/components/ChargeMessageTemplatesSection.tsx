@@ -8,6 +8,7 @@ import {
   type ChargeMessageSettingsDto,
   type ChargeMessageTemplateContext,
 } from '@client-manager/shared';
+import { newButtonDashedClass } from '../../../shared/ui/buttons/button-styles';
 
 interface ChargeMessageTemplatesSectionProps {
   title?: string;
@@ -198,7 +199,7 @@ export const ChargeMessageTemplatesSection: React.FC<ChargeMessageTemplatesSecti
       <button
         type="button"
         onClick={addTemplate}
-        className="rounded-md border border-dashed border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        className={newButtonDashedClass}
       >
         + Adicionar mensagem
       </button>
@@ -228,7 +229,7 @@ export const ChargeMessageTemplatesSection: React.FC<ChargeMessageTemplatesSecti
       </div>
       ) : null}
 
-      <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
+      <div className="rounded-lg border border-form-primary/20 bg-form-primary/5/50 p-4">
         <p className="text-sm font-medium text-slate-900">
           {previewContext ? 'Prévia com dados desta fatura' : 'Preview da sequência'}
         </p>

@@ -46,7 +46,7 @@ export const PaymentDetailPage: React.FC<PaymentDetailPageProps> = ({ variant })
         <button
           type="button"
           onClick={() => navigate(`${basePath}/payments`)}
-          className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+          className="mt-4 text-sm font-medium text-form-primary hover:text-form-primary-hover"
         >
           Voltar para pagamentos
         </button>
@@ -128,7 +128,7 @@ export const PaymentDetailPage: React.FC<PaymentDetailPageProps> = ({ variant })
           </div>
           <Link
             to={`${basePath}/invoices/${inv.id}`}
-            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-form-primary hover:text-form-primary-hover"
           >
             <FileText className="h-4 w-4" />
             Ver fatura completa

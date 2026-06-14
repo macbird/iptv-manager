@@ -31,7 +31,7 @@ export const PendingActivationsList: React.FC<PendingActivationsListProps> = ({
         <h2 className="text-base font-semibold text-slate-900">Ativações pendentes</h2>
         <Link
           to={activationsHref}
-          className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+          className="text-sm text-form-primary hover:text-form-primary-hover flex items-center gap-1"
         >
           Ver todas <ArrowRight className="w-4 h-4" />
         </Link>

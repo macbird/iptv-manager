@@ -60,7 +60,7 @@ export const PlatformPlansPage: React.FC = () => {
       <button
         type="button"
         onClick={() => formModal.openEdit(row.id)}
-        className="p-2 text-slate-500 hover:text-indigo-600"
+        className="p-2 text-slate-500 hover:text-form-primary"
         aria-label={`Editar ${row.name}`}
       >
         <Edit2 className="h-4 w-4" />
@@ -85,7 +85,7 @@ export const PlatformPlansPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <span>{plan.name}</span>
           {plan.isDefault ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-form-primary/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-form-primary">
               <Star className="h-3 w-3" />
               Padrão
             </span>

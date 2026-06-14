@@ -80,7 +80,10 @@ export const createTenantAccountSchema = z.object({
   slug: accountSlugSchema,
   ownerName: z.string().min(1, 'Nome do proprietário é obrigatório'),
   ownerEmail: z.string().email('Informe um e-mail válido'),
-  initialPassword: z.string().min(6).optional(),
+  initialPassword: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : val),
+    z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').optional(),
+  ),
   dueDate: z.string().min(1, 'Informe a data de vencimento'),
   platformPlanId: z.string().uuid().optional(),
   phone: optionalPhoneE164Schema,

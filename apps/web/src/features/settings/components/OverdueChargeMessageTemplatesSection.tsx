@@ -9,6 +9,7 @@ import {
   type OverdueReminderWindowDto,
 } from '@client-manager/shared';
 import { ChargeMessageTemplatesSection } from './ChargeMessageTemplatesSection';
+import { newButtonDashedClass } from '../../../shared/ui/buttons/button-styles';
 
 interface OverdueChargeMessageTemplatesSectionProps {
   value: OverdueChargeMessagesDto;
@@ -130,7 +131,7 @@ export const OverdueChargeMessageTemplatesSection: React.FC<
           janela na prévia.
         </p>
         {configuredDays.length > 0 ? (
-          <p className="mt-2 text-xs font-medium text-indigo-700">
+          <p className="mt-2 text-xs font-medium text-form-primary">
             Janelas ativas: {configuredDays.map((day) => `D+${day}`).join(' · ')}
           </p>
         ) : null}
@@ -155,13 +156,13 @@ export const OverdueChargeMessageTemplatesSection: React.FC<
               <header className="border-b border-slate-100 px-3 py-3 sm:px-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-form-primary text-xs font-bold text-white">
                       {index + 1}
                     </span>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
                         <span className="text-xs font-medium text-slate-800 sm:text-sm">Disparar</span>
-                        <span className="text-[10px] font-bold uppercase text-indigo-600 sm:text-xs">
+                        <span className="text-[10px] font-bold uppercase text-form-primary sm:text-xs">
                           D+
                         </span>
                         <input
@@ -181,7 +182,7 @@ export const OverdueChargeMessageTemplatesSection: React.FC<
                           className={`w-14 rounded-md border px-1.5 py-1 text-center text-sm font-semibold sm:w-16 sm:px-2 sm:py-1.5 ${
                             hasDuplicateDay
                               ? 'border-red-300 bg-red-50 text-red-700'
-                              : 'border-indigo-200 bg-white text-slate-900'
+                              : 'border-form-primary/30 bg-white text-slate-900'
                           }`}
                         />
                         <span className="text-[11px] text-slate-500 sm:text-xs">dias após venc.</span>
@@ -248,7 +249,7 @@ export const OverdueChargeMessageTemplatesSection: React.FC<
       <button
         type="button"
         onClick={addWindow}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 px-4 py-3 text-sm font-semibold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50 sm:w-auto"
+        className={newButtonDashedClass}
       >
         <Plus className="h-4 w-4" />
         Adicionar janela

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Copy, Loader2, MessageCircle, RotateCcw, Sparkles, XCircle } from 'lucide-react';
 import { platformBillingApi, tenantBillingApi } from '../api/billing.api';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
+import { primaryButtonClass } from '../../../shared/ui/buttons/button-styles';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
 import { FormModal } from '../../../shared/ui/modals/FormModal';
 import { FormCurrencyInput } from '../../../shared/ui/forms/FormCurrencyInput';
@@ -190,7 +191,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
         <button
           type="button"
           onClick={() => navigate(`${basePath}/invoices`)}
-          className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+          className="mt-4 text-sm font-medium text-form-primary hover:text-form-primary-hover"
         >
           Voltar para faturas
         </button>
@@ -244,7 +245,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
               <button
                 type="button"
                 onClick={() => setRecreateOpen(true)}
-                className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                className={`${primaryButtonClass} gap-2`}
               >
                 <RotateCcw className="h-4 w-4" />
                 Emitir substituta
@@ -255,7 +256,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
                 type="button"
                 onClick={() => generatePixMutation.mutate()}
                 disabled={generatePixMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+                className={`${primaryButtonClass} gap-2 disabled:opacity-60`}
               >
                 {generatePixMutation.isPending ? (
                   <>
@@ -285,7 +286,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
               <button
                 type="button"
                 onClick={copyPix}
-                className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                className={`${primaryButtonClass} gap-2`}
               >
                 <Copy className="h-4 w-4" />
                 Copiar PIX
@@ -298,7 +299,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
       <div className="relative mx-auto max-w-2xl space-y-6">
         {generatePixMutation.isPending ? (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/70 backdrop-blur-[1px]">
-            <div className="flex items-center gap-2 rounded-md border border-indigo-100 bg-white px-4 py-3 text-sm font-medium text-indigo-700 shadow-sm">
+            <div className="flex items-center gap-2 rounded-md border border-form-primary/20 bg-white px-4 py-3 text-sm font-medium text-form-primary shadow-sm">
               <Loader2 className="h-4 w-4 animate-spin" />
               Gerando PIX...
             </div>
@@ -335,7 +336,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
             Substitui a fatura{' '}
             <Link
               to={`${basePath}/invoices/${invoice.replacesInvoice.id}`}
-              className="font-medium text-indigo-600 hover:text-indigo-800"
+              className="font-medium text-form-primary hover:text-form-primary-hover"
             >
               cancelada
             </Link>
@@ -344,7 +345,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
         ) : null}
 
         {invoice.replacement ? (
-          <p className="rounded-md border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-sm text-indigo-900">
+          <p className="rounded-md border border-form-primary/20 bg-form-primary/5/60 px-4 py-3 text-sm text-slate-900">
             Substituída por{' '}
             <Link
               to={`${basePath}/invoices/${invoice.replacement.id}`}
@@ -379,7 +380,7 @@ export const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ variant })
                   type="button"
                   disabled={saveChargeMessagesMutation.isPending}
                   onClick={() => saveChargeMessagesMutation.mutate()}
-                  className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                  className={`${primaryButtonClass} disabled:opacity-50`}
                 >
                   {saveChargeMessagesMutation.isPending ? 'Salvando...' : 'Salvar mensagens'}
                 </button>

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { primaryButtonModalClass, secondaryButtonModalClass } from '../buttons/button-styles';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
@@ -68,12 +69,12 @@ export const Modal: React.FC<ModalProps> = ({
   const confirmButtonClass =
     confirmTone === 'danger'
       ? 'text-red-600 active:bg-red-50'
-      : 'text-indigo-600 active:bg-indigo-50';
+      : 'text-form-primary active:bg-form-primary/10';
 
   const desktopConfirmClass =
     confirmTone === 'danger'
       ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500/30'
-      : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500/30';
+      : primaryButtonModalClass;
 
   const modalContent = (
     <div
@@ -114,7 +115,7 @@ export const Modal: React.FC<ModalProps> = ({
             </div>
             <button
               type="button"
-              className="mt-2 w-full rounded-2xl bg-white py-3.5 text-[17px] font-semibold text-indigo-600 shadow-xl active:bg-slate-50"
+              className="mt-2 w-full rounded-2xl bg-white py-3.5 text-[17px] font-semibold text-form-secondary shadow-xl active:bg-slate-50"
               onClick={onClose}
             >
               {cancelLabel}
@@ -135,7 +136,7 @@ export const Modal: React.FC<ModalProps> = ({
               <div className="flex gap-3 border-t border-slate-100 px-4 py-4">
                 <button
                   type="button"
-                  className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                  className={secondaryButtonModalClass}
                   onClick={onClose}
                 >
                   {cancelLabel}
@@ -143,7 +144,7 @@ export const Modal: React.FC<ModalProps> = ({
                 {onConfirm && (
                   <button
                     type="button"
-                    className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 ${desktopConfirmClass}`}
+                    className={`${desktopConfirmClass} focus:ring-2`}
                     onClick={onConfirm}
                   >
                     {confirmLabel}

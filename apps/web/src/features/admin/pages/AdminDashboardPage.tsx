@@ -129,8 +129,8 @@ export const AdminDashboardPage: React.FC = () => {
       value: formatCents(stats?.expectedMrrCents ?? 0),
       subtitle: `${stats?.activeSubscriptions ?? 0} assinaturas ativas`,
       icon: CreditCard,
-      iconColor: 'text-indigo-600',
-      iconBg: 'bg-indigo-100',
+      iconColor: 'text-form-primary',
+      iconBg: 'bg-form-primary/10',
       href: '/admin/settings',
     },
     {
@@ -243,25 +243,25 @@ export const AdminDashboardPage: React.FC = () => {
             <Link
               to="/admin/invoices"
               state={{ listFilters: dashboardInvoiceListFilters.canceled }}
-              className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+              className="inline-flex items-center gap-1 text-sm font-medium text-form-primary hover:text-form-primary-hover"
             >
               Faturas canceladas <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               to="/admin/invoices"
-              className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+              className="inline-flex items-center gap-1 text-sm font-medium text-form-primary hover:text-form-primary-hover"
             >
               Faturas <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               to="/admin/payments"
-              className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+              className="inline-flex items-center gap-1 text-sm font-medium text-form-primary hover:text-form-primary-hover"
             >
               Pagamentos <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               to="/admin/settings"
-              className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+              className="inline-flex items-center gap-1 text-sm font-medium text-form-primary hover:text-form-primary-hover"
             >
               Configurações <ArrowRight className="w-4 h-4" />
             </Link>

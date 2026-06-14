@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { dashboardApi } from '../api/dashboard.api';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
+import { newButtonLgClass, primaryButtonClass } from '../../../shared/ui/buttons/button-styles';
 import { surfaceCardClass } from '../../../shared/ui/layout/surface-styles';
 import { StatCard } from '../../../shared/ui/layout/StatCard';
 import { LoadingSpinner } from '../../../shared/ui/layout/LoadingSpinner';
@@ -106,7 +107,7 @@ export const DashboardPage: React.FC = () => {
               <Link
                 to="/login"
                 onClick={() => localStorage.removeItem('token')}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                className={primaryButtonClass}
               >
                 Ir para o login
               </Link>
@@ -114,7 +115,7 @@ export const DashboardPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => refetchStats()}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                className={primaryButtonClass}
               >
                 Tentar novamente
               </button>
@@ -388,7 +389,7 @@ export const DashboardPage: React.FC = () => {
             <Link
               to="/customers"
               state={{ listFilters: dashboardCustomerListFilters.upcomingExpirations }}
-              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+              className="text-sm text-form-primary hover:text-form-primary-hover flex items-center gap-1"
             >
               Ver todos <ArrowRight className="w-4 h-4" />
             </Link>
@@ -438,7 +439,7 @@ export const DashboardPage: React.FC = () => {
             <Link
               to="/customers"
               state={{ form: 'create' }}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+              className={`${newButtonLgClass} w-full gap-3`}
             >
               <Plus className="w-4 h-4" />
               Novo cliente
@@ -453,7 +454,7 @@ export const DashboardPage: React.FC = () => {
             <Link
               to="/plans"
               state={{ form: 'create' }}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+              className={`${newButtonLgClass} w-full gap-3`}
             >
               <CreditCard className="w-4 h-4" />
               Novo plano
@@ -461,7 +462,7 @@ export const DashboardPage: React.FC = () => {
             <Link
               to="/servers"
               state={{ form: 'create' }}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+              className={`${newButtonLgClass} w-full gap-3`}
             >
               <Server className="w-4 h-4" />
               Novo servidor

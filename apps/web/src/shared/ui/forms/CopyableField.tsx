@@ -55,7 +55,7 @@ export const CopyableField: React.FC<CopyableFieldProps> = ({
             type="button"
             onClick={handleCopy}
             disabled={!canCopy}
-            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-40"
+            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-form-primary/5 hover:text-form-primary disabled:opacity-40"
             title={`Copiar ${label}`}
             aria-label={`Copiar ${label}`}
           >

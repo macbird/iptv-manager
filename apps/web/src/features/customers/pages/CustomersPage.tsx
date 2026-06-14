@@ -127,7 +127,7 @@ export const CustomersPage: React.FC = () => {
         <div className="flex justify-end">
           <button
             onClick={() => formModal.openEdit(c.id)}
-            className="text-slate-500 hover:text-indigo-600 p-2"
+            className="text-slate-500 hover:text-form-primary p-2"
           >
             <Edit2 className="w-4 h-4" />
           </button>
@@ -160,7 +160,7 @@ export const CustomersPage: React.FC = () => {
               <div className="text-[10px] text-slate-400 truncate leading-none mb-1">
                 {c.phone || 'Sem telefone'}
               </div>
-              <div className="text-[9px] font-medium text-indigo-500/70 uppercase tracking-tighter leading-none">
+              <div className="text-[9px] font-medium text-form-primary/70 uppercase tracking-tighter leading-none">
                 {c.connectionCount} conexões
               </div>
             </div>
@@ -187,7 +187,7 @@ export const CustomersPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => formModal.openEdit(c.id)}
-                className="p-2 text-slate-400 hover:text-indigo-600"
+                className="p-2 text-slate-400 hover:text-form-primary"
                 aria-label="Editar cliente"
               >
                 <Edit2 className="w-4 h-4" />
