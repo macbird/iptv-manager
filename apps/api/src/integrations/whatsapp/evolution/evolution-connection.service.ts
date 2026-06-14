@@ -117,6 +117,7 @@ export class EvolutionConnectionService {
         connectionStatus: 'connected',
         qrCodeBase64: null,
         pairingCode: null,
+        pairingPhoneNumber: null,
       };
     }
 
@@ -130,6 +131,7 @@ export class EvolutionConnectionService {
       connectionStatus: 'pending',
       qrCodeBase64: connect.qrCodeBase64 ?? null,
       pairingCode: connect.pairingCode ?? null,
+      pairingPhoneNumber: connect.pairingPhoneNumber ?? normalizedPhone ?? null,
     };
   }
 
@@ -297,6 +299,7 @@ export class EvolutionConnectionService {
         connectionStatus: 'connected',
         qrCodeBase64: null,
         pairingCode: null,
+        pairingPhoneNumber: null,
       };
     }
 
@@ -310,6 +313,7 @@ export class EvolutionConnectionService {
       connectionStatus: 'pending',
       qrCodeBase64: connect.qrCodeBase64 ?? null,
       pairingCode: connect.pairingCode ?? null,
+      pairingPhoneNumber: connect.pairingPhoneNumber ?? normalizedPhone ?? null,
     };
   }
 

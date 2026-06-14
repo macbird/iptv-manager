@@ -106,7 +106,7 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
   const copyWebhookUrl = () => {
     if (!mercadoPagoWebhookUrl) return;
     navigator.clipboard.writeText(mercadoPagoWebhookUrl);
-    showToast.success('URL do webhook copiada');
+    showToast.success('Endereço copiado');
   };
 
   return (
@@ -128,8 +128,8 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
 
       {legacyProviderWarning ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Esta conta ainda tem credencial ou roteamento de um provedor antigo (ex.: Asaas). Salve
-          novamente com Mercado Pago para usar apenas o PSP ativo.
+          Esta conta ainda tem configuração de um meio de pagamento antigo. Salve novamente com
+          Mercado Pago para ativar só ele.
         </p>
       ) : null}
 
@@ -145,7 +145,7 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
 
       <div className="rounded-lg border border-form-primary/30 bg-form-primary/5/30 p-4">
         <h3 className="font-medium text-slate-900">{PAYMENT_PROVIDER_LABELS[ACTIVE_PROVIDER]}</h3>
-        <p className="mt-0.5 text-xs text-slate-500">Credenciais para integração com o PIX</p>
+        <p className="mt-0.5 text-xs text-slate-500">Dados para gerar PIX e receber confirmação de pagamento</p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <SecretCredentialField
@@ -154,8 +154,8 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
             value={selected.apiKey}
             configured={selected.apiKeyConfigured}
             onChange={(apiKey) => updateSelected({ apiKey })}
-            emptyPlaceholder="Cole o Access Token de produção (APP_USR-...)"
-            configuredHint="Access token salvo — não exibido por segurança"
+            emptyPlaceholder="Cole o Access Token de produção (começa com APP_USR-)"
+            configuredHint="Código salvo — não exibido por segurança"
           />
           <SecretCredentialField
             id={`payment-webhook-${ACTIVE_PROVIDER}`}
@@ -163,32 +163,31 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
             value={selected.webhookToken}
             configured={selected.webhookTokenConfigured}
             onChange={(webhookToken) => updateSelected({ webhookToken })}
-            emptyPlaceholder="Cole o secret do painel MP"
-            configuredHint="Secret salvo — não exibido por segurança"
+            emptyPlaceholder="Cole o código de segurança do Mercado Pago"
+            configuredHint="Código salvo — não exibido por segurança"
           />
         </div>
 
         <p className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-              Mercado Pago: em <strong>Credenciais de produção</strong>, copie o{' '}
-              <strong>Access Token</strong> (começa com{' '}
-              <code className="font-mono">APP_USR-</code>) em{' '}
+              No Mercado Pago, em <strong>Credenciais de produção</strong>, copie o{' '}
+              <strong>Access Token</strong> (código longo que começa com <strong>APP_USR-</strong>) em{' '}
               <a
                 href="https://www.mercadopago.com.br/developers/panel/app"
                 target="_blank"
                 rel="noreferrer"
                 className="underline"
               >
-                Developers → Suas integrações
+                Suas integrações
               </a>
-              . Não use a <strong>Public Key</strong> (UUID curto) nem o usuário{' '}
-              <code className="font-mono">TESTUSER...</code>.
+              . Não use a chave pública (Public Key) nem o usuário de teste (
+              <strong>TESTUSER...</strong>).
             </p>
 
             {mercadoPagoWebhookUrl ? (
               <div className="mt-3 space-y-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-3">
                 <div>
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-medium text-emerald-900">URL do webhook (PIX pago)</p>
+                    <p className="text-xs font-medium text-emerald-900">Endereço para aviso de PIX pago</p>
                     <button
                       type="button"
                       onClick={() => openHelp('webhook')}
@@ -199,8 +198,7 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
                     </button>
                   </div>
                   <p className="mt-1 text-[11px] text-emerald-800">
-                    A URL usa o <strong>ID da sua conta</strong> (não o nome do tenant). Copie e
-                    cadastre exatamente como aparece abaixo.
+                    Copie e cadastre exatamente como aparece abaixo, no Mercado Pago.
                   </p>
                   <div className="mt-2 flex items-start gap-2">
                     <code className="flex-1 break-all font-mono text-[11px] text-emerald-950">
@@ -232,39 +230,37 @@ export const PaymentCredentialsSection: React.FC<PaymentCredentialsSectionProps>
                 </div>
 
                 <p className="text-[11px] text-slate-700">
-                  No painel do Mercado Pago, copie a <strong>assinatura secreta</strong> gerada ao
-                  salvar o webhook e cole no campo acima. A API valida o header{' '}
-                  <code className="font-mono">x-signature</code> em cada notificação de pagamento.
+                  Depois de salvar no Mercado Pago, copie o <strong>código de segurança</strong>{' '}
+                  (assinatura secreta) e cole no campo acima.
                 </p>
 
                 {mercadoPagoWebhookRequiresToken ? (
                   <p className="text-[11px] text-emerald-800">
-                    Assinatura secreta configurada. Notificações sem assinatura válida serão
-                    rejeitadas.
+                    Código de segurança configurado. Pagamentos só serão confirmados com aviso
+                    válido do Mercado Pago.
                   </p>
                 ) : (
                   <p className="text-[11px] text-amber-800">
-                    Sem assinatura secreta, a API aceita notificações sem validar origem (útil para
-                    teste). Em produção, configure o secret.
+                    Sem o código de segurança, o sistema aceita qualquer aviso de pagamento. Configure
+                    em produção para maior proteção.
                   </p>
                 )}
 
                 <p className="text-[11px] text-slate-600">
-                  Se a URL mudar (ex.: novo túnel da API), atualize no painel do Mercado Pago. A URL
-                  exibida aqui sempre reflete o endereço público atual da API.
+                  Se este endereço mudar no futuro, atualize também no painel do Mercado Pago.
                 </p>
               </div>
             ) : (
               <p className="mt-3 text-xs text-amber-700">
-                URL do webhook indisponível — verifique se a API está com{' '}
-                <code className="font-mono">API_PUBLIC_BASE_URL</code> configurada.
+                Endereço indisponível no momento. Recarregue a página ou fale com quem administra o
+                sistema.
               </p>
             )}
 
         {!selected.apiKeyConfigured ? (
-          <p className="mt-3 text-xs text-amber-700">
-            Informe a API key e clique em <strong>Salvar</strong> no fim da página.
-          </p>
+              <p className="mt-3 text-xs text-amber-700">
+                Informe o código de acesso e clique em <strong>Salvar</strong> no fim da página.
+              </p>
         ) : null}
       </div>
 

@@ -28,6 +28,8 @@ export interface EvolutionConnectResponseDto {
   connectionStatus: WhatsAppConnectionStatusValue;
   qrCodeBase64: string | null;
   pairingCode: string | null;
+  /** Phone number used to generate the pairing code (must match WhatsApp entry). */
+  pairingPhoneNumber: string | null;
 }
 
 export interface EvolutionTestMessageResponseDto {

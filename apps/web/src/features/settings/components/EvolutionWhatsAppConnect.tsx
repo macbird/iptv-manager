@@ -2,7 +2,7 @@ import React from 'react';
 import { Copy, Check } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { WhatsAppEvolutionConnectionDto } from '@client-manager/shared';
-import { WHATSAPP_CONNECTION_STATUS_LABELS, normalizePhoneE164 } from '@client-manager/shared';
+import { WHATSAPP_CONNECTION_STATUS_LABELS, formatBrazilPhoneForDisplay, normalizePhoneE164 } from '@client-manager/shared';
 import { tenantBillingApi, platformBillingApi } from '../../billing/api/billing.api';
 import { getApiErrorMessage } from '@client-manager/shared';
 import { showToast } from '../../../shared/utils/toast';
@@ -22,7 +22,8 @@ function toQrSrc(base64: string): string {
 function normalizePhoneInput(value: string): string {
   const digits = value.replace(/\D/g, '');
   if (!digits) return '';
-  return normalizePhoneE164(digits);
+  const normalized = normalizePhoneE164(digits);
+  return normalized.startsWith('55') ? normalized.slice(2) : normalized;
 }
 
 function formatPairingCodeDisplay(code: string): string {
@@ -47,6 +48,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
   const [usePairingCode, setUsePairingCode] = React.useState(false);
   const [qrCodeBase64, setQrCodeBase64] = React.useState<string | null>(null);
   const [pairingCode, setPairingCode] = React.useState<string | null>(null);
+  const [pairingPhoneNumber, setPairingPhoneNumber] = React.useState<string | null>(null);
   const [pairingCodeCopied, setPairingCodeCopied] = React.useState(false);
 
   const {
@@ -91,6 +93,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
     if (status === 'connected') {
       setQrCodeBase64(null);
       setPairingCode(null);
+      setPairingPhoneNumber(null);
       setPairingCodeCopied(false);
     }
   }, [status]);
@@ -107,7 +110,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
   const connectMutation = useMutation({
     mutationFn: () => {
       const digits = phone.replace(/\D/g, '');
-      const normalized = digits ? normalizePhoneInput(digits) : '';
+      const normalized = digits ? normalizePhoneE164(digits) : '';
       return billingApi.connectEvolutionWhatsapp(
         usePairingCode && normalized ? { phone: normalized } : undefined,
       );
@@ -115,6 +118,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
     onSuccess: (data) => {
       setQrCodeBase64(data.qrCodeBase64);
       setPairingCode(data.pairingCode);
+      setPairingPhoneNumber(data.pairingPhoneNumber);
       queryClient.invalidateQueries({ queryKey: [connectionQueryKey] });
       queryClient.invalidateQueries({ queryKey: [settingsQueryKey] });
 
@@ -143,6 +147,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
     onSuccess: () => {
       setQrCodeBase64(null);
       setPairingCode(null);
+      setPairingPhoneNumber(null);
       queryClient.invalidateQueries({ queryKey: [connectionQueryKey] });
       queryClient.invalidateQueries({ queryKey: [settingsQueryKey] });
       showToast.success('WhatsApp desconectado');
@@ -153,7 +158,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
   const testMutation = useMutation({
     mutationFn: () => {
       const digits = testPhone.replace(/\D/g, '');
-      const normalized = digits ? normalizePhoneInput(digits) : undefined;
+      const normalized = digits ? normalizePhoneE164(digits) : undefined;
       return billingApi.sendEvolutionTestMessage(
         normalized ? { phone: normalized } : undefined,
       );
@@ -213,9 +218,9 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
           </label>
 
           {usePairingCode ? (
-            <div>
+            <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700">
-                Seu número (DDD + número — o 55 é adicionado automaticamente)
+                Número deste WhatsApp (DDD + número, sem 55)
               </label>
               <input
                 type="text"
@@ -225,13 +230,32 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
                 onBlur={() => {
                   if (phone.trim()) setPhone(normalizePhoneInput(phone));
                 }}
-                placeholder="359998415212"
+                placeholder="35999841521"
                 className="mt-1 block w-full max-w-sm rounded-md border border-slate-300 p-2 text-sm shadow-sm"
               />
-              <p className="mt-1 text-xs text-slate-500">
-                No WhatsApp: Aparelhos conectados → Conectar com número de telefone → digite o
-                código exibido abaixo.
-              </p>
+              <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs text-sky-950">
+                <p className="font-semibold">
+                  Quando o código for gerado, o WhatsApp deste número deve mostrar um aviso de
+                  conexão em alguns segundos.
+                </p>
+                <ol className="mt-2 list-decimal space-y-1 pl-4">
+                  <li>
+                    Confira se o número acima é o <strong>mesmo</strong> deste WhatsApp (com o 9 do
+                    celular, se houver)
+                  </li>
+                  <li>
+                    Se aparecer o aviso no celular, toque para confirmar e digite o código abaixo
+                  </li>
+                  <li>
+                    Se <strong>não aparecer nada</strong> no celular, clique em{' '}
+                    <strong>Desconectar</strong> aqui, gere de novo ou use o QR Code
+                  </li>
+                </ol>
+                <p className="mt-2 text-sky-800">
+                  Desconectar só no WhatsApp não basta — clique em <strong>Desconectar</strong> aqui
+                  no PixFlow antes de tentar outra vez.
+                </p>
+              </div>
             </div>
           ) : (
             <p className="text-xs text-slate-500">
@@ -252,6 +276,12 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
           {pairingCode ? (
             <div className="rounded-md bg-emerald-50 px-4 py-3 text-center">
               <p className="text-xs uppercase tracking-wide text-emerald-700">Código de pareamento</p>
+              {pairingPhoneNumber ? (
+                <p className="mt-1 text-xs text-emerald-800">
+                  Use com o número{' '}
+                  <strong>{formatBrazilPhoneForDisplay(pairingPhoneNumber)}</strong> no WhatsApp
+                </p>
+              ) : null}
               <div className="mt-2 flex items-center justify-center gap-2">
                 <p className="font-mono text-2xl font-bold tracking-widest text-emerald-900">
                   {formatPairingCodeDisplay(pairingCode)}
@@ -271,8 +301,9 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
                 </button>
               </div>
               <p className="mt-2 text-xs text-emerald-700">
-                Digite no WhatsApp exatamente como copiado (sem hífen). O código expira em cerca de 1
-                minuto — use o mesmo número informado acima.
+                Aguarde o aviso no WhatsApp ou digite o código em Aparelhos conectados → Conectar
+                com número de telefone. Válido por ~1 minuto — se expirar, clique em{' '}
+                <strong>Atualizar QR / código</strong>.
               </p>
             </div>
           ) : null}

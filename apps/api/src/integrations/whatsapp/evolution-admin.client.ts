@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { orderBrazilPairingPhoneCandidates } from '@client-manager/shared';
 import {
   normalizeEvolutionInstanceItem,
   parseEvolutionConnectPayload,
@@ -19,6 +20,7 @@ export interface EvolutionConnectInfo {
   state: string;
   qrCodeBase64?: string;
   pairingCode?: string;
+  pairingPhoneNumber?: string;
 }
 
 /**
@@ -97,13 +99,32 @@ export class EvolutionAdminClient {
    */
   async getConnectInfo(instanceName: string, phone?: string): Promise<EvolutionConnectInfo> {
     if (phone) {
-      const state = await this.fetchConnectionState(instanceName).catch(() => 'unknown');
-      if (state.toLowerCase() === 'connecting') {
-        await this.logoutInstance(instanceName).catch(() => undefined);
+      const candidates = orderBrazilPairingPhoneCandidates(phone);
+
+      for (const candidate of candidates) {
+        await this.resetInstanceSession(instanceName);
+        const connectResult = await this.requestPairingConnect(instanceName, candidate);
+        const pairingCode = connectResult.parsed.pairingCode;
+
+        if (pairingCode) {
+          await sleep(1500);
+          return {
+            instanceName,
+            state: connectResult.parsed.state,
+            pairingCode,
+            pairingPhoneNumber: candidate,
+          };
+        }
       }
+
+      return {
+        instanceName,
+        state: 'close',
+        pairingPhoneNumber: candidates[0] ?? phone,
+      };
     }
 
-    let connectResult = await this.fetchConnectPayload(instanceName, phone);
+    let connectResult = await this.fetchConnectPayload(instanceName);
     let parsed = connectResult.parsed;
     let qrCodeBase64 = parsed.qrCodeBase64;
 
@@ -112,27 +133,13 @@ export class EvolutionAdminClient {
     }
 
     if (!qrCodeBase64 && !parsed.pairingCode && isZeroCountQrcode(connectResult.payload)) {
-      await this.logoutInstance(instanceName).catch(() => undefined);
-      connectResult = await this.fetchConnectPayload(instanceName, phone);
+      await this.resetInstanceSession(instanceName);
+      connectResult = await this.fetchConnectPayload(instanceName);
       parsed = connectResult.parsed;
       qrCodeBase64 = parsed.qrCodeBase64;
       if (!qrCodeBase64 && !parsed.pairingCode && parsed.qrCodeRaw) {
         qrCodeBase64 = await QRCode.toDataURL(parsed.qrCodeRaw, { margin: 1, width: 280 });
       }
-    }
-
-    if (phone && !parsed.pairingCode) {
-      await this.logoutInstance(instanceName).catch(() => undefined);
-      connectResult = await this.fetchConnectPayload(instanceName, phone);
-      parsed = connectResult.parsed;
-      qrCodeBase64 = phone ? undefined : parsed.qrCodeBase64;
-      if (!phone && !qrCodeBase64 && !parsed.pairingCode && parsed.qrCodeRaw) {
-        qrCodeBase64 = await QRCode.toDataURL(parsed.qrCodeRaw, { margin: 1, width: 280 });
-      }
-    }
-
-    if (phone && parsed.pairingCode) {
-      qrCodeBase64 = undefined;
     }
 
     return {
@@ -143,13 +150,35 @@ export class EvolutionAdminClient {
     };
   }
 
+  private async resetInstanceSession(instanceName: string): Promise<void> {
+    await this.logoutInstance(instanceName).catch(() => undefined);
+    await sleep(1200);
+  }
+
+  private async requestPairingConnect(
+    instanceName: string,
+    phone: string,
+  ): Promise<{ payload: Record<string, unknown>; parsed: ReturnType<typeof parseEvolutionConnectPayload> }> {
+    return this.requestConnect(instanceName, 'GET', phone);
+  }
+
   private async fetchConnectPayload(
     instanceName: string,
+  ): Promise<{ payload: Record<string, unknown>; parsed: ReturnType<typeof parseEvolutionConnectPayload> }> {
+    return this.requestConnect(instanceName, 'GET');
+  }
+
+  private async requestConnect(
+    instanceName: string,
+    method: 'GET',
     phone?: string,
   ): Promise<{ payload: Record<string, unknown>; parsed: ReturnType<typeof parseEvolutionConnectPayload> }> {
-    const query = phone ? `?number=${encodeURIComponent(phone)}` : '';
-    const url = `${this.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}${query}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers() });
+    const basePath = `${this.baseUrl}/instance/connect/${encodeURIComponent(instanceName)}`;
+    const url = phone ? `${basePath}?number=${encodeURIComponent(phone)}` : basePath;
+    const response = await fetch(url, {
+      method,
+      headers: this.headers(),
+    });
     const text = await response.text();
     const payload = safeJson(text);
 
@@ -264,4 +293,10 @@ function isZeroCountQrcode(payload: Record<string, unknown>): boolean {
   }
 
   return (qrcode as Record<string, unknown>).count === 0;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
