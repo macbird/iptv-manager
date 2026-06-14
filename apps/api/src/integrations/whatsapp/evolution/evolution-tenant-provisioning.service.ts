@@ -3,6 +3,7 @@ import { prisma } from '../../../core/database';
 import { EvolutionAdminClient } from '../evolution-admin.client';
 import { buildEvolutionInstanceUrl } from '../evolution-config.util';
 import { getEvolutionPlatformConfig } from './evolution-platform.config';
+import { EvolutionWhatsAppError } from './evolution-whatsapp.errors';
 
 /**
  * Provisions Evolution WhatsApp instances for tenant accounts.
@@ -63,5 +64,53 @@ export class EvolutionTenantProvisioningService {
 
     console.info(`[evolution-provision] instance ready for account ${accountId} (${instanceName})`);
     return true;
+  }
+
+  /**
+   * Deletes and recreates the Evolution instance for a tenant.
+   * Does not connect WhatsApp or bind a phone — the tenant links later in settings.
+   */
+  async recreateForAccount(accountId: string, slug: string): Promise<void> {
+    const platform = getEvolutionPlatformConfig();
+    if (!platform) {
+      throw new EvolutionWhatsAppError(
+        'Evolution não configurada no servidor (EVOLUTION_BASE_URL / EVOLUTION_API_KEY).',
+        'NOT_CONFIGURED',
+      );
+    }
+
+    const instanceName = slug.trim();
+    if (!instanceName) {
+      throw new EvolutionWhatsAppError('Conta sem slug configurado.', 'NO_ACCOUNT');
+    }
+
+    const client = new EvolutionAdminClient(platform.baseUrl, platform.apiKey);
+    const instanceUrl = buildEvolutionInstanceUrl(platform.baseUrl, instanceName);
+    const encryptedApiKey = encryptCredential(platform.apiKey);
+
+    await client.logoutInstance(instanceName).catch(() => undefined);
+    await client.deleteInstance(instanceName);
+    await client.createInstance({ instanceName, token: instanceName });
+
+    await prisma.tenantWhatsappConfig.upsert({
+      where: { accountId },
+      create: {
+        accountId,
+        provider: 'evolution',
+        instanceUrl,
+        apiKey: encryptedApiKey,
+        connectionStatus: 'disconnected',
+        displayPhoneNumber: null,
+      },
+      update: {
+        provider: 'evolution',
+        instanceUrl,
+        apiKey: encryptedApiKey,
+        connectionStatus: 'disconnected',
+        displayPhoneNumber: null,
+      },
+    });
+
+    console.info(`[evolution-provision] instance recreated for account ${accountId} (${instanceName})`);
   }
 }

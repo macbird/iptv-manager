@@ -77,6 +77,7 @@ A API interpreta `instance_url` como **base** `http://localhost:8080` + instânc
 ## Produção
 
 - `EVOLUTION_BASE_URL` = URL HTTPS pública da Evolution  
+- **`SERVER_URL` na Evolution** deve ser a mesma URL pública (ex.: `https://evolution-pixflow.squareweb.app`). Sem isso, `GET /instance/connect` pode retornar `count: 0` sem QR.  
 - Mesmo processo: um host, N instâncias  
 - Não use `PAYMENT_NOTIFY_PHONE` em produção  
 

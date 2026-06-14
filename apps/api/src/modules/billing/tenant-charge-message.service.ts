@@ -1,4 +1,5 @@
 import { prisma } from '../../core/database';
+import { toPrismaInputJson } from '../../core/database/prisma-json.util';
 import {
   DEFAULT_CHARGE_MESSAGE_DELAY_MS,
   DEFAULT_CHARGE_MESSAGE_TEMPLATES,
@@ -54,17 +55,17 @@ export class TenantChargeMessageService {
       where: { accountId: tenantId },
       create: {
         accountId: tenantId,
-        chargeMessageTemplates: input.subscription.templates,
-        oneOffMessageTemplates: input.oneOff.templates,
+        chargeMessageTemplates: toPrismaInputJson(input.subscription.templates),
+        oneOffMessageTemplates: toPrismaInputJson(input.oneOff.templates),
         chargeMessageDelayMs: input.subscription.delayMs,
-        overdueMessageTemplates: serializeOverdueChargeMessages(input.overdue),
+        overdueMessageTemplates: toPrismaInputJson(serializeOverdueChargeMessages(input.overdue)),
         overdueReminderDays,
       },
       update: {
-        chargeMessageTemplates: input.subscription.templates,
-        oneOffMessageTemplates: input.oneOff.templates,
+        chargeMessageTemplates: toPrismaInputJson(input.subscription.templates),
+        oneOffMessageTemplates: toPrismaInputJson(input.oneOff.templates),
         chargeMessageDelayMs: input.subscription.delayMs,
-        overdueMessageTemplates: serializeOverdueChargeMessages(input.overdue),
+        overdueMessageTemplates: toPrismaInputJson(serializeOverdueChargeMessages(input.overdue)),
         overdueReminderDays,
       },
     });

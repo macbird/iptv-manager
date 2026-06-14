@@ -64,6 +64,10 @@ export const tenantsApi = {
     const response = await api.post(`/admin/tenants/reset-password`, { email, newPassword });
     return response.data;
   },
+  recreateEvolutionInstance: async (id: string): Promise<AccountListItem> => {
+    const response = await api.post(`/admin/tenants/${id}/evolution/recreate`);
+    return response.data;
+  },
 };
 
 export interface AdminDashboardStats {

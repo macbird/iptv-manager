@@ -1,7 +1,7 @@
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tenantsApi } from '../api/admin.api';
-import { Users, Key, Edit2, Receipt } from 'lucide-react';
+import { Users, Key, Edit2, Receipt, RefreshCw } from 'lucide-react';
 import { PageLayout } from '../../../shared/ui/layout/PageLayout';
 import { PageHeaderActions } from '../../../shared/ui/layout/PageHeaderActions';
 import { ResponsiveDataGrid } from '../../../shared/ui/layout/ResponsiveDataGrid';
@@ -155,6 +155,35 @@ export const AccountsPage: React.FC = () => {
     },
   });
 
+  const recreateEvolutionMutation = useMutation({
+    mutationFn: tenantsApi.recreateEvolutionInstance,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      showToast.success('Instância Evolution recriada. O tenant conecta o WhatsApp em Configurações.');
+    },
+    onError: (err: unknown) => {
+      showToast.error(getApiErrorMessage(err, 'Erro ao recriar instância Evolution'));
+    },
+  });
+
+  const handleRecreateEvolution = (account: AccountListItem) => {
+    if (!account.slug?.trim()) {
+      showToast.error('Conta sem identificador (slug) para recriar a instância');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Recriar a instância Evolution "${account.slug}"?\n\n` +
+        'A instância atual será removida e criada novamente. ' +
+        'Nenhum número será vinculado — o tenant precisa conectar o WhatsApp em Configurações.',
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    recreateEvolutionMutation.mutate(account.id);
+  };
+
   const formatDueDate = (value?: string | null, emphasizeOverdue = false) => {
     if (!value) return '—';
     const formatted = new Date(value).toLocaleDateString('pt-BR');
@@ -220,6 +249,16 @@ export const AccountsPage: React.FC = () => {
       align: 'right' as const,
       accessor: (a: AccountListItem) => (
         <div className="flex justify-end space-x-1">
+          <button
+            type="button"
+            onClick={() => handleRecreateEvolution(a)}
+            disabled={!a.slug?.trim() || recreateEvolutionMutation.isPending}
+            className="p-2 text-slate-500 hover:text-sky-600 disabled:opacity-40"
+            aria-label="Recriar instância Evolution"
+            title="Recriar instância Evolution (WhatsApp desconectado — tenant conecta depois)"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
           <button
             type="button"
             onClick={() => generateInvoiceMutation.mutate(a.id)}
@@ -295,7 +334,17 @@ export const AccountsPage: React.FC = () => {
           </span>
         </div>
 
-        <div className="flex w-16 shrink-0 items-center justify-end gap-1">
+        <div className="flex w-20 shrink-0 items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => handleRecreateEvolution(a)}
+            disabled={!a.slug?.trim() || recreateEvolutionMutation.isPending}
+            className="p-2 text-slate-400 hover:text-sky-600 disabled:opacity-40"
+            aria-label="Recriar instância Evolution"
+            title="Recriar instância Evolution"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
           <button
             type="button"
             onClick={() => generateInvoiceMutation.mutate(a.id)}

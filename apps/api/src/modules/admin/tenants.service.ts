@@ -403,6 +403,36 @@ export class TenantsService {
     return invoice;
   }
 
+  /**
+   * Deletes and recreates the Evolution WhatsApp instance for a tenant account.
+   */
+  async recreateEvolutionInstance(accountId: string) {
+    const account = await prisma.account.findUnique({
+      where: { id: accountId },
+      include: accountListInclude,
+    });
+
+    if (!account) {
+      throw new ApiBusinessError('Conta não encontrada', API_ERROR_CODES.NOT_FOUND, 404);
+    }
+
+    await evolutionProvisioning.recreateForAccount(account.id, account.slug);
+
+    const credential = await prisma.tenantPaymentCredential.findFirst({
+      where: { accountId: account.id, active: true },
+      select: { apiKey: true },
+    });
+    const evolutionByAccountId = await evolutionIntegrity.resolveForAccounts([
+      { id: account.id, slug: account.slug },
+    ]);
+
+    return mapAccount(
+      account,
+      Boolean(credential?.apiKey),
+      evolutionByAccountId.get(account.id) ?? null,
+    );
+  }
+
   async resetPassword(email: string, newPassword?: string) {
     const password = newPassword || 'Reset123!';
     const passwordHash = await argon2.hash(password);

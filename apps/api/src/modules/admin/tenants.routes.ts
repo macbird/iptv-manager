@@ -56,6 +56,15 @@ export async function tenantsRoutes(app: FastifyInstance) {
     }
   });
 
+  app.post('/:id/evolution/recreate', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      return await tenantsService.recreateEvolutionInstance(id);
+    } catch (error) {
+      return sendApiError(reply, error);
+    }
+  });
+
   app.get('/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const account = await tenantsService.findById(id);

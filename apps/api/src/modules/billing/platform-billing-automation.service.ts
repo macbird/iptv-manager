@@ -7,6 +7,7 @@ import {
   type PlatformBillingAutomationSettingsInput,
 } from '@client-manager/shared';
 import { prisma } from '../../core/database';
+import { toPrismaInputJson } from '../../core/database/prisma-json.util';
 import {
   advanceNextDueDate,
   billingCycleKeyFromDate,
@@ -79,7 +80,7 @@ export class PlatformBillingAutomationService {
     await prisma.platformBillingAutomationConfig.update({
       where: { id: CONFIG_ID },
       data: {
-        chargeMessageTemplates: input.templates,
+        chargeMessageTemplates: toPrismaInputJson(input.templates),
         chargeMessageDelayMs: input.delayMs,
       },
     });
