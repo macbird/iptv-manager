@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   normalizeEvolutionInstanceItem,
+  normalizeEvolutionPairingCode,
   parseEvolutionConnectPayload,
   readEvolutionRemoteState,
+  unwrapEvolutionConnectPayload,
   unwrapEvolutionInstanceList,
 } from './evolution-api-payload.util';
 
@@ -70,6 +72,41 @@ describe('parseEvolutionConnectPayload', () => {
     expect(parsed.qrCodeBase64).toBeUndefined();
   });
 
+  it('should normalize dashed pairing codes', () => {
+    const parsed = parseEvolutionConnectPayload({
+      pairingCode: 'abcd-efgh',
+      count: 1,
+    });
+
+    expect(parsed.pairingCode).toBe('ABCDEFGH');
+  });
+
+  it('should unwrap array connect payloads', () => {
+    const parsed = parseEvolutionConnectPayload([
+      {
+        pairingCode: 'FNPG5AYK',
+        count: 1,
+      },
+    ]);
+
+    expect(parsed.pairingCode).toBe('FNPG5AYK');
+  });
+
+  it('should read nested qrcode pairing code', () => {
+    const parsed = parseEvolutionConnectPayload({
+      qrcode: {
+        pairingCode: 'ABCD-1234',
+        count: 1,
+      },
+    });
+
+    expect(parsed.pairingCode).toBe('ABCD1234');
+  });
+
+  it('should ignore qr raw code as pairing code', () => {
+    expect(normalizeEvolutionPairingCode('2@pairing-token')).toBeUndefined();
+  });
+
   it('should expose raw QR code payload when base64 is missing', () => {
     const parsed = parseEvolutionConnectPayload({
       code: '2@pairing-token',
@@ -77,6 +114,16 @@ describe('parseEvolutionConnectPayload', () => {
     });
 
     expect(parsed.qrCodeRaw).toBe('2@pairing-token');
+  });
+});
+
+describe('unwrapEvolutionConnectPayload', () => {
+  it('should unwrap response object wrapper', () => {
+    expect(
+      unwrapEvolutionConnectPayload({
+        response: { pairingCode: 'WZYEH1YY' },
+      }).pairingCode,
+    ).toBe('WZYEH1YY');
   });
 });
 

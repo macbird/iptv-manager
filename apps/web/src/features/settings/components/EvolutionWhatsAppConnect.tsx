@@ -1,4 +1,5 @@
 import React from 'react';
+import { Copy, Check } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { WhatsAppEvolutionConnectionDto } from '@client-manager/shared';
 import { WHATSAPP_CONNECTION_STATUS_LABELS, normalizePhoneE164 } from '@client-manager/shared';
@@ -24,6 +25,14 @@ function normalizePhoneInput(value: string): string {
   return normalizePhoneE164(digits);
 }
 
+function formatPairingCodeDisplay(code: string): string {
+  const normalized = code.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (normalized.length === 8) {
+    return `${normalized.slice(0, 4)}-${normalized.slice(4)}`;
+  }
+  return normalized;
+}
+
 export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> = ({
   connection,
   scope = 'tenant',
@@ -38,6 +47,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
   const [usePairingCode, setUsePairingCode] = React.useState(false);
   const [qrCodeBase64, setQrCodeBase64] = React.useState<string | null>(null);
   const [pairingCode, setPairingCode] = React.useState<string | null>(null);
+  const [pairingCodeCopied, setPairingCodeCopied] = React.useState(false);
 
   const {
     data: liveConnection,
@@ -81,8 +91,18 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
     if (status === 'connected') {
       setQrCodeBase64(null);
       setPairingCode(null);
+      setPairingCodeCopied(false);
     }
   }, [status]);
+
+  const handleCopyPairingCode = async () => {
+    if (!pairingCode) return;
+    const normalized = pairingCode.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    await navigator.clipboard.writeText(normalized);
+    setPairingCodeCopied(true);
+    showToast.success('Código copiado — cole no WhatsApp sem hífen');
+    window.setTimeout(() => setPairingCodeCopied(false), 2000);
+  };
 
   const connectMutation = useMutation({
     mutationFn: () => {
@@ -219,7 +239,7 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
             </p>
           )}
 
-          {qrCodeBase64 ? (
+          {qrCodeBase64 && !usePairingCode ? (
             <div className="inline-block rounded-md bg-white p-3 shadow-sm">
               <img
                 src={toQrSrc(qrCodeBase64)}
@@ -232,8 +252,27 @@ export const EvolutionWhatsAppConnect: React.FC<EvolutionWhatsAppConnectProps> =
           {pairingCode ? (
             <div className="rounded-md bg-emerald-50 px-4 py-3 text-center">
               <p className="text-xs uppercase tracking-wide text-emerald-700">Código de pareamento</p>
-              <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-emerald-900">
-                {pairingCode}
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <p className="font-mono text-2xl font-bold tracking-widest text-emerald-900">
+                  {formatPairingCodeDisplay(pairingCode)}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCopyPairingCode}
+                  className="rounded-md p-2 text-emerald-700 transition-colors hover:bg-emerald-100"
+                  title="Copiar código"
+                  aria-label="Copiar código de pareamento"
+                >
+                  {pairingCodeCopied ? (
+                    <Check className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <Copy className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-emerald-700">
+                Digite no WhatsApp exatamente como copiado (sem hífen). O código expira em cerca de 1
+                minuto — use o mesmo número informado acima.
               </p>
             </div>
           ) : null}

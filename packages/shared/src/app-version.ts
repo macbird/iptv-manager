@@ -1,4 +1,4 @@
-export const APP_VERSION = '2.3.0.0';
+export const APP_VERSION = '2.2.0.1';
 
 /** Product name shown in UI, PWA manifest and browser title. */
 export const APP_NAME = 'PixFlow';

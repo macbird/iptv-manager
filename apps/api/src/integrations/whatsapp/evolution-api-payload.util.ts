@@ -68,14 +68,61 @@ export function readEvolutionRemoteState(payload: Record<string, unknown>): stri
 }
 
 /**
+ * Unwraps Evolution connect payloads returned as arrays or { response: {...} } wrappers.
+ */
+export function unwrapEvolutionConnectPayload(payload: unknown): Record<string, unknown> {
+  if (Array.isArray(payload)) {
+    const first = payload[0];
+    if (first && typeof first === 'object' && !Array.isArray(first)) {
+      return first as Record<string, unknown>;
+    }
+    return {};
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return {};
+  }
+
+  const record = payload as Record<string, unknown>;
+  const response = record.response;
+  if (response && typeof response === 'object' && !Array.isArray(response)) {
+    return response as Record<string, unknown>;
+  }
+
+  return record;
+}
+
+/**
+ * Normalizes Evolution pairing codes for WhatsApp entry (no dashes/spaces, uppercase).
+ */
+export function normalizeEvolutionPairingCode(value: unknown): string | undefined {
+  const raw = readOptionalString(value);
+  if (!raw) {
+    return undefined;
+  }
+
+  if (/[@+/=]/.test(raw)) {
+    return undefined;
+  }
+
+  const normalized = raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (normalized.length < 6 || normalized.length > 12) {
+    return undefined;
+  }
+
+  return normalized;
+}
+
+/**
  * Extracts QR / pairing fields from Evolution connect endpoint payloads (v1 and v2).
  */
-export function parseEvolutionConnectPayload(payload: Record<string, unknown>): {
+export function parseEvolutionConnectPayload(rawPayload: unknown): {
   state: string;
   qrCodeBase64: string | undefined;
   pairingCode: string | undefined;
   qrCodeRaw: string | undefined;
 } {
+  const payload = unwrapEvolutionConnectPayload(rawPayload);
   const instanceBlock = payload.instance;
   const qrcodeBlock = payload.qrcode;
   const qrBlock = payload.qr;
@@ -87,13 +134,15 @@ export function parseEvolutionConnectPayload(payload: Record<string, unknown>): 
     readNestedBase64(qrcodeBlock) ??
     readNestedBase64(qrBlock);
 
-  const pairingCode =
-    readOptionalString(payload.pairingCode) ??
-    readOptionalString(
-      qrcodeBlock && typeof qrcodeBlock === 'object'
+  const pairingCode = normalizeEvolutionPairingCode(
+    payload.pairingCode ??
+      (qrcodeBlock && typeof qrcodeBlock === 'object'
         ? (qrcodeBlock as Record<string, unknown>).pairingCode
-        : undefined,
-    );
+        : undefined) ??
+      (qrBlock && typeof qrBlock === 'object'
+        ? (qrBlock as Record<string, unknown>).pairingCode
+        : undefined),
+  );
 
   const qrCodeRaw =
     !base64 && !pairingCode
